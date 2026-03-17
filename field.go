@@ -1,4 +1,4 @@
-package lightfield
+package githubcomlightfldlightfieldgo
 
 import (
 	"github.com/Lightfld/lightfield-go/packages/param"
