@@ -74,6 +74,13 @@ func (r *OpportunityService) List(ctx context.Context, query OpportunityListPara
 	return
 }
 
+func (r *OpportunityService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *OpportunityDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/opportunities/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return
+}
+
 type OpportunityNewResponse struct {
 	ID            string                                        `json:"id" api:"required"`
 	CreatedAt     string                                        `json:"createdAt" api:"required"`
@@ -1859,6 +1866,274 @@ func (r *OpportunityListResponseDataMapItemUnion) UnmarshalJSON(data []byte) err
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type OpportunityDefinitionsResponse struct {
+	FieldDefinitions        map[string]OpportunityDefinitionsResponseFieldDefinition        `json:"fieldDefinitions" api:"required"`
+	ObjectType              string                                                          `json:"objectType" api:"required"`
+	RelationshipDefinitions map[string]OpportunityDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions        respjson.Field
+		ObjectType              respjson.Field
+		RelationshipDefinitions respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDefinitionsResponseFieldDefinition struct {
+	Description       string                                                                         `json:"description" api:"required"`
+	Label             string                                                                         `json:"label" api:"required"`
+	TypeConfiguration map[string]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion `json:"typeConfiguration" api:"required"`
+	ValueType         string                                                                         `json:"valueType" api:"required"`
+	ID                string                                                                         `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion contains all
+// possible properties and values from [string], [float64], [bool],
+// [[]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion],
+// [map[string]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool
+// OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArray OfAnyArray
+// OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem]
+type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a
+	// [[]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion]
+	// instead of an object.
+	OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArray []OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem any `json:",inline"`
+	JSON                                                                           struct {
+		OfString                                                                       respjson.Field
+		OfFloat                                                                        respjson.Field
+		OfBool                                                                         respjson.Field
+		OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArray          respjson.Field
+		OfAnyArray                                                                     respjson.Field
+		OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem respjson.Field
+		raw                                                                            string
+	} `json:"-"`
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArray() (v []OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapMap() (v map[string]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion
+// contains all possible properties and values from [string], [float64], [bool],
+// [[]any], [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem]
+type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem any `json:",inline"`
+	JSON                                                                             struct {
+		OfString                                                                         respjson.Field
+		OfFloat                                                                          respjson.Field
+		OfBool                                                                           respjson.Field
+		OfAnyArray                                                                       respjson.Field
+		OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem respjson.Field
+		raw                                                                              string
+	} `json:"-"`
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion
+// contains all possible properties and values from [string], [float64], [bool],
+// [[]any], [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem]
+type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem any `json:",inline"`
+	JSON                                                                           struct {
+		OfString                                                                       respjson.Field
+		OfFloat                                                                        respjson.Field
+		OfBool                                                                         respjson.Field
+		OfAnyArray                                                                     respjson.Field
+		OfOpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem respjson.Field
+		raw                                                                            string
+	} `json:"-"`
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDefinitionsResponseRelationshipDefinition struct {
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	Description string `json:"description" api:"required"`
+	Label       string `json:"label" api:"required"`
+	ObjectType  string `json:"objectType" api:"required"`
+	ID          string `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type OpportunityNewParams struct {
 	Fields        OpportunityNewParamsFields        `json:"fields,omitzero" api:"required"`
 	Relationships OpportunityNewParamsRelationships `json:"relationships,omitzero" api:"required"`
@@ -1873,10 +2148,10 @@ func (r *OpportunityNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The properties SystemName, SystemStage are required.
+// The properties Name, Stage are required.
 type OpportunityNewParamsFields struct {
-	SystemName  string                                    `json:"system_name" api:"required"`
-	SystemStage string                                    `json:"system_stage" api:"required"`
+	Name        string                                    `json:"$name" api:"required"`
+	Stage       string                                    `json:"$stage" api:"required"`
 	ExtraFields map[string]OpportunityNewParamsFieldUnion `json:"-"`
 	paramObj
 }
@@ -1958,14 +2233,14 @@ func (u *OpportunityNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// The property SystemAccount is required.
+// The property Account is required.
 type OpportunityNewParamsRelationships struct {
-	SystemAccount   OpportunityNewParamsRelationshipsSystemAccountUnion   `json:"system_account,omitzero" api:"required"`
-	SystemChampion  OpportunityNewParamsRelationshipsSystemChampionUnion  `json:"system_champion,omitzero"`
-	SystemCreatedBy OpportunityNewParamsRelationshipsSystemCreatedByUnion `json:"system_createdBy,omitzero"`
-	SystemEvaluator OpportunityNewParamsRelationshipsSystemEvaluatorUnion `json:"system_evaluator,omitzero"`
-	SystemOwner     OpportunityNewParamsRelationshipsSystemOwnerUnion     `json:"system_owner,omitzero"`
-	ExtraFields     map[string]OpportunityNewParamsRelationshipUnion      `json:"-"`
+	Account     OpportunityNewParamsRelationshipsAccountUnion    `json:"$account,omitzero" api:"required"`
+	Champion    OpportunityNewParamsRelationshipsChampionUnion   `json:"$champion,omitzero"`
+	CreatedBy   OpportunityNewParamsRelationshipsCreatedByUnion  `json:"$createdBy,omitzero"`
+	Evaluator   OpportunityNewParamsRelationshipsEvaluatorUnion  `json:"$evaluator,omitzero"`
+	Owner       OpportunityNewParamsRelationshipsOwnerUnion      `json:"$owner,omitzero"`
+	ExtraFields map[string]OpportunityNewParamsRelationshipUnion `json:"-"`
 	paramObj
 }
 
@@ -1980,80 +2255,80 @@ func (r *OpportunityNewParamsRelationships) UnmarshalJSON(data []byte) error {
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsSystemAccountUnion struct {
+type OpportunityNewParamsRelationshipsAccountUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipsSystemAccountUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityNewParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipsSystemAccountUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityNewParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsSystemChampionUnion struct {
+type OpportunityNewParamsRelationshipsChampionUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipsSystemChampionUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityNewParamsRelationshipsChampionUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipsSystemChampionUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityNewParamsRelationshipsChampionUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsSystemCreatedByUnion struct {
+type OpportunityNewParamsRelationshipsCreatedByUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipsSystemCreatedByUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityNewParamsRelationshipsCreatedByUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipsSystemCreatedByUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityNewParamsRelationshipsCreatedByUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsSystemEvaluatorUnion struct {
+type OpportunityNewParamsRelationshipsEvaluatorUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipsSystemEvaluatorUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityNewParamsRelationshipsEvaluatorUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipsSystemEvaluatorUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityNewParamsRelationshipsEvaluatorUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsSystemOwnerUnion struct {
+type OpportunityNewParamsRelationshipsOwnerUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipsSystemOwnerUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityNewParamsRelationshipsOwnerUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipsSystemOwnerUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityNewParamsRelationshipsOwnerUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2088,8 +2363,8 @@ func (r *OpportunityUpdateParams) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityUpdateParamsFields struct {
-	SystemName  param.Opt[string]                            `json:"system_name,omitzero"`
-	SystemStage param.Opt[string]                            `json:"system_stage,omitzero"`
+	Name        param.Opt[string]                            `json:"$name,omitzero"`
+	Stage       param.Opt[string]                            `json:"$stage,omitzero"`
 	ExtraFields map[string]OpportunityUpdateParamsFieldUnion `json:"-"`
 	paramObj
 }
@@ -2172,12 +2447,10 @@ func (u *OpportunityUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) er
 }
 
 type OpportunityUpdateParamsRelationships struct {
-	SystemAccount   OpportunityUpdateParamsRelationshipsSystemAccount   `json:"system_account,omitzero"`
-	SystemChampion  OpportunityUpdateParamsRelationshipsSystemChampion  `json:"system_champion,omitzero"`
-	SystemCreatedBy OpportunityUpdateParamsRelationshipsSystemCreatedBy `json:"system_createdBy,omitzero"`
-	SystemEvaluator OpportunityUpdateParamsRelationshipsSystemEvaluator `json:"system_evaluator,omitzero"`
-	SystemOwner     OpportunityUpdateParamsRelationshipsSystemOwner     `json:"system_owner,omitzero"`
-	ExtraFields     map[string]OpportunityUpdateParamsRelationship      `json:"-"`
+	Champion    OpportunityUpdateParamsRelationshipsChampion   `json:"$champion,omitzero"`
+	Evaluator   OpportunityUpdateParamsRelationshipsEvaluator  `json:"$evaluator,omitzero"`
+	Owner       OpportunityUpdateParamsRelationshipsOwner      `json:"$owner,omitzero"`
+	ExtraFields map[string]OpportunityUpdateParamsRelationship `json:"-"`
 	paramObj
 }
 
@@ -2189,318 +2462,192 @@ func (r *OpportunityUpdateParamsRelationships) UnmarshalJSON(data []byte) error 
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateParamsRelationshipsSystemAccount struct {
-	Add     OpportunityUpdateParamsRelationshipsSystemAccountAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion  `json:"remove,omitzero"`
-	Replace OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion `json:"replace,omitzero"`
+type OpportunityUpdateParamsRelationshipsChampion struct {
+	Add     OpportunityUpdateParamsRelationshipsChampionAddUnion     `json:"add,omitzero"`
+	Remove  OpportunityUpdateParamsRelationshipsChampionRemoveUnion  `json:"remove,omitzero"`
+	Replace OpportunityUpdateParamsRelationshipsChampionReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r OpportunityUpdateParamsRelationshipsSystemAccount) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsSystemAccount
+func (r OpportunityUpdateParamsRelationshipsChampion) MarshalJSON() (data []byte, err error) {
+	type shadow OpportunityUpdateParamsRelationshipsChampion
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsRelationshipsSystemAccount) UnmarshalJSON(data []byte) error {
+func (r *OpportunityUpdateParamsRelationshipsChampion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemAccountAddUnion struct {
+type OpportunityUpdateParamsRelationshipsChampionAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemAccountAddUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsChampionAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemAccountAddUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsChampionAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion struct {
+type OpportunityUpdateParamsRelationshipsChampionRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsChampionRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsChampionRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion struct {
+type OpportunityUpdateParamsRelationshipsChampionReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsChampionReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsChampionReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityUpdateParamsRelationshipsSystemChampion struct {
-	Add     OpportunityUpdateParamsRelationshipsSystemChampionAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion  `json:"remove,omitzero"`
-	Replace OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion `json:"replace,omitzero"`
+type OpportunityUpdateParamsRelationshipsEvaluator struct {
+	Add     OpportunityUpdateParamsRelationshipsEvaluatorAddUnion     `json:"add,omitzero"`
+	Remove  OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion  `json:"remove,omitzero"`
+	Replace OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r OpportunityUpdateParamsRelationshipsSystemChampion) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsSystemChampion
+func (r OpportunityUpdateParamsRelationshipsEvaluator) MarshalJSON() (data []byte, err error) {
+	type shadow OpportunityUpdateParamsRelationshipsEvaluator
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsRelationshipsSystemChampion) UnmarshalJSON(data []byte) error {
+func (r *OpportunityUpdateParamsRelationshipsEvaluator) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemChampionAddUnion struct {
+type OpportunityUpdateParamsRelationshipsEvaluatorAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemChampionAddUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsEvaluatorAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemChampionAddUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsEvaluatorAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion struct {
+type OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion struct {
+type OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityUpdateParamsRelationshipsSystemCreatedBy struct {
-	Add     OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion  `json:"remove,omitzero"`
-	Replace OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion `json:"replace,omitzero"`
+type OpportunityUpdateParamsRelationshipsOwner struct {
+	Add     OpportunityUpdateParamsRelationshipsOwnerAddUnion     `json:"add,omitzero"`
+	Remove  OpportunityUpdateParamsRelationshipsOwnerRemoveUnion  `json:"remove,omitzero"`
+	Replace OpportunityUpdateParamsRelationshipsOwnerReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r OpportunityUpdateParamsRelationshipsSystemCreatedBy) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsSystemCreatedBy
+func (r OpportunityUpdateParamsRelationshipsOwner) MarshalJSON() (data []byte, err error) {
+	type shadow OpportunityUpdateParamsRelationshipsOwner
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsRelationshipsSystemCreatedBy) UnmarshalJSON(data []byte) error {
+func (r *OpportunityUpdateParamsRelationshipsOwner) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion struct {
+type OpportunityUpdateParamsRelationshipsOwnerAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsOwnerAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsOwnerAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion struct {
+type OpportunityUpdateParamsRelationshipsOwnerRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsOwnerRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsOwnerRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion struct {
+type OpportunityUpdateParamsRelationshipsOwnerReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u OpportunityUpdateParamsRelationshipsOwnerReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-type OpportunityUpdateParamsRelationshipsSystemEvaluator struct {
-	Add     OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion  `json:"remove,omitzero"`
-	Replace OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationshipsSystemEvaluator) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsSystemEvaluator
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *OpportunityUpdateParamsRelationshipsSystemEvaluator) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-type OpportunityUpdateParamsRelationshipsSystemOwner struct {
-	Add     OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion  `json:"remove,omitzero"`
-	Replace OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationshipsSystemOwner) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsSystemOwner
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *OpportunityUpdateParamsRelationshipsSystemOwner) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *OpportunityUpdateParamsRelationshipsOwnerReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

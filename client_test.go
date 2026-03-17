@@ -40,12 +40,12 @@ func TestUserAgentHeader(t *testing.T) {
 	)
 	client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -54,11 +54,11 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -87,12 +87,12 @@ func TestRetryAfter(t *testing.T) {
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -101,11 +101,11 @@ func TestRetryAfter(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -145,12 +145,12 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -159,11 +159,11 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -198,12 +198,12 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -212,11 +212,11 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -250,12 +250,12 @@ func TestRetryAfterMs(t *testing.T) {
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -264,11 +264,11 @@ func TestRetryAfterMs(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -296,12 +296,12 @@ func TestContextCancel(t *testing.T) {
 	cancel()
 	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -310,11 +310,11 @@ func TestContextCancel(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -339,12 +339,12 @@ func TestContextCancelDelay(t *testing.T) {
 	defer cancel()
 	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -353,11 +353,11 @@ func TestContextCancelDelay(t *testing.T) {
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	})
@@ -388,12 +388,12 @@ func TestContextDeadline(t *testing.T) {
 		)
 		_, err := client.Account.New(deadlineCtx, githubcomlightfldlightfieldgo.AccountNewParams{
 			Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-				SystemName:      "Acme Corp",
-				SystemWebsite:   []string{"https://acme.com"},
-				SystemIndustry:  []string{"Technology", "SaaS"},
-				SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-				SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-				SystemPrimaryAddress: map[string]string{
+				Name:      "Acme Corp",
+				Website:   []string{"https://acme.com"},
+				Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+				Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+				LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+				PrimaryAddress: map[string]string{
 					"street":  "123 Market St",
 					"city":    "San Francisco",
 					"state":   "CA",
@@ -402,11 +402,11 @@ func TestContextDeadline(t *testing.T) {
 				},
 			},
 			Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-				SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-					OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+				Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+					OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 				},
-				SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-					OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+				Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+					OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 				},
 			},
 		})
