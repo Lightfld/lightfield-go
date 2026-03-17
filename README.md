@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/Lightfld/lightfield-go@v0.1.0'
+go get -u 'github.com/Lightfld/lightfield-go@v0.2.0'
 ```
 
 <!-- x-release-please-end -->
@@ -58,8 +58,8 @@ func main() {
 	)
 	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:     "Acme Corp",
-			SystemIndustry: []string{"Technology"},
+			Name:     "Acme Corp",
+			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
 		},
 	})
 	if err != nil {
@@ -304,12 +304,12 @@ To handle errors, we recommend that you use the `errors.As` pattern:
 ```go
 _, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
 	Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
-		SystemName:  "Enterprise Platform Deal",
-		SystemStage: "stg_01abc2def3ghi4jkl5mno6pqr",
+		Name:  "Enterprise Platform Deal",
+		Stage: "opt_01abc2def3ghi4jkl5mno6pqr",
 	},
 	Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
-		SystemAccount: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemAccountUnion{
-			OfString: githubcomlightfldlightfieldgo.String("account_cm4stu901uvw234"),
+		Account: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsAccountUnion{
+			OfString: githubcomlightfldlightfieldgo.String("acc_cm4stu901uvw234"),
 		},
 	},
 })
@@ -341,12 +341,12 @@ client.Account.New(
 	ctx,
 	githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:      "Acme Corp",
-			SystemWebsite:   []string{"https://acme.com"},
-			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
-			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			SystemPrimaryAddress: map[string]string{
+			Name:      "Acme Corp",
+			Website:   []string{"https://acme.com"},
+			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
+			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			PrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
 				"state":   "CA",
@@ -355,11 +355,11 @@ client.Account.New(
 			},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
+			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
-				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
 	},
@@ -398,7 +398,7 @@ client := githubcomlightfldlightfieldgo.NewClient(
 // Override per-request:
 client.Opportunity.Get(
 	context.TODO(),
-	"opportunity_cm9uvw890xyz123",
+	"opp_cm9uvw890xyz123",
 	option.WithMaxRetries(5),
 )
 ```
@@ -413,7 +413,7 @@ you need to examine response headers, status codes, or other details.
 var response *http.Response
 account, err := client.Account.Get(
 	context.TODO(),
-	"account_cm4stu901uvw234",
+	"acc_cm4stu901uvw234",
 	option.WithResponseInto(&response),
 )
 if err != nil {

@@ -27,23 +27,23 @@ func TestOpportunityNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
 		Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
-			SystemName:  "system_name",
-			SystemStage: "system_stage",
+			Name:  "$name",
+			Stage: "$stage",
 		},
 		Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
-			SystemAccount: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemAccountUnion{
+			Account: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsAccountUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemChampion: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemChampionUnion{
+			Champion: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsChampionUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemCreatedBy: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemCreatedByUnion{
+			CreatedBy: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsCreatedByUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemEvaluator: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemEvaluatorUnion{
+			Evaluator: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsEvaluatorUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemOwner: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemOwnerUnion{
+			Owner: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
@@ -96,62 +96,40 @@ func TestOpportunityUpdateWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.OpportunityUpdateParams{
 			Fields: githubcomlightfldlightfieldgo.OpportunityUpdateParamsFields{
-				SystemName:  githubcomlightfldlightfieldgo.String("system_name"),
-				SystemStage: githubcomlightfldlightfieldgo.String("system_stage"),
+				Name:  githubcomlightfldlightfieldgo.String("$name"),
+				Stage: githubcomlightfldlightfieldgo.String("$stage"),
 			},
 			Relationships: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationships{
-				SystemAccount: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccount{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountAddUnion{
+				Champion: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampion{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
-				SystemChampion: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampion{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
-				SystemCreatedBy: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedBy{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion{
+				Evaluator: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluator{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
-				SystemEvaluator: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluator{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
-				SystemOwner: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwner{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion{
+				Owner: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwner{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
@@ -183,6 +161,28 @@ func TestOpportunityListWithOptionalParams(t *testing.T) {
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
 	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestOpportunityDefinitions(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Opportunity.Definitions(context.TODO())
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

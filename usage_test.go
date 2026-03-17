@@ -26,8 +26,8 @@ func TestUsage(t *testing.T) {
 	)
 	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			SystemName:     "Acme Corp",
-			SystemIndustry: []string{"Technology"},
+			Name:     "Acme Corp",
+			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
 		},
 	})
 	if err != nil {

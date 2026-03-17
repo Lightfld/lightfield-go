@@ -74,6 +74,13 @@ func (r *ContactService) List(ctx context.Context, query ContactListParams, opts
 	return
 }
 
+func (r *ContactService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *ContactDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/contacts/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return
+}
+
 type ContactNewResponse struct {
 	ID            string                                    `json:"id" api:"required"`
 	CreatedAt     string                                    `json:"createdAt" api:"required"`
@@ -1854,6 +1861,274 @@ func (r *ContactListResponseDataMapItemUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type ContactDefinitionsResponse struct {
+	FieldDefinitions        map[string]ContactDefinitionsResponseFieldDefinition        `json:"fieldDefinitions" api:"required"`
+	ObjectType              string                                                      `json:"objectType" api:"required"`
+	RelationshipDefinitions map[string]ContactDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions        respjson.Field
+		ObjectType              respjson.Field
+		RelationshipDefinitions respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactDefinitionsResponseFieldDefinition struct {
+	Description       string                                                                     `json:"description" api:"required"`
+	Label             string                                                                     `json:"label" api:"required"`
+	TypeConfiguration map[string]ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion `json:"typeConfiguration" api:"required"`
+	ValueType         string                                                                     `json:"valueType" api:"required"`
+	ID                string                                                                     `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ContactDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion contains all
+// possible properties and values from [string], [float64], [bool],
+// [[]ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion],
+// [map[string]ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool
+// OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArray OfAnyArray
+// OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem]
+type ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a
+	// [[]ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion]
+	// instead of an object.
+	OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArray []ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem any `json:",inline"`
+	JSON                                                                       struct {
+		OfString                                                                   respjson.Field
+		OfFloat                                                                    respjson.Field
+		OfBool                                                                     respjson.Field
+		OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArray          respjson.Field
+		OfAnyArray                                                                 respjson.Field
+		OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem respjson.Field
+		raw                                                                        string
+	} `json:"-"`
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsContactDefinitionsResponseFieldDefinitionTypeConfigurationArray() (v []ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) AsContactDefinitionsResponseFieldDefinitionTypeConfigurationMapMap() (v map[string]ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion
+// contains all possible properties and values from [string], [float64], [bool],
+// [[]any], [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem]
+type ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem any `json:",inline"`
+	JSON                                                                         struct {
+		OfString                                                                     respjson.Field
+		OfFloat                                                                      respjson.Field
+		OfBool                                                                       respjson.Field
+		OfAnyArray                                                                   respjson.Field
+		OfContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemMapItem respjson.Field
+		raw                                                                          string
+	} `json:"-"`
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationArrayItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion contains
+// all possible properties and values from [string], [float64], [bool], [[]any],
+// [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem]
+type ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem any `json:",inline"`
+	JSON                                                                       struct {
+		OfString                                                                   respjson.Field
+		OfFloat                                                                    respjson.Field
+		OfBool                                                                     respjson.Field
+		OfAnyArray                                                                 respjson.Field
+		OfContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemMapItem respjson.Field
+		raw                                                                        string
+	} `json:"-"`
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) RawJSON() string {
+	return u.JSON.raw
+}
+
+func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactDefinitionsResponseRelationshipDefinition struct {
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	Description string `json:"description" api:"required"`
+	Label       string `json:"label" api:"required"`
+	ObjectType  string `json:"objectType" api:"required"`
+	ID          string `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ContactDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type ContactNewParams struct {
 	Fields        ContactNewParamsFields        `json:"fields,omitzero" api:"required"`
 	Relationships ContactNewParamsRelationships `json:"relationships,omitzero"`
@@ -1869,10 +2144,10 @@ func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
 }
 
 type ContactNewParamsFields struct {
-	SystemProfilePhotoURL param.Opt[string]                     `json:"system_profilePhotoUrl,omitzero"`
-	SystemEmail           []string                              `json:"system_email,omitzero"`
-	SystemName            ContactNewParamsFieldsSystemName      `json:"system_name,omitzero"`
-	ExtraFields           map[string]ContactNewParamsFieldUnion `json:"-"`
+	ProfilePhotoURL param.Opt[string]                     `json:"$profilePhotoUrl,omitzero"`
+	Email           []string                              `json:"$email,omitzero"`
+	Name            ContactNewParamsFieldsName            `json:"$name,omitzero"`
+	ExtraFields     map[string]ContactNewParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -1884,17 +2159,17 @@ func (r *ContactNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactNewParamsFieldsSystemName struct {
+type ContactNewParamsFieldsName struct {
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
 	LastName  param.Opt[string] `json:"lastName,omitzero"`
 	paramObj
 }
 
-func (r ContactNewParamsFieldsSystemName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParamsFieldsSystemName
+func (r ContactNewParamsFieldsName) MarshalJSON() (data []byte, err error) {
+	type shadow ContactNewParamsFieldsName
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactNewParamsFieldsSystemName) UnmarshalJSON(data []byte) error {
+func (r *ContactNewParamsFieldsName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1968,8 +2243,8 @@ func (u *ContactNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactNewParamsRelationships struct {
-	SystemAccount ContactNewParamsRelationshipsSystemAccountUnion `json:"system_account,omitzero"`
-	ExtraFields   map[string]ContactNewParamsRelationshipUnion    `json:"-"`
+	Accounts    ContactNewParamsRelationshipsAccountsUnion   `json:"$accounts,omitzero"`
+	ExtraFields map[string]ContactNewParamsRelationshipUnion `json:"-"`
 	paramObj
 }
 
@@ -1984,16 +2259,16 @@ func (r *ContactNewParamsRelationships) UnmarshalJSON(data []byte) error {
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsRelationshipsSystemAccountUnion struct {
+type ContactNewParamsRelationshipsAccountsUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactNewParamsRelationshipsSystemAccountUnion) MarshalJSON() ([]byte, error) {
+func (u ContactNewParamsRelationshipsAccountsUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactNewParamsRelationshipsSystemAccountUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactNewParamsRelationshipsAccountsUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2028,10 +2303,10 @@ func (r *ContactUpdateParams) UnmarshalJSON(data []byte) error {
 }
 
 type ContactUpdateParamsFields struct {
-	SystemProfilePhotoURL param.Opt[string]                        `json:"system_profilePhotoUrl,omitzero"`
-	SystemEmail           []string                                 `json:"system_email,omitzero"`
-	SystemName            ContactUpdateParamsFieldsSystemName      `json:"system_name,omitzero"`
-	ExtraFields           map[string]ContactUpdateParamsFieldUnion `json:"-"`
+	ProfilePhotoURL param.Opt[string]                        `json:"$profilePhotoUrl,omitzero"`
+	Email           []string                                 `json:"$email,omitzero"`
+	Name            ContactUpdateParamsFieldsName            `json:"$name,omitzero"`
+	ExtraFields     map[string]ContactUpdateParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -2043,17 +2318,17 @@ func (r *ContactUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateParamsFieldsSystemName struct {
+type ContactUpdateParamsFieldsName struct {
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
 	LastName  param.Opt[string] `json:"lastName,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParamsFieldsSystemName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsFieldsSystemName
+func (r ContactUpdateParamsFieldsName) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateParamsFieldsName
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsFieldsSystemName) UnmarshalJSON(data []byte) error {
+func (r *ContactUpdateParamsFieldsName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2127,8 +2402,8 @@ func (u *ContactUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error 
 }
 
 type ContactUpdateParamsRelationships struct {
-	SystemAccount ContactUpdateParamsRelationshipsSystemAccount `json:"system_account,omitzero"`
-	ExtraFields   map[string]ContactUpdateParamsRelationship    `json:"-"`
+	Accounts    ContactUpdateParamsRelationshipsAccounts   `json:"$accounts,omitzero"`
+	ExtraFields map[string]ContactUpdateParamsRelationship `json:"-"`
 	paramObj
 }
 
@@ -2140,66 +2415,66 @@ func (r *ContactUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateParamsRelationshipsSystemAccount struct {
-	Add     ContactUpdateParamsRelationshipsSystemAccountAddUnion     `json:"add,omitzero"`
-	Remove  ContactUpdateParamsRelationshipsSystemAccountRemoveUnion  `json:"remove,omitzero"`
-	Replace ContactUpdateParamsRelationshipsSystemAccountReplaceUnion `json:"replace,omitzero"`
+type ContactUpdateParamsRelationshipsAccounts struct {
+	Add     ContactUpdateParamsRelationshipsAccountsAddUnion     `json:"add,omitzero"`
+	Remove  ContactUpdateParamsRelationshipsAccountsRemoveUnion  `json:"remove,omitzero"`
+	Replace ContactUpdateParamsRelationshipsAccountsReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParamsRelationshipsSystemAccount) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsRelationshipsSystemAccount
+func (r ContactUpdateParamsRelationshipsAccounts) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateParamsRelationshipsAccounts
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsRelationshipsSystemAccount) UnmarshalJSON(data []byte) error {
+func (r *ContactUpdateParamsRelationshipsAccounts) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsSystemAccountAddUnion struct {
+type ContactUpdateParamsRelationshipsAccountsAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsSystemAccountAddUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountsAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsSystemAccountAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountsAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsSystemAccountRemoveUnion struct {
+type ContactUpdateParamsRelationshipsAccountsRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsSystemAccountRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountsRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsSystemAccountRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountsRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsSystemAccountReplaceUnion struct {
+type ContactUpdateParamsRelationshipsAccountsReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsSystemAccountReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountsReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsSystemAccountReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountsReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

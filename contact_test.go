@@ -27,15 +27,15 @@ func TestContactNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.Contact.New(context.TODO(), githubcomlightfldlightfieldgo.ContactNewParams{
 		Fields: githubcomlightfldlightfieldgo.ContactNewParamsFields{
-			SystemEmail: []string{"string"},
-			SystemName: githubcomlightfldlightfieldgo.ContactNewParamsFieldsSystemName{
+			Email: []string{"string"},
+			Name: githubcomlightfldlightfieldgo.ContactNewParamsFieldsName{
 				FirstName: githubcomlightfldlightfieldgo.String("firstName"),
 				LastName:  githubcomlightfldlightfieldgo.String("lastName"),
 			},
-			SystemProfilePhotoURL: githubcomlightfldlightfieldgo.String("system_profilePhotoUrl"),
+			ProfilePhotoURL: githubcomlightfldlightfieldgo.String("$profilePhotoUrl"),
 		},
 		Relationships: githubcomlightfldlightfieldgo.ContactNewParamsRelationships{
-			SystemAccount: githubcomlightfldlightfieldgo.ContactNewParamsRelationshipsSystemAccountUnion{
+			Accounts: githubcomlightfldlightfieldgo.ContactNewParamsRelationshipsAccountsUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
@@ -88,22 +88,22 @@ func TestContactUpdateWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.ContactUpdateParams{
 			Fields: githubcomlightfldlightfieldgo.ContactUpdateParamsFields{
-				SystemEmail: []string{"string"},
-				SystemName: githubcomlightfldlightfieldgo.ContactUpdateParamsFieldsSystemName{
+				Email: []string{"string"},
+				Name: githubcomlightfldlightfieldgo.ContactUpdateParamsFieldsName{
 					FirstName: githubcomlightfldlightfieldgo.String("firstName"),
 					LastName:  githubcomlightfldlightfieldgo.String("lastName"),
 				},
-				SystemProfilePhotoURL: githubcomlightfldlightfieldgo.String("system_profilePhotoUrl"),
+				ProfilePhotoURL: githubcomlightfldlightfieldgo.String("$profilePhotoUrl"),
 			},
 			Relationships: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationships{
-				SystemAccount: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccount{
-					Add: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountAddUnion{
+				Accounts: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccounts{
+					Add: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountsAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountsRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountsReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
@@ -135,6 +135,28 @@ func TestContactListWithOptionalParams(t *testing.T) {
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
 	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestContactDefinitions(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Contact.Definitions(context.TODO())
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
