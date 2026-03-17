@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package lightfield_test
+package githubcomlightfldlightfieldgo_test
 
 import (
 	"context"
@@ -20,12 +20,12 @@ func TestUsage(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	account, err := client.Account.New(context.TODO(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:     "Acme Corp",
 			SystemIndustry: []string{"Technology"},
 		},

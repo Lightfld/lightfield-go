@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package lightfield_test
+package githubcomlightfldlightfieldgo_test
 
 import (
 	"context"
@@ -21,35 +21,35 @@ func TestOpportunityNewWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Opportunity.New(context.TODO(), lightfield.OpportunityNewParams{
-		Fields: lightfield.OpportunityNewParamsFields{
+	_, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
+		Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
 			SystemName:  "system_name",
 			SystemStage: "system_stage",
 		},
-		Relationships: lightfield.OpportunityNewParamsRelationships{
-			SystemAccount: lightfield.OpportunityNewParamsRelationshipsSystemAccountUnion{
-				OfString: lightfield.String("string"),
+		Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
+			SystemAccount: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemAccountUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemChampion: lightfield.OpportunityNewParamsRelationshipsSystemChampionUnion{
-				OfString: lightfield.String("string"),
+			SystemChampion: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemChampionUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemCreatedBy: lightfield.OpportunityNewParamsRelationshipsSystemCreatedByUnion{
-				OfString: lightfield.String("string"),
+			SystemCreatedBy: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemCreatedByUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemEvaluator: lightfield.OpportunityNewParamsRelationshipsSystemEvaluatorUnion{
-				OfString: lightfield.String("string"),
+			SystemEvaluator: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemEvaluatorUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			SystemOwner: lightfield.OpportunityNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("string"),
+			SystemOwner: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
 	})
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -65,13 +65,13 @@ func TestOpportunityGet(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Opportunity.Get(context.TODO(), "id")
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -87,79 +87,79 @@ func TestOpportunityUpdateWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Opportunity.Update(
 		context.TODO(),
 		"id",
-		lightfield.OpportunityUpdateParams{
-			Fields: lightfield.OpportunityUpdateParamsFields{
-				SystemName:  lightfield.String("system_name"),
-				SystemStage: lightfield.String("system_stage"),
+		githubcomlightfldlightfieldgo.OpportunityUpdateParams{
+			Fields: githubcomlightfldlightfieldgo.OpportunityUpdateParamsFields{
+				SystemName:  githubcomlightfldlightfieldgo.String("system_name"),
+				SystemStage: githubcomlightfldlightfieldgo.String("system_stage"),
 			},
-			Relationships: lightfield.OpportunityUpdateParamsRelationships{
-				SystemAccount: lightfield.OpportunityUpdateParamsRelationshipsSystemAccount{
-					Add: lightfield.OpportunityUpdateParamsRelationshipsSystemAccountAddUnion{
-						OfString: lightfield.String("string"),
+			Relationships: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationships{
+				SystemAccount: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccount{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: lightfield.OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion{
-						OfString: lightfield.String("string"),
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: lightfield.OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion{
-						OfString: lightfield.String("string"),
-					},
-				},
-				SystemChampion: lightfield.OpportunityUpdateParamsRelationshipsSystemChampion{
-					Add: lightfield.OpportunityUpdateParamsRelationshipsSystemChampionAddUnion{
-						OfString: lightfield.String("string"),
-					},
-					Remove: lightfield.OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion{
-						OfString: lightfield.String("string"),
-					},
-					Replace: lightfield.OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion{
-						OfString: lightfield.String("string"),
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemAccountReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
-				SystemCreatedBy: lightfield.OpportunityUpdateParamsRelationshipsSystemCreatedBy{
-					Add: lightfield.OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion{
-						OfString: lightfield.String("string"),
+				SystemChampion: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampion{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: lightfield.OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion{
-						OfString: lightfield.String("string"),
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: lightfield.OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion{
-						OfString: lightfield.String("string"),
-					},
-				},
-				SystemEvaluator: lightfield.OpportunityUpdateParamsRelationshipsSystemEvaluator{
-					Add: lightfield.OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion{
-						OfString: lightfield.String("string"),
-					},
-					Remove: lightfield.OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion{
-						OfString: lightfield.String("string"),
-					},
-					Replace: lightfield.OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion{
-						OfString: lightfield.String("string"),
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemChampionReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
-				SystemOwner: lightfield.OpportunityUpdateParamsRelationshipsSystemOwner{
-					Add: lightfield.OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion{
-						OfString: lightfield.String("string"),
+				SystemCreatedBy: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedBy{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: lightfield.OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion{
-						OfString: lightfield.String("string"),
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: lightfield.OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion{
-						OfString: lightfield.String("string"),
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemCreatedByReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+				},
+				SystemEvaluator: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluator{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemEvaluatorReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+				},
+				SystemOwner: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwner{
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsSystemOwnerReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
 			},
 		},
 	)
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -175,16 +175,16 @@ func TestOpportunityListWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Opportunity.List(context.TODO(), lightfield.OpportunityListParams{
-		Limit:  lightfield.Int(1),
-		Offset: lightfield.Int(0),
+	_, err := client.Opportunity.List(context.TODO(), githubcomlightfldlightfieldgo.OpportunityListParams{
+		Limit:  githubcomlightfldlightfieldgo.Int(1),
+		Offset: githubcomlightfldlightfieldgo.Int(0),
 	})
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}

@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package lightfield_test
+package githubcomlightfldlightfieldgo_test
 
 import (
 	"context"
@@ -21,27 +21,27 @@ func TestContactNewWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Contact.New(context.TODO(), lightfield.ContactNewParams{
-		Fields: lightfield.ContactNewParamsFields{
+	_, err := client.Contact.New(context.TODO(), githubcomlightfldlightfieldgo.ContactNewParams{
+		Fields: githubcomlightfldlightfieldgo.ContactNewParamsFields{
 			SystemEmail: []string{"string"},
-			SystemName: lightfield.ContactNewParamsFieldsSystemName{
-				FirstName: lightfield.String("firstName"),
-				LastName:  lightfield.String("lastName"),
+			SystemName: githubcomlightfldlightfieldgo.ContactNewParamsFieldsSystemName{
+				FirstName: githubcomlightfldlightfieldgo.String("firstName"),
+				LastName:  githubcomlightfldlightfieldgo.String("lastName"),
 			},
-			SystemProfilePhotoURL: lightfield.String("system_profilePhotoUrl"),
+			SystemProfilePhotoURL: githubcomlightfldlightfieldgo.String("system_profilePhotoUrl"),
 		},
-		Relationships: lightfield.ContactNewParamsRelationships{
-			SystemAccount: lightfield.ContactNewParamsRelationshipsSystemAccountUnion{
-				OfString: lightfield.String("string"),
+		Relationships: githubcomlightfldlightfieldgo.ContactNewParamsRelationships{
+			SystemAccount: githubcomlightfldlightfieldgo.ContactNewParamsRelationshipsSystemAccountUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
 	})
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -57,13 +57,13 @@ func TestContactGet(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Contact.Get(context.TODO(), "id")
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -79,39 +79,39 @@ func TestContactUpdateWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Contact.Update(
 		context.TODO(),
 		"id",
-		lightfield.ContactUpdateParams{
-			Fields: lightfield.ContactUpdateParamsFields{
+		githubcomlightfldlightfieldgo.ContactUpdateParams{
+			Fields: githubcomlightfldlightfieldgo.ContactUpdateParamsFields{
 				SystemEmail: []string{"string"},
-				SystemName: lightfield.ContactUpdateParamsFieldsSystemName{
-					FirstName: lightfield.String("firstName"),
-					LastName:  lightfield.String("lastName"),
+				SystemName: githubcomlightfldlightfieldgo.ContactUpdateParamsFieldsSystemName{
+					FirstName: githubcomlightfldlightfieldgo.String("firstName"),
+					LastName:  githubcomlightfldlightfieldgo.String("lastName"),
 				},
-				SystemProfilePhotoURL: lightfield.String("system_profilePhotoUrl"),
+				SystemProfilePhotoURL: githubcomlightfldlightfieldgo.String("system_profilePhotoUrl"),
 			},
-			Relationships: lightfield.ContactUpdateParamsRelationships{
-				SystemAccount: lightfield.ContactUpdateParamsRelationshipsSystemAccount{
-					Add: lightfield.ContactUpdateParamsRelationshipsSystemAccountAddUnion{
-						OfString: lightfield.String("string"),
+			Relationships: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationships{
+				SystemAccount: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccount{
+					Add: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: lightfield.ContactUpdateParamsRelationshipsSystemAccountRemoveUnion{
-						OfString: lightfield.String("string"),
+					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: lightfield.ContactUpdateParamsRelationshipsSystemAccountReplaceUnion{
-						OfString: lightfield.String("string"),
+					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsSystemAccountReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
 			},
 		},
 	)
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}
@@ -127,16 +127,16 @@ func TestContactListWithOptionalParams(t *testing.T) {
 	if !testutil.CheckTestServer(t, baseURL) {
 		return
 	}
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Contact.List(context.TODO(), lightfield.ContactListParams{
-		Limit:  lightfield.Int(1),
-		Offset: lightfield.Int(0),
+	_, err := client.Contact.List(context.TODO(), githubcomlightfldlightfieldgo.ContactListParams{
+		Limit:  githubcomlightfldlightfieldgo.Int(1),
+		Offset: githubcomlightfldlightfieldgo.Int(0),
 	})
 	if err != nil {
-		var apierr *lightfield.Error
+		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
 			t.Log(string(apierr.DumpRequest(true)))
 		}

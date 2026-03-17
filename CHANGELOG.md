@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.1.0 (2026-03-17)
+
+Full Changelog: [v0.0.2...v0.1.0](https://github.com/Lightfld/lightfield-go/compare/v0.0.2...v0.1.0)
+
+### Features
+
+* **api:** add Go SDK and CLI targets to Stainless config ([891280c](https://github.com/Lightfld/lightfield-go/commit/891280c5773e89eaf407ef656af84dc610ccd359))
+
 ## 0.0.2 (2026-03-17)
 
 Full Changelog: [v0.0.1...v0.0.2](https://github.com/Lightfld/lightfield-go/compare/v0.0.1...v0.0.2)

@@ -17,7 +17,7 @@ It is generated with [Stainless](https://www.stainless.com/).
 
 ```go
 import (
-	"github.com/Lightfld/lightfield-go" // imported as lightfield
+	"github.com/Lightfld/lightfield-go" // imported as githubcomlightfldlightfieldgo
 )
 ```
 
@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/Lightfld/lightfield-go@v0.0.2'
+go get -u 'github.com/Lightfld/lightfield-go@v0.1.0'
 ```
 
 <!-- x-release-please-end -->
@@ -53,11 +53,11 @@ import (
 )
 
 func main() {
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 	)
-	account, err := client.Account.New(context.TODO(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:     "Acme Corp",
 			SystemIndustry: []string{"Technology"},
 		},
@@ -72,13 +72,13 @@ func main() {
 
 ### Request fields
 
-The lightfield library uses the [`omitzero`](https://tip.golang.org/doc/go1.24#encodingjsonpkgencodingjson)
+The githubcomlightfldlightfieldgo library uses the [`omitzero`](https://tip.golang.org/doc/go1.24#encodingjsonpkgencodingjson)
 semantics from the Go 1.24+ `encoding/json` release for request fields.
 
 Required primitive fields (`int64`, `string`, etc.) feature the tag <code>\`json:"...,required"\`</code>. These
 fields are always serialized, even their zero values.
 
-Optional primitive types are wrapped in a `param.Opt[T]`. These fields can be set with the provided constructors, `lightfield.String(string)`, `lightfield.Int(int64)`, etc.
+Optional primitive types are wrapped in a `param.Opt[T]`. These fields can be set with the provided constructors, `githubcomlightfldlightfieldgo.String(string)`, `githubcomlightfldlightfieldgo.Int(int64)`, etc.
 
 Any `param.Opt[T]`, map, slice, struct or string enum uses the
 tag <code>\`json:"...,omitzero"\`</code>. Its zero value is considered omitted.
@@ -86,17 +86,17 @@ tag <code>\`json:"...,omitzero"\`</code>. Its zero value is considered omitted.
 The `param.IsOmitted(any)` function can confirm the presence of any `omitzero` field.
 
 ```go
-p := lightfield.ExampleParams{
-	ID:   "id_xxx",                 // required property
-	Name: lightfield.String("..."), // optional property
+p := githubcomlightfldlightfieldgo.ExampleParams{
+	ID:   "id_xxx",                                    // required property
+	Name: githubcomlightfldlightfieldgo.String("..."), // optional property
 
-	Point: lightfield.Point{
-		X: 0,                 // required field will serialize as 0
-		Y: lightfield.Int(1), // optional field will serialize as 1
+	Point: githubcomlightfldlightfieldgo.Point{
+		X: 0,                                    // required field will serialize as 0
+		Y: githubcomlightfldlightfieldgo.Int(1), // optional field will serialize as 1
 		// ... omitted non-required fields will not be serialized
 	},
 
-	Origin: lightfield.Origin{}, // the zero value of [Origin] is considered omitted
+	Origin: githubcomlightfldlightfieldgo.Origin{}, // the zero value of [Origin] is considered omitted
 }
 ```
 
@@ -125,7 +125,7 @@ p.SetExtraFields(map[string]any{
 })
 
 // Send a number instead of an object
-custom := param.Override[lightfield.FooParams](12)
+custom := param.Override[githubcomlightfldlightfieldgo.FooParams](12)
 ```
 
 ### Request unions
@@ -266,7 +266,7 @@ This library uses the functional options pattern. Functions defined in the
 requests. For example:
 
 ```go
-client := lightfield.NewClient(
+client := githubcomlightfldlightfieldgo.NewClient(
 	// Adds a header to every request made by the client
 	option.WithHeader("X-Some-Header", "custom_header_info"),
 )
@@ -295,26 +295,26 @@ with additional helper methods like `.GetNextPage()`, e.g.:
 ### Errors
 
 When the API returns a non-success status code, we return an error with type
-`*lightfield.Error`. This contains the `StatusCode`, `*http.Request`, and
+`*githubcomlightfldlightfieldgo.Error`. This contains the `StatusCode`, `*http.Request`, and
 `*http.Response` values of the request, as well as the JSON of the error body
 (much like other response objects in the SDK).
 
 To handle errors, we recommend that you use the `errors.As` pattern:
 
 ```go
-_, err := client.Opportunity.New(context.TODO(), lightfield.OpportunityNewParams{
-	Fields: lightfield.OpportunityNewParamsFields{
+_, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
+	Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
 		SystemName:  "Enterprise Platform Deal",
 		SystemStage: "stg_01abc2def3ghi4jkl5mno6pqr",
 	},
-	Relationships: lightfield.OpportunityNewParamsRelationships{
-		SystemAccount: lightfield.OpportunityNewParamsRelationshipsSystemAccountUnion{
-			OfString: lightfield.String("account_cm4stu901uvw234"),
+	Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
+		SystemAccount: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsSystemAccountUnion{
+			OfString: githubcomlightfldlightfieldgo.String("account_cm4stu901uvw234"),
 		},
 	},
 })
 if err != nil {
-	var apierr *lightfield.Error
+	var apierr *githubcomlightfldlightfieldgo.Error
 	if errors.As(err, &apierr) {
 		println(string(apierr.DumpRequest(true)))  // Prints the serialized HTTP request
 		println(string(apierr.DumpResponse(true))) // Prints the serialized HTTP response
@@ -339,13 +339,13 @@ ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 defer cancel()
 client.Account.New(
 	ctx,
-	lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -354,11 +354,11 @@ client.Account.New(
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -378,7 +378,7 @@ The file name and content-type can be customized by implementing `Name() string`
 string` on the run-time type of `io.Reader`. Note that `os.File` implements `Name() string`, so a
 file returned by `os.Open` will be sent with the file name on disk.
 
-We also provide a helper `lightfield.File(reader io.Reader, filename string, contentType string)`
+We also provide a helper `githubcomlightfldlightfieldgo.File(reader io.Reader, filename string, contentType string)`
 which can be used to wrap any `io.Reader` with the appropriate file name and content type.
 
 ### Retries
@@ -391,7 +391,7 @@ You can use the `WithMaxRetries` option to configure or disable this:
 
 ```go
 // Configure the default for all requests:
-client := lightfield.NewClient(
+client := githubcomlightfldlightfieldgo.NewClient(
 	option.WithMaxRetries(0), // default is 2
 )
 
@@ -460,7 +460,7 @@ or the `option.WithJSONSet()` methods.
 params := FooNewParams{
     ID:   "id_xxxx",
     Data: FooNewParamsData{
-        FirstName: lightfield.String("John"),
+        FirstName: githubcomlightfldlightfieldgo.String("John"),
     },
 }
 client.Foo.New(context.Background(), params, option.WithJSONSet("data.last_name", "Doe"))
@@ -495,7 +495,7 @@ func Logger(req *http.Request, next option.MiddlewareNext) (res *http.Response, 
     return res, err
 }
 
-client := lightfield.NewClient(
+client := githubcomlightfldlightfieldgo.NewClient(
 	option.WithMiddleware(Logger),
 )
 ```

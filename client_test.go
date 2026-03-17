@@ -1,6 +1,6 @@
 // File generated from our OpenAPI spec by Stainless. See CONTRIBUTING.md for details.
 
-package lightfield_test
+package githubcomlightfldlightfieldgo_test
 
 import (
 	"context"
@@ -25,7 +25,7 @@ func (t *closureTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 
 func TestUserAgentHeader(t *testing.T) {
 	var userAgent string
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -38,13 +38,13 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		}),
 	)
-	client.Account.New(context.Background(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -53,11 +53,11 @@ func TestUserAgentHeader(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -69,7 +69,7 @@ func TestUserAgentHeader(t *testing.T) {
 
 func TestRetryAfter(t *testing.T) {
 	retryCountHeaders := make([]string, 0)
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -85,13 +85,13 @@ func TestRetryAfter(t *testing.T) {
 			},
 		}),
 	)
-	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -100,11 +100,11 @@ func TestRetryAfter(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -126,7 +126,7 @@ func TestRetryAfter(t *testing.T) {
 
 func TestDeleteRetryCountHeader(t *testing.T) {
 	retryCountHeaders := make([]string, 0)
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -143,13 +143,13 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 		}),
 		option.WithHeaderDel("X-Stainless-Retry-Count"),
 	)
-	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -158,11 +158,11 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -179,7 +179,7 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 
 func TestOverwriteRetryCountHeader(t *testing.T) {
 	retryCountHeaders := make([]string, 0)
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -196,13 +196,13 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 		}),
 		option.WithHeader("X-Stainless-Retry-Count", "42"),
 	)
-	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -211,11 +211,11 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -232,7 +232,7 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 
 func TestRetryAfterMs(t *testing.T) {
 	attempts := 0
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -248,13 +248,13 @@ func TestRetryAfterMs(t *testing.T) {
 			},
 		}),
 	)
-	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -263,11 +263,11 @@ func TestRetryAfterMs(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -281,7 +281,7 @@ func TestRetryAfterMs(t *testing.T) {
 }
 
 func TestContextCancel(t *testing.T) {
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -294,13 +294,13 @@ func TestContextCancel(t *testing.T) {
 	)
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := client.Account.New(cancelCtx, lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -309,11 +309,11 @@ func TestContextCancel(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -324,7 +324,7 @@ func TestContextCancel(t *testing.T) {
 }
 
 func TestContextCancelDelay(t *testing.T) {
-	client := lightfield.NewClient(
+	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 		option.WithHTTPClient(&http.Client{
 			Transport: &closureTransport{
@@ -337,13 +337,13 @@ func TestContextCancelDelay(t *testing.T) {
 	)
 	cancelCtx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
 	defer cancel()
-	_, err := client.Account.New(cancelCtx, lightfield.AccountNewParams{
-		Fields: lightfield.AccountNewParamsFields{
+	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
+		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			SystemName:      "Acme Corp",
 			SystemWebsite:   []string{"https://acme.com"},
 			SystemIndustry:  []string{"Technology", "SaaS"},
-			SystemHeadcount: lightfield.String("51-200"),
-			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+			SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			SystemPrimaryAddress: map[string]string{
 				"street":  "123 Market St",
 				"city":    "San Francisco",
@@ -352,11 +352,11 @@ func TestContextCancelDelay(t *testing.T) {
 				"country": "US",
 			},
 		},
-		Relationships: lightfield.AccountNewParamsRelationships{
-			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-				OfString: lightfield.String("user_cm1abc123def456"),
+		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+			SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 			},
-			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+			SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 			},
 		},
@@ -375,7 +375,7 @@ func TestContextDeadline(t *testing.T) {
 	defer cancel()
 
 	go func() {
-		client := lightfield.NewClient(
+		client := githubcomlightfldlightfieldgo.NewClient(
 			option.WithAPIKey("My API Key"),
 			option.WithHTTPClient(&http.Client{
 				Transport: &closureTransport{
@@ -386,13 +386,13 @@ func TestContextDeadline(t *testing.T) {
 				},
 			}),
 		)
-		_, err := client.Account.New(deadlineCtx, lightfield.AccountNewParams{
-			Fields: lightfield.AccountNewParamsFields{
+		_, err := client.Account.New(deadlineCtx, githubcomlightfldlightfieldgo.AccountNewParams{
+			Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 				SystemName:      "Acme Corp",
 				SystemWebsite:   []string{"https://acme.com"},
 				SystemIndustry:  []string{"Technology", "SaaS"},
-				SystemHeadcount: lightfield.String("51-200"),
-				SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+				SystemHeadcount: githubcomlightfldlightfieldgo.String("51-200"),
+				SystemLinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 				SystemPrimaryAddress: map[string]string{
 					"street":  "123 Market St",
 					"city":    "San Francisco",
@@ -401,11 +401,11 @@ func TestContextDeadline(t *testing.T) {
 					"country": "US",
 				},
 			},
-			Relationships: lightfield.AccountNewParamsRelationships{
-				SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
-					OfString: lightfield.String("user_cm1abc123def456"),
+			Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
+				SystemOwner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemOwnerUnion{
+					OfString: githubcomlightfldlightfieldgo.String("user_cm1abc123def456"),
 				},
-				SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				SystemContact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsSystemContactUnion{
 					OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
 				},
 			},
