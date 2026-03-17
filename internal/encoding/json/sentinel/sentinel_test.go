@@ -1,8 +1,8 @@
 package sentinel_test
 
 import (
-	"github.com/stainless-sdks/lightfield-go/internal/encoding/json/sentinel"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/internal/encoding/json/sentinel"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"reflect"
 	"slices"
 	"testing"

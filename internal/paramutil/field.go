@@ -1,8 +1,8 @@
 package paramutil
 
 import (
-	"github.com/stainless-sdks/lightfield-go/packages/param"
-	"github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
 func AddrIfPresent[T comparable](v param.Opt[T]) *T {

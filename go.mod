@@ -1,4 +1,4 @@
-module github.com/stainless-sdks/lightfield-go
+module github.com/Lightfld/lightfield-go
 
 go 1.22
 

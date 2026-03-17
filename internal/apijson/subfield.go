@@ -1,7 +1,7 @@
 package apijson
 
 import (
-	"github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/packages/respjson"
 	"reflect"
 )
 

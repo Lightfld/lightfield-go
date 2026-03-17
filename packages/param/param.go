@@ -2,7 +2,7 @@ package param
 
 import (
 	"encoding/json"
-	"github.com/stainless-sdks/lightfield-go/internal/encoding/json/sentinel"
+	"github.com/Lightfld/lightfield-go/internal/encoding/json/sentinel"
 	"reflect"
 )
 

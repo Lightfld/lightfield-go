@@ -3,8 +3,8 @@
 package lightfield
 
 import (
-	"github.com/stainless-sdks/lightfield-go/internal/apierror"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/internal/apierror"
+	"github.com/Lightfld/lightfield-go/packages/param"
 )
 
 // aliased to make [param.APIUnion] private when embedding

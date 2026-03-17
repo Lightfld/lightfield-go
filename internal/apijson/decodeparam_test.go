@@ -3,8 +3,8 @@ package apijson_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stainless-sdks/lightfield-go/internal/apijson"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/internal/apijson"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"reflect"
 	"testing"
 )

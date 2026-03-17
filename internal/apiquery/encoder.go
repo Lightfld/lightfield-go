@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/param"
 )
 
 var encoders sync.Map // map[reflect.Type]encoderFunc

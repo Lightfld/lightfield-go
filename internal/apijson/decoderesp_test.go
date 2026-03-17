@@ -2,8 +2,8 @@ package apijson_test
 
 import (
 	"encoding/json"
-	"github.com/stainless-sdks/lightfield-go/internal/apijson"
-	"github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/internal/apijson"
+	"github.com/Lightfld/lightfield-go/packages/respjson"
 	"testing"
 )
 
