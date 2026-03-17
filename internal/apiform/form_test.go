@@ -2,7 +2,7 @@ package apiform
 
 import (
 	"bytes"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"io"
 	"mime/multipart"
 	"strings"

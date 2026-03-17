@@ -8,9 +8,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stainless-sdks/lightfield-go"
-	"github.com/stainless-sdks/lightfield-go/internal/testutil"
-	"github.com/stainless-sdks/lightfield-go/option"
+	"github.com/Lightfld/lightfield-go"
+	"github.com/Lightfld/lightfield-go/internal/testutil"
+	"github.com/Lightfld/lightfield-go/option"
 )
 
 func TestOpportunityNewWithOptionalParams(t *testing.T) {

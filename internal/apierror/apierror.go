@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"net/http/httputil"
 
-	"github.com/stainless-sdks/lightfield-go/internal/apijson"
-	"github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/internal/apijson"
+	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
 // Error represents an error that originates from the API, i.e. when a request is

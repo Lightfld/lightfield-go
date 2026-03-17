@@ -18,10 +18,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/stainless-sdks/lightfield-go/internal"
-	"github.com/stainless-sdks/lightfield-go/internal/apierror"
-	"github.com/stainless-sdks/lightfield-go/internal/apiform"
-	"github.com/stainless-sdks/lightfield-go/internal/apiquery"
+	"github.com/Lightfld/lightfield-go/internal"
+	"github.com/Lightfld/lightfield-go/internal/apierror"
+	"github.com/Lightfld/lightfield-go/internal/apiform"
+	"github.com/Lightfld/lightfield-go/internal/apiquery"
 )
 
 func getDefaultHeaders() map[string]string {

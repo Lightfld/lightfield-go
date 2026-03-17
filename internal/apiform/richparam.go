@@ -1,7 +1,7 @@
 package apiform
 
 import (
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"mime/multipart"
 	"reflect"
 )
