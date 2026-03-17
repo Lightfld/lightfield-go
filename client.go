@@ -8,8 +8,8 @@ import (
 	"os"
 	"slices"
 
-	"github.com/stainless-sdks/lightfield-go/internal/requestconfig"
-	"github.com/stainless-sdks/lightfield-go/option"
+	"github.com/Lightfld/lightfield-go/internal/requestconfig"
+	"github.com/Lightfld/lightfield-go/option"
 )
 
 // Client creates a struct with services and top level methods that help with

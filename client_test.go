@@ -10,9 +10,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stainless-sdks/lightfield-go"
-	"github.com/stainless-sdks/lightfield-go/internal"
-	"github.com/stainless-sdks/lightfield-go/option"
+	"github.com/Lightfld/lightfield-go"
+	"github.com/Lightfld/lightfield-go/internal"
+	"github.com/Lightfld/lightfield-go/option"
 )
 
 type closureTransport struct {

@@ -3,8 +3,8 @@ package respjson_test
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stainless-sdks/lightfield-go/internal/apijson"
-	rj "github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/internal/apijson"
+	rj "github.com/Lightfld/lightfield-go/packages/respjson"
 	"reflect"
 	"testing"
 )

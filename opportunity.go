@@ -11,12 +11,12 @@ import (
 	"net/url"
 	"slices"
 
-	"github.com/stainless-sdks/lightfield-go/internal/apijson"
-	"github.com/stainless-sdks/lightfield-go/internal/apiquery"
-	"github.com/stainless-sdks/lightfield-go/internal/requestconfig"
-	"github.com/stainless-sdks/lightfield-go/option"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
-	"github.com/stainless-sdks/lightfield-go/packages/respjson"
+	"github.com/Lightfld/lightfield-go/internal/apijson"
+	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	"github.com/Lightfld/lightfield-go/internal/requestconfig"
+	"github.com/Lightfld/lightfield-go/option"
+	"github.com/Lightfld/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
 // OpportunityService contains methods and other services that help with

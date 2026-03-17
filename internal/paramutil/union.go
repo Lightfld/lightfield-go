@@ -2,7 +2,7 @@ package paramutil
 
 import (
 	"fmt"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"reflect"
 )
 

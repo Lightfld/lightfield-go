@@ -7,7 +7,7 @@ package apijson
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/stainless-sdks/lightfield-go/packages/param"
+	"github.com/Lightfld/lightfield-go/packages/param"
 	"reflect"
 	"strconv"
 	"sync"

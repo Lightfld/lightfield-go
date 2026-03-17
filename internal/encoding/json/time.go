@@ -2,7 +2,7 @@
 package json
 
 import (
-	"github.com/stainless-sdks/lightfield-go/internal/encoding/json/shims"
+	"github.com/Lightfld/lightfield-go/internal/encoding/json/shims"
 	"reflect"
 	"time"
 )
