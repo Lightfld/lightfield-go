@@ -48,21 +48,16 @@ func main() {
 	client := lightfield.NewClient(
 		option.WithAPIKey("My API Key"),
 	)
-	object, err := client.Object.New(
-		context.TODO(),
-		lightfield.ObjectNewParamsEntityTypeOpportunities,
-		lightfield.ObjectNewParams{
-			Fields: map[string]lightfield.ObjectNewParamsFieldUnion{
-				"name": {
-					OfString: lightfield.String("Big Deal"),
-				},
-			},
+	account, err := client.Account.New(context.TODO(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:     "Acme Corp",
+			SystemIndustry: []string{"Technology"},
 		},
-	)
+	})
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("%+v\n", object)
+	fmt.Printf("%+v\n", account.ID)
 }
 
 ```
@@ -268,7 +263,7 @@ client := lightfield.NewClient(
 	option.WithHeader("X-Some-Header", "custom_header_info"),
 )
 
-client.Object.List(context.TODO(), ...,
+client.Account.New(context.TODO(), ...,
 	// Override the header
 	option.WithHeader("X-Some-Header", "some_other_custom_header_info"),
 	// Add an undocumented field to the request body, using sjson syntax
@@ -299,18 +294,24 @@ When the API returns a non-success status code, we return an error with type
 To handle errors, we recommend that you use the `errors.As` pattern:
 
 ```go
-_, err := client.Object.List(
-	context.TODO(),
-	lightfield.ObjectListParamsEntityTypeContacts,
-	lightfield.ObjectListParams{},
-)
+_, err := client.Opportunity.New(context.TODO(), lightfield.OpportunityNewParams{
+	Fields: lightfield.OpportunityNewParamsFields{
+		SystemName:  "Enterprise Platform Deal",
+		SystemStage: "stg_01abc2def3ghi4jkl5mno6pqr",
+	},
+	Relationships: lightfield.OpportunityNewParamsRelationships{
+		SystemAccount: lightfield.OpportunityNewParamsRelationshipsSystemAccountUnion{
+			OfString: lightfield.String("account_cm4stu901uvw234"),
+		},
+	},
+})
 if err != nil {
 	var apierr *lightfield.Error
 	if errors.As(err, &apierr) {
 		println(string(apierr.DumpRequest(true)))  // Prints the serialized HTTP request
 		println(string(apierr.DumpResponse(true))) // Prints the serialized HTTP response
 	}
-	panic(err.Error()) // GET "/v1/objects/{entityType}": 400 Bad Request { ... }
+	panic(err.Error()) // GET "/v1/opportunities": 400 Bad Request { ... }
 }
 ```
 
@@ -328,10 +329,32 @@ To set a per-retry timeout, use `option.WithRequestTimeout()`.
 // This sets the timeout for the request, including all the retries.
 ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 defer cancel()
-client.Object.List(
+client.Account.New(
 	ctx,
-	lightfield.ObjectListParamsEntityTypeContacts,
-	lightfield.ObjectListParams{},
+	lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	},
 	// This sets the per-retry timeout
 	option.WithRequestTimeout(20*time.Second),
 )
@@ -365,10 +388,9 @@ client := lightfield.NewClient(
 )
 
 // Override per-request:
-client.Object.List(
+client.Opportunity.Get(
 	context.TODO(),
-	lightfield.ObjectListParamsEntityTypeContacts,
-	lightfield.ObjectListParams{},
+	"opportunity_cm9uvw890xyz123",
 	option.WithMaxRetries(5),
 )
 ```
@@ -381,16 +403,15 @@ you need to examine response headers, status codes, or other details.
 ```go
 // Create a variable to store the HTTP response
 var response *http.Response
-objects, err := client.Object.List(
+account, err := client.Account.Get(
 	context.TODO(),
-	lightfield.ObjectListParamsEntityTypeContacts,
-	lightfield.ObjectListParams{},
+	"account_cm4stu901uvw234",
 	option.WithResponseInto(&response),
 )
 if err != nil {
 	// handle error
 }
-fmt.Printf("%+v\n", objects)
+fmt.Printf("%+v\n", account)
 
 fmt.Printf("Status Code: %d\n", response.StatusCode)
 fmt.Printf("Headers: %+#v\n", response.Header)

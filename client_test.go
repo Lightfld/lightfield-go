@@ -38,11 +38,30 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		}),
 	)
-	client.Object.List(
-		context.Background(),
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	client.Account.New(context.Background(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if userAgent != fmt.Sprintf("Lightfield/Go %s", internal.PackageVersion) {
 		t.Errorf("Expected User-Agent to be correct, but got: %#v", userAgent)
 	}
@@ -66,11 +85,30 @@ func TestRetryAfter(t *testing.T) {
 			},
 		}),
 	)
-	_, err := client.Object.List(
-		context.Background(),
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("Expected there to be a cancel error")
 	}
@@ -105,11 +143,30 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 		}),
 		option.WithHeaderDel("X-Stainless-Retry-Count"),
 	)
-	_, err := client.Object.List(
-		context.Background(),
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("Expected there to be a cancel error")
 	}
@@ -139,11 +196,30 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 		}),
 		option.WithHeader("X-Stainless-Retry-Count", "42"),
 	)
-	_, err := client.Object.List(
-		context.Background(),
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("Expected there to be a cancel error")
 	}
@@ -172,11 +248,30 @@ func TestRetryAfterMs(t *testing.T) {
 			},
 		}),
 	)
-	_, err := client.Object.List(
-		context.Background(),
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(context.Background(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("Expected there to be a cancel error")
 	}
@@ -199,11 +294,30 @@ func TestContextCancel(t *testing.T) {
 	)
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	cancel()
-	_, err := client.Object.List(
-		cancelCtx,
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(cancelCtx, lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("Expected there to be a cancel error")
 	}
@@ -223,11 +337,30 @@ func TestContextCancelDelay(t *testing.T) {
 	)
 	cancelCtx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
 	defer cancel()
-	_, err := client.Object.List(
-		cancelCtx,
-		lightfield.ObjectListParamsEntityTypeContacts,
-		lightfield.ObjectListParams{},
-	)
+	_, err := client.Account.New(cancelCtx, lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:      "Acme Corp",
+			SystemWebsite:   []string{"https://acme.com"},
+			SystemIndustry:  []string{"Technology", "SaaS"},
+			SystemHeadcount: lightfield.String("51-200"),
+			SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+			SystemPrimaryAddress: map[string]string{
+				"street":  "123 Market St",
+				"city":    "San Francisco",
+				"state":   "CA",
+				"zip":     "94105",
+				"country": "US",
+			},
+		},
+		Relationships: lightfield.AccountNewParamsRelationships{
+			SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+				OfString: lightfield.String("user_cm1abc123def456"),
+			},
+			SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+				OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+			},
+		},
+	})
 	if err == nil {
 		t.Error("expected there to be a cancel error")
 	}
@@ -253,11 +386,30 @@ func TestContextDeadline(t *testing.T) {
 				},
 			}),
 		)
-		_, err := client.Object.List(
-			deadlineCtx,
-			lightfield.ObjectListParamsEntityTypeContacts,
-			lightfield.ObjectListParams{},
-		)
+		_, err := client.Account.New(deadlineCtx, lightfield.AccountNewParams{
+			Fields: lightfield.AccountNewParamsFields{
+				SystemName:      "Acme Corp",
+				SystemWebsite:   []string{"https://acme.com"},
+				SystemIndustry:  []string{"Technology", "SaaS"},
+				SystemHeadcount: lightfield.String("51-200"),
+				SystemLinkedIn:  lightfield.String("https://linkedin.com/company/acme"),
+				SystemPrimaryAddress: map[string]string{
+					"street":  "123 Market St",
+					"city":    "San Francisco",
+					"state":   "CA",
+					"zip":     "94105",
+					"country": "US",
+				},
+			},
+			Relationships: lightfield.AccountNewParamsRelationships{
+				SystemOwner: lightfield.AccountNewParamsRelationshipsSystemOwnerUnion{
+					OfString: lightfield.String("user_cm1abc123def456"),
+				},
+				SystemContact: lightfield.AccountNewParamsRelationshipsSystemContactUnion{
+					OfStringArray: []string{"contact_cm2ghi789jkl012", "contact_cm3mno345pqr678"},
+				},
+			},
+		})
 		if err == nil {
 			t.Error("expected there to be a deadline error")
 		}
