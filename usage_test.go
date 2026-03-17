@@ -24,19 +24,14 @@ func TestUsage(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	object, err := client.Object.New(
-		context.TODO(),
-		lightfield.ObjectNewParamsEntityTypeOpportunities,
-		lightfield.ObjectNewParams{
-			Fields: map[string]lightfield.ObjectNewParamsFieldUnion{
-				"name": {
-					OfString: lightfield.String("Big Deal"),
-				},
-			},
+	account, err := client.Account.New(context.TODO(), lightfield.AccountNewParams{
+		Fields: lightfield.AccountNewParamsFields{
+			SystemName:     "Acme Corp",
+			SystemIndustry: []string{"Technology"},
 		},
-	)
+	})
 	if err != nil {
 		t.Fatalf("err should be nil: %s", err.Error())
 	}
-	t.Logf("%+v\n", object)
+	t.Logf("%+v\n", account.ID)
 }

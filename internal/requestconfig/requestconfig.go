@@ -159,7 +159,7 @@ func NewRequestConfig(ctx context.Context, method string, u string, body any, ds
 	for k, v := range getDefaultHeaders() {
 		req.Header.Add(k, v)
 	}
-
+	req.Header.Set("Lightfield-Version", "2026-03-01")
 	for k, v := range getPlatformProperties() {
 		req.Header.Add(k, v)
 	}

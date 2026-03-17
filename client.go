@@ -16,8 +16,10 @@ import (
 // interacting with the Lightfield API. You should not instantiate this client
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
-	Options []option.RequestOption
-	Object  ObjectService
+	Options     []option.RequestOption
+	Account     AccountService
+	Contact     ContactService
+	Opportunity OpportunityService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -39,7 +41,9 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 
 	r = Client{Options: opts}
 
-	r.Object = NewObjectService(opts...)
+	r.Account = NewAccountService(opts...)
+	r.Contact = NewContactService(opts...)
+	r.Opportunity = NewOpportunityService(opts...)
 
 	return
 }
