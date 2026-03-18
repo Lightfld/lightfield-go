@@ -20,6 +20,7 @@ type Client struct {
 	Account     AccountService
 	Contact     ContactService
 	Opportunity OpportunityService
+	Webhook     WebhookService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -44,6 +45,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
 	r.Opportunity = NewOpportunityService(opts...)
+	r.Webhook = NewWebhookService(opts...)
 
 	return
 }
