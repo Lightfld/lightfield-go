@@ -42,43 +42,43 @@ func (r *ContactService) New(ctx context.Context, body ContactNewParams, opts ..
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/contacts"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 func (r *ContactService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 func (r *ContactService) Update(ctx context.Context, id string, body ContactUpdateParams, opts ...option.RequestOption) (res *ContactUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
 func (r *ContactService) List(ctx context.Context, query ContactListParams, opts ...option.RequestOption) (res *ContactListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/contacts"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
 func (r *ContactService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *ContactDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/contacts/definitions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type ContactNewResponse struct {
