@@ -38,7 +38,7 @@ func TestUserAgentHeader(t *testing.T) {
 			},
 		}),
 	)
-	client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
+	_, _ = client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			Name:      "Acme Corp",
 			Website:   []string{"https://acme.com"},
