@@ -38,6 +38,19 @@ func NewOpportunityService(opts ...option.RequestOption) (r OpportunityService) 
 	return
 }
 
+// Creates a new opportunity record. The `$name` and `$stage` fields and the
+// `$account` relationship are required.
+//
+// After creation, Lightfield automatically generates an opportunity summary in the
+// background. The `$opportunityStatus` field is read-only and cannot be set via
+// the API. The `$tasks` and `$notes` relationships are also read-only — manage
+// them via the `$opportunity` relationship on the task or note instead.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *OpportunityService) New(ctx context.Context, body OpportunityNewParams, opts ...option.RequestOption) (res *OpportunityNewResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/opportunities"
@@ -45,6 +58,11 @@ func (r *OpportunityService) New(ctx context.Context, body OpportunityNewParams,
 	return res, err
 }
 
+// Retrieves a single opportunity by its ID.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
 func (r *OpportunityService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *OpportunityGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -56,6 +74,18 @@ func (r *OpportunityService) Get(ctx context.Context, id string, opts ...option.
 	return res, err
 }
 
+// Updates an existing opportunity by ID. Only included fields and relationships
+// are modified.
+//
+// The `$opportunityStatus` field is read-only and cannot be updated. The `$tasks`
+// and `$notes` relationships are also read-only — manage them via the
+// `$opportunity` relationship on the task or note instead.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *OpportunityService) Update(ctx context.Context, id string, body OpportunityUpdateParams, opts ...option.RequestOption) (res *OpportunityUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
@@ -67,6 +97,13 @@ func (r *OpportunityService) Update(ctx context.Context, id string, body Opportu
 	return res, err
 }
 
+// Returns a paginated list of opportunities. Use `offset` and `limit` to paginate
+// through results. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for
+// more information about pagination.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Search
 func (r *OpportunityService) List(ctx context.Context, query OpportunityListParams, opts ...option.RequestOption) (res *OpportunityListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/opportunities"
@@ -74,6 +111,15 @@ func (r *OpportunityService) List(ctx context.Context, query OpportunityListPara
 	return res, err
 }
 
+// Returns the schema for all field and relationship definitions available on
+// opportunities, including both system-defined and custom fields. Useful for
+// understanding the shape of opportunity data before creating or updating records.
+// See <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u>
+// for more details.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
 func (r *OpportunityService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *OpportunityDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/opportunities/definitions"
@@ -82,10 +128,17 @@ func (r *OpportunityService) Definitions(ctx context.Context, opts ...option.Req
 }
 
 type OpportunityNewResponse struct {
-	ID            string                                        `json:"id" api:"required"`
-	CreatedAt     string                                        `json:"createdAt" api:"required"`
-	Fields        map[string]OpportunityNewResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                        `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]OpportunityNewResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]OpportunityNewResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityNewResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -107,8 +160,12 @@ func (r *OpportunityNewResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityNewResponseField struct {
-	Value     OpportunityNewResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value OpportunityNewResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field (e.g. `TEXT`, `EMAIL`, `URL`, `TELEPHONE`,
+	// `FULL_NAME`, `ADDRESS`, `SINGLE_SELECT`, `MULTI_SELECT`, `NUMBER`, `CURRENCY`,
+	// `DATETIME`, `CHECKBOX`, `SOCIAL_HANDLE`).
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -314,9 +371,12 @@ func (r *OpportunityNewResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte
 }
 
 type OpportunityNewResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -522,10 +582,17 @@ func (r *OpportunityNewResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityGetResponse struct {
-	ID            string                                        `json:"id" api:"required"`
-	CreatedAt     string                                        `json:"createdAt" api:"required"`
-	Fields        map[string]OpportunityGetResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                        `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]OpportunityGetResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]OpportunityGetResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityGetResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -547,8 +614,12 @@ func (r *OpportunityGetResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityGetResponseField struct {
-	Value     OpportunityGetResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value OpportunityGetResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field (e.g. `TEXT`, `EMAIL`, `URL`, `TELEPHONE`,
+	// `FULL_NAME`, `ADDRESS`, `SINGLE_SELECT`, `MULTI_SELECT`, `NUMBER`, `CURRENCY`,
+	// `DATETIME`, `CHECKBOX`, `SOCIAL_HANDLE`).
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -754,9 +825,12 @@ func (r *OpportunityGetResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte
 }
 
 type OpportunityGetResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -962,10 +1036,17 @@ func (r *OpportunityGetResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityUpdateResponse struct {
-	ID            string                                           `json:"id" api:"required"`
-	CreatedAt     string                                           `json:"createdAt" api:"required"`
-	Fields        map[string]OpportunityUpdateResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                           `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]OpportunityUpdateResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]OpportunityUpdateResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityUpdateResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -987,8 +1068,12 @@ func (r *OpportunityUpdateResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityUpdateResponseField struct {
-	Value     OpportunityUpdateResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                   `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value OpportunityUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field (e.g. `TEXT`, `EMAIL`, `URL`, `TELEPHONE`,
+	// `FULL_NAME`, `ADDRESS`, `SINGLE_SELECT`, `MULTI_SELECT`, `NUMBER`, `CURRENCY`,
+	// `DATETIME`, `CHECKBOX`, `SOCIAL_HANDLE`).
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1196,9 +1281,12 @@ func (r *OpportunityUpdateResponseFieldValueMapItemUnion) UnmarshalJSON(data []b
 }
 
 type OpportunityUpdateResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1404,9 +1492,12 @@ func (r *OpportunityUpdateResponseMapItemUnion) UnmarshalJSON(data []byte) error
 }
 
 type OpportunityListResponse struct {
-	Data       []OpportunityListResponseData `json:"data" api:"required"`
-	Object     string                        `json:"object" api:"required"`
-	TotalCount int64                         `json:"totalCount" api:"required"`
+	// Array of entity objects for the current page.
+	Data []OpportunityListResponseData `json:"data" api:"required"`
+	// The object type, always `"list"`.
+	Object string `json:"object" api:"required"`
+	// Total number of entities matching the query.
+	TotalCount int64 `json:"totalCount" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Data        respjson.Field
@@ -1424,10 +1515,17 @@ func (r *OpportunityListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityListResponseData struct {
-	ID            string                                             `json:"id" api:"required"`
-	CreatedAt     string                                             `json:"createdAt" api:"required"`
-	Fields        map[string]OpportunityListResponseDataField        `json:"fields" api:"required"`
-	HTTPLink      string                                             `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]OpportunityListResponseDataField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]OpportunityListResponseDataRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityListResponseDataUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1449,8 +1547,12 @@ func (r *OpportunityListResponseData) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityListResponseDataField struct {
-	Value     OpportunityListResponseDataFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                     `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value OpportunityListResponseDataFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field (e.g. `TEXT`, `EMAIL`, `URL`, `TELEPHONE`,
+	// `FULL_NAME`, `ADDRESS`, `SINGLE_SELECT`, `MULTI_SELECT`, `NUMBER`, `CURRENCY`,
+	// `DATETIME`, `CHECKBOX`, `SOCIAL_HANDLE`).
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1659,9 +1761,12 @@ func (r *OpportunityListResponseDataFieldValueMapItemUnion) UnmarshalJSON(data [
 }
 
 type OpportunityListResponseDataRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1867,8 +1972,11 @@ func (r *OpportunityListResponseDataMapItemUnion) UnmarshalJSON(data []byte) err
 }
 
 type OpportunityDefinitionsResponse struct {
-	FieldDefinitions        map[string]OpportunityDefinitionsResponseFieldDefinition        `json:"fieldDefinitions" api:"required"`
-	ObjectType              string                                                          `json:"objectType" api:"required"`
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]OpportunityDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions.
 	RelationshipDefinitions map[string]OpportunityDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1887,11 +1995,16 @@ func (r *OpportunityDefinitionsResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityDefinitionsResponseFieldDefinition struct {
-	Description       string                                                                         `json:"description" api:"required"`
-	Label             string                                                                         `json:"label" api:"required"`
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code).
 	TypeConfiguration map[string]OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationUnion `json:"typeConfiguration" api:"required"`
-	ValueType         string                                                                         `json:"valueType" api:"required"`
-	ID                string                                                                         `json:"id"`
+	// Data type of the field (e.g. `text`, `number`, `datetime`, `single_select`).
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Description       respjson.Field
@@ -2110,12 +2223,18 @@ func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUn
 }
 
 type OpportunityDefinitionsResponseRelationshipDefinition struct {
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
 	// Any of "HAS_ONE", "HAS_MANY".
 	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
 	Description string `json:"description" api:"required"`
-	Label       string `json:"label" api:"required"`
-	ObjectType  string `json:"objectType" api:"required"`
-	ID          string `json:"id"`
+	// Human-readable display name of the relationship.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -2135,7 +2254,21 @@ func (r *OpportunityDefinitionsResponseRelationshipDefinition) UnmarshalJSON(dat
 }
 
 type OpportunityNewParams struct {
-	Fields        OpportunityNewParamsFields        `json:"fields,omitzero" api:"required"`
+	// Field values for the new opportunity. System fields use a `$` prefix (e.g.
+	// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
+	// (string) and `$stage` (option ID). Fields of type `single_select` or
+	// `multi_select` require a valid option ID from the field's
+	// `typeConfiguration.options` — call the
+	// [definitions endpoint](/api/resources/opportunity/methods/definitions) to
+	// discover available fields and option IDs. See
+	// [Fields and relationships](/using-the-api/fields-and-relationships/) for value
+	// type details.
+	Fields OpportunityNewParamsFields `json:"fields,omitzero" api:"required"`
+	// Relationships to set on the new opportunity. System relationships use a `$`
+	// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
+	// `$account` is required. Each value is a single entity ID or an array of IDs.
+	// Call the [definitions endpoint](/api/resources/opportunity/methods/definitions)
+	// to list available relationship keys.
 	Relationships OpportunityNewParamsRelationships `json:"relationships,omitzero" api:"required"`
 	paramObj
 }
@@ -2148,9 +2281,21 @@ func (r *OpportunityNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values for the new opportunity. System fields use a `$` prefix (e.g.
+// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
+// (string) and `$stage` (option ID). Fields of type `single_select` or
+// `multi_select` require a valid option ID from the field's
+// `typeConfiguration.options` — call the
+// [definitions endpoint](/api/resources/opportunity/methods/definitions) to
+// discover available fields and option IDs. See
+// [Fields and relationships](/using-the-api/fields-and-relationships/) for value
+// type details.
+//
 // The properties Name, Stage are required.
 type OpportunityNewParamsFields struct {
-	Name        string                                    `json:"$name" api:"required"`
+	// Display name of the opportunity.
+	Name string `json:"$name" api:"required"`
+	// Pipeline stage. Pass the option ID from the field definition.
 	Stage       string                                    `json:"$stage" api:"required"`
 	ExtraFields map[string]OpportunityNewParamsFieldUnion `json:"-"`
 	paramObj
@@ -2233,12 +2378,23 @@ func (u *OpportunityNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationships to set on the new opportunity. System relationships use a `$`
+// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
+// `$account` is required. Each value is a single entity ID or an array of IDs.
+// Call the [definitions endpoint](/api/resources/opportunity/methods/definitions)
+// to list available relationship keys.
+//
 // The property Account is required.
 type OpportunityNewParamsRelationships struct {
-	Account     OpportunityNewParamsRelationshipsAccountUnion    `json:"$account,omitzero" api:"required"`
-	Champion    OpportunityNewParamsRelationshipsChampionUnion   `json:"$champion,omitzero"`
-	CreatedBy   OpportunityNewParamsRelationshipsCreatedByUnion  `json:"$createdBy,omitzero"`
-	Evaluator   OpportunityNewParamsRelationshipsEvaluatorUnion  `json:"$evaluator,omitzero"`
+	// ID of the account this opportunity belongs to.
+	Account OpportunityNewParamsRelationshipsAccountUnion `json:"$account,omitzero" api:"required"`
+	// ID of the contact who is the internal champion.
+	Champion OpportunityNewParamsRelationshipsChampionUnion `json:"$champion,omitzero"`
+	// ID of the user who created this opportunity.
+	CreatedBy OpportunityNewParamsRelationshipsCreatedByUnion `json:"$createdBy,omitzero"`
+	// ID of the contact who is the evaluator.
+	Evaluator OpportunityNewParamsRelationshipsEvaluatorUnion `json:"$evaluator,omitzero"`
+	// ID of the user who owns this opportunity.
 	Owner       OpportunityNewParamsRelationshipsOwnerUnion      `json:"$owner,omitzero"`
 	ExtraFields map[string]OpportunityNewParamsRelationshipUnion `json:"-"`
 	paramObj
@@ -2349,7 +2505,17 @@ func (u *OpportunityNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error
 }
 
 type OpportunityUpdateParams struct {
-	Fields        OpportunityUpdateParamsFields        `json:"fields,omitzero"`
+	// Field values to update — only provided fields are modified; omitted fields are
+	// left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
+	// attributes use their bare slug. Select-type fields require a valid option ID —
+	// call the [definitions endpoint](/api/resources/opportunity/methods/definitions)
+	// for available options. See
+	// [Fields and relationships](/using-the-api/fields-and-relationships/) for value
+	// type details.
+	Fields OpportunityUpdateParamsFields `json:"fields,omitzero"`
+	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+	// `$owner`, `$champion`). Each value is an operation object with `add`, `remove`,
+	// or `replace`.
 	Relationships OpportunityUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2362,8 +2528,17 @@ func (r *OpportunityUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values to update — only provided fields are modified; omitted fields are
+// left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
+// attributes use their bare slug. Select-type fields require a valid option ID —
+// call the [definitions endpoint](/api/resources/opportunity/methods/definitions)
+// for available options. See
+// [Fields and relationships](/using-the-api/fields-and-relationships/) for value
+// type details.
 type OpportunityUpdateParamsFields struct {
-	Name        param.Opt[string]                            `json:"$name,omitzero"`
+	// Display name of the opportunity.
+	Name param.Opt[string] `json:"$name,omitzero"`
+	// Pipeline stage. Pass the option ID from the field definition.
 	Stage       param.Opt[string]                            `json:"$stage,omitzero"`
 	ExtraFields map[string]OpportunityUpdateParamsFieldUnion `json:"-"`
 	paramObj
@@ -2446,9 +2621,15 @@ func (u *OpportunityUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) er
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+// `$owner`, `$champion`). Each value is an operation object with `add`, `remove`,
+// or `replace`.
 type OpportunityUpdateParamsRelationships struct {
-	Champion    OpportunityUpdateParamsRelationshipsChampion   `json:"$champion,omitzero"`
-	Evaluator   OpportunityUpdateParamsRelationshipsEvaluator  `json:"$evaluator,omitzero"`
+	// Operation to modify the internal champion.
+	Champion OpportunityUpdateParamsRelationshipsChampion `json:"$champion,omitzero"`
+	// Operation to modify the evaluator.
+	Evaluator OpportunityUpdateParamsRelationshipsEvaluator `json:"$evaluator,omitzero"`
+	// Operation to modify the opportunity owner.
 	Owner       OpportunityUpdateParamsRelationshipsOwner      `json:"$owner,omitzero"`
 	ExtraFields map[string]OpportunityUpdateParamsRelationship `json:"-"`
 	paramObj
@@ -2462,9 +2643,14 @@ func (r *OpportunityUpdateParamsRelationships) UnmarshalJSON(data []byte) error 
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Operation to modify the internal champion.
 type OpportunityUpdateParamsRelationshipsChampion struct {
-	Add     OpportunityUpdateParamsRelationshipsChampionAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsChampionRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add OpportunityUpdateParamsRelationshipsChampionAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove OpportunityUpdateParamsRelationshipsChampionRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace OpportunityUpdateParamsRelationshipsChampionReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2525,9 +2711,14 @@ func (u *OpportunityUpdateParamsRelationshipsChampionReplaceUnion) UnmarshalJSON
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Operation to modify the evaluator.
 type OpportunityUpdateParamsRelationshipsEvaluator struct {
-	Add     OpportunityUpdateParamsRelationshipsEvaluatorAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add OpportunityUpdateParamsRelationshipsEvaluatorAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2588,9 +2779,14 @@ func (u *OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion) UnmarshalJSO
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Operation to modify the opportunity owner.
 type OpportunityUpdateParamsRelationshipsOwner struct {
-	Add     OpportunityUpdateParamsRelationshipsOwnerAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipsOwnerRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add OpportunityUpdateParamsRelationshipsOwnerAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove OpportunityUpdateParamsRelationshipsOwnerRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace OpportunityUpdateParamsRelationshipsOwnerReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2651,9 +2847,15 @@ func (u *OpportunityUpdateParamsRelationshipsOwnerReplaceUnion) UnmarshalJSON(da
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// An operation to modify a relationship. Provide one of `add`, `remove`, or
+// `replace`.
 type OpportunityUpdateParamsRelationship struct {
-	Add     OpportunityUpdateParamsRelationshipAddUnion     `json:"add,omitzero"`
-	Remove  OpportunityUpdateParamsRelationshipRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add OpportunityUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove OpportunityUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace OpportunityUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2715,7 +2917,9 @@ func (u *OpportunityUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []b
 }
 
 type OpportunityListParams struct {
-	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Maximum number of records to return. Defaults to 25, maximum 100.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	paramObj
 }
