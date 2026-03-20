@@ -56,7 +56,7 @@ func main() {
 	client := githubcomlightfldlightfieldgo.NewClient(
 		option.WithAPIKey("My API Key"),
 	)
-	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
+	accountCreateResponse, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			Name:     "Acme Corp",
 			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
@@ -65,7 +65,7 @@ func main() {
 	if err != nil {
 		panic(err.Error())
 	}
-	fmt.Printf("%+v\n", account.ID)
+	fmt.Printf("%+v\n", accountCreateResponse.ID)
 }
 
 ```
@@ -410,7 +410,7 @@ you need to examine response headers, status codes, or other details.
 ```go
 // Create a variable to store the HTTP response
 var response *http.Response
-account, err := client.Account.Get(
+accountRetrieveResponse, err := client.Account.Get(
 	context.TODO(),
 	"acc_cm4stu901uvw234",
 	option.WithResponseInto(&response),
@@ -418,7 +418,7 @@ account, err := client.Account.Get(
 if err != nil {
 	// handle error
 }
-fmt.Printf("%+v\n", account)
+fmt.Printf("%+v\n", accountRetrieveResponse)
 
 fmt.Printf("Status Code: %d\n", response.StatusCode)
 fmt.Printf("Headers: %+#v\n", response.Header)

@@ -24,7 +24,7 @@ func TestUsage(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	account, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
+	accountCreateResponse, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
 		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
 			Name:     "Acme Corp",
 			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
@@ -33,5 +33,5 @@ func TestUsage(t *testing.T) {
 	if err != nil {
 		t.Fatalf("err should be nil: %s", err.Error())
 	}
-	t.Logf("%+v\n", account.ID)
+	t.Logf("%+v\n", accountCreateResponse.ID)
 }
