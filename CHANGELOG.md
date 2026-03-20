@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.2-alpha (2026-03-20)
+
+Full Changelog: [v0.3.1-alpha...v0.3.2-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.1-alpha...v0.3.2-alpha)
+
+### Bug Fixes
+
+* **api:** resolve system and custom attribute collision error ([62a0eb5](https://github.com/Lightfld/lightfield-go/commit/62a0eb5a500426dc578f975eb005d21221d6fcea))
+
 ## 0.3.1-alpha (2026-03-20)
 
 Full Changelog: [v0.3.0-alpha...v0.3.1-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.0-alpha...v0.3.1-alpha)

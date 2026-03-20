@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/Lightfld/lightfield-go@v0.3.1-alpha'
+go get -u 'github.com/Lightfld/lightfield-go@v0.3.2-alpha'
 ```
 
 <!-- x-release-please-end -->
@@ -57,9 +57,15 @@ func main() {
 		option.WithAPIKey("My API Key"),
 	)
 	accountCreateResponse, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:     "Acme Corp",
-			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}},
+			},
 		},
 	})
 	if err != nil {
@@ -303,12 +309,16 @@ To handle errors, we recommend that you use the `errors.As` pattern:
 
 ```go
 _, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
-	Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
-		Name:  "Enterprise Platform Deal",
-		Stage: "opt_01abc2def3ghi4jkl5mno6pqr",
+	Fields: map[string]githubcomlightfldlightfieldgo.OpportunityNewParamsFieldUnion{
+		"$name": {
+			OfString: githubcomlightfldlightfieldgo.String("Enterprise Platform Deal"),
+		},
+		"$stage": {
+			OfString: githubcomlightfldlightfieldgo.String("opt_01abc2def3ghi4jkl5mno6pqr"),
+		},
 	},
-	Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
-		Account: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsAccountUnion{
+	Relationships: map[string]githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipUnion{
+		"$account": {
 			OfString: githubcomlightfldlightfieldgo.String("acc_cm4stu901uvw234"),
 		},
 	},
@@ -340,24 +350,53 @@ defer cancel()
 client.Account.New(
 	ctx,
 	githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},

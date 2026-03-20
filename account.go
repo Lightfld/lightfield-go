@@ -2279,13 +2279,13 @@ type AccountNewParams struct {
 	// discover available fields and options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields AccountNewParamsFields `json:"fields,omitzero" api:"required"`
+	Fields map[string]AccountNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new account. System relationships use a `$` prefix
 	// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
 	// value is a single entity ID or an array of IDs. Call the
 	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
 	// list available relationship keys.
-	Relationships AccountNewParamsRelationships `json:"relationships,omitzero"`
+	Relationships map[string]AccountNewParamsRelationshipUnion `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -2294,82 +2294,6 @@ func (r AccountNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AccountNewParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Field values for the new account. System fields use a `$` prefix (e.g. `$name`,
-// `$website`); custom attributes use their bare slug (e.g. `tier`, `renewalDate`).
-// Required: `$name` (string). Fields of type `SINGLE_SELECT` or `MULTI_SELECT`
-// accept either an option ID or label from the field's `typeConfiguration.options`
-// — call the
-// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
-// discover available fields and options. See
-// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-// value type details.
-//
-// The property Name is required.
-type AccountNewParamsFields struct {
-	// Display name of the account.
-	Name string `json:"$name" api:"required"`
-	// Facebook handle or profile identifier (`SOCIAL_HANDLE`).
-	Facebook param.Opt[string] `json:"$facebook,omitzero"`
-	// Employee count range (`SINGLE_SELECT`). Pass the option ID or label from the
-	// field definition.
-	Headcount param.Opt[string] `json:"$headcount,omitzero"`
-	// Instagram handle or profile identifier (`SOCIAL_HANDLE`).
-	Instagram param.Opt[string] `json:"$instagram,omitzero"`
-	// Most recent funding round type (`SINGLE_SELECT`). Pass the option ID or label
-	// from the field definition.
-	LastFundingType param.Opt[string] `json:"$lastFundingType,omitzero"`
-	// LinkedIn handle or profile identifier (`SOCIAL_HANDLE`).
-	LinkedIn param.Opt[string] `json:"$linkedIn,omitzero"`
-	// Twitter/X handle (`SOCIAL_HANDLE`).
-	Twitter param.Opt[string] `json:"$twitter,omitzero"`
-	// Industries the account operates in (`MULTI_SELECT`). Pass option IDs or labels
-	// from the field definition.
-	Industry []string `json:"$industry,omitzero"`
-	// Primary address (`ADDRESS`).
-	PrimaryAddress AccountNewParamsFieldsPrimaryAddress `json:"$primaryAddress,omitzero"`
-	// Website URLs associated with the account (`URL`, multi-value).
-	Website     []string                              `json:"$website,omitzero"`
-	ExtraFields map[string]AccountNewParamsFieldUnion `json:"-"`
-	paramObj
-}
-
-func (r AccountNewParamsFields) MarshalJSON() (data []byte, err error) {
-	type shadow AccountNewParamsFields
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *AccountNewParamsFields) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Primary address (`ADDRESS`).
-type AccountNewParamsFieldsPrimaryAddress struct {
-	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
-	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
-	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
-	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
-	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
-	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
-	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
-	paramObj
-}
-
-func (r AccountNewParamsFieldsPrimaryAddress) MarshalJSON() (data []byte, err error) {
-	type shadow AccountNewParamsFieldsPrimaryAddress
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *AccountNewParamsFieldsPrimaryAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2442,60 +2366,6 @@ func (u *AccountNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// Relationships to set on the new account. System relationships use a `$` prefix
-// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
-// value is a single entity ID or an array of IDs. Call the
-// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
-// list available relationship keys.
-type AccountNewParamsRelationships struct {
-	// ID(s) of contacts to associate with this account.
-	Contact AccountNewParamsRelationshipsContactUnion `json:"$contact,omitzero"`
-	// ID of the user who owns this account.
-	Owner       AccountNewParamsRelationshipsOwnerUnion      `json:"$owner,omitzero"`
-	ExtraFields map[string]AccountNewParamsRelationshipUnion `json:"-"`
-	paramObj
-}
-
-func (r AccountNewParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow AccountNewParamsRelationships
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *AccountNewParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountNewParamsRelationshipsContactUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountNewParamsRelationshipsContactUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountNewParamsRelationshipsContactUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountNewParamsRelationshipsOwnerUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountNewParamsRelationshipsOwnerUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountNewParamsRelationshipsOwnerUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
@@ -2521,11 +2391,11 @@ type AccountUpdateParams struct {
 	// available options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields AccountUpdateParamsFields `json:"fields,omitzero"`
+	Fields map[string]AccountUpdateParamsFieldUnion `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
 	// `$owner`, `$contact`). Each value is an operation object with `add`, `remove`,
 	// or `replace`.
-	Relationships AccountUpdateParamsRelationships `json:"relationships,omitzero"`
+	Relationships map[string]AccountUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -2534,79 +2404,6 @@ func (r AccountUpdateParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *AccountUpdateParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Field values to update — only provided fields are modified; omitted fields are
-// left unchanged. System fields use a `$` prefix (e.g. `$name`); custom attributes
-// use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept an option
-// ID or label — call the
-// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> for
-// available options. See
-// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-// value type details.
-type AccountUpdateParamsFields struct {
-	// Facebook handle or profile identifier (`SOCIAL_HANDLE`).
-	Facebook param.Opt[string] `json:"$facebook,omitzero"`
-	// Employee count range (`SINGLE_SELECT`). Pass the option ID or label from the
-	// field definition.
-	Headcount param.Opt[string] `json:"$headcount,omitzero"`
-	// Instagram handle or profile identifier (`SOCIAL_HANDLE`).
-	Instagram param.Opt[string] `json:"$instagram,omitzero"`
-	// Most recent funding round type (`SINGLE_SELECT`). Pass the option ID or label
-	// from the field definition.
-	LastFundingType param.Opt[string] `json:"$lastFundingType,omitzero"`
-	// LinkedIn handle or profile identifier (`SOCIAL_HANDLE`).
-	LinkedIn param.Opt[string] `json:"$linkedIn,omitzero"`
-	// Display name of the account.
-	Name param.Opt[string] `json:"$name,omitzero"`
-	// Twitter/X handle (`SOCIAL_HANDLE`).
-	Twitter param.Opt[string] `json:"$twitter,omitzero"`
-	// Industries the account operates in (`MULTI_SELECT`). Pass option IDs or labels
-	// from the field definition.
-	Industry []string `json:"$industry,omitzero"`
-	// Primary address (`ADDRESS`).
-	PrimaryAddress AccountUpdateParamsFieldsPrimaryAddress `json:"$primaryAddress,omitzero"`
-	// Website URLs associated with the account (`URL`, multi-value).
-	Website     []string                                 `json:"$website,omitzero"`
-	ExtraFields map[string]AccountUpdateParamsFieldUnion `json:"-"`
-	paramObj
-}
-
-func (r AccountUpdateParamsFields) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsFields
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *AccountUpdateParamsFields) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Primary address (`ADDRESS`).
-type AccountUpdateParamsFieldsPrimaryAddress struct {
-	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
-	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
-	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
-	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
-	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
-	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
-	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
-	paramObj
-}
-
-func (r AccountUpdateParamsFieldsPrimaryAddress) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsFieldsPrimaryAddress
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *AccountUpdateParamsFieldsPrimaryAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2676,162 +2473,6 @@ func (u AccountUpdateParamsFieldMapItemUnion) MarshalJSON() ([]byte, error) {
 		u.OfAnyMap)
 }
 func (u *AccountUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-// `$owner`, `$contact`). Each value is an operation object with `add`, `remove`,
-// or `replace`.
-type AccountUpdateParamsRelationships struct {
-	// Operation to modify associated contacts.
-	Contact AccountUpdateParamsRelationshipsContact `json:"$contact,omitzero"`
-	// Operation to modify the account owner.
-	Owner       AccountUpdateParamsRelationshipsOwner      `json:"$owner,omitzero"`
-	ExtraFields map[string]AccountUpdateParamsRelationship `json:"-"`
-	paramObj
-}
-
-func (r AccountUpdateParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsRelationships
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *AccountUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Operation to modify associated contacts.
-type AccountUpdateParamsRelationshipsContact struct {
-	// Entity ID(s) to add to the relationship.
-	Add AccountUpdateParamsRelationshipsContactAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove AccountUpdateParamsRelationshipsContactRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace AccountUpdateParamsRelationshipsContactReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r AccountUpdateParamsRelationshipsContact) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsRelationshipsContact
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *AccountUpdateParamsRelationshipsContact) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsContactAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsContactAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsContactRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsContactRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsContactReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsContactReplaceUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Operation to modify the account owner.
-type AccountUpdateParamsRelationshipsOwner struct {
-	// Entity ID(s) to add to the relationship.
-	Add AccountUpdateParamsRelationshipsOwnerAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove AccountUpdateParamsRelationshipsOwnerRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace AccountUpdateParamsRelationshipsOwnerReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r AccountUpdateParamsRelationshipsOwner) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsRelationshipsOwner
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *AccountUpdateParamsRelationshipsOwner) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsOwnerAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsOwnerAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsOwnerAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsOwnerRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsOwnerRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsOwnerRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsOwnerReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u AccountUpdateParamsRelationshipsOwnerReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *AccountUpdateParamsRelationshipsOwnerReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

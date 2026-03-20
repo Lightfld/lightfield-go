@@ -25,9 +25,15 @@ func TestUsage(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	accountCreateResponse, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:     "Acme Corp",
-			Industry: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}},
+			},
 		},
 	})
 	if err != nil {

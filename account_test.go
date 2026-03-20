@@ -26,32 +26,13 @@ func TestAccountNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:            "$name",
-			Facebook:        githubcomlightfldlightfieldgo.String("$facebook"),
-			Headcount:       githubcomlightfldlightfieldgo.String("$headcount"),
-			Industry:        []string{"string"},
-			Instagram:       githubcomlightfldlightfieldgo.String("$instagram"),
-			LastFundingType: githubcomlightfldlightfieldgo.String("$lastFundingType"),
-			LinkedIn:        githubcomlightfldlightfieldgo.String("$linkedIn"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				City:       githubcomlightfldlightfieldgo.String("city"),
-				Country:    githubcomlightfldlightfieldgo.String("country"),
-				Latitude:   githubcomlightfldlightfieldgo.Float(0),
-				Longitude:  githubcomlightfldlightfieldgo.Float(0),
-				PostalCode: githubcomlightfldlightfieldgo.String("postalCode"),
-				State:      githubcomlightfldlightfieldgo.String("state"),
-				Street:     githubcomlightfldlightfieldgo.String("street"),
-				Street2:    githubcomlightfldlightfieldgo.String("street2"),
-			},
-			Twitter: githubcomlightfldlightfieldgo.String("$twitter"),
-			Website: []string{"string"},
-		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"foo": {
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		},
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"foo": {
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
@@ -103,47 +84,20 @@ func TestAccountUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		githubcomlightfldlightfieldgo.AccountUpdateParams{
-			Fields: githubcomlightfldlightfieldgo.AccountUpdateParamsFields{
-				Facebook:        githubcomlightfldlightfieldgo.String("$facebook"),
-				Headcount:       githubcomlightfldlightfieldgo.String("$headcount"),
-				Industry:        []string{"string"},
-				Instagram:       githubcomlightfldlightfieldgo.String("$instagram"),
-				LastFundingType: githubcomlightfldlightfieldgo.String("$lastFundingType"),
-				LinkedIn:        githubcomlightfldlightfieldgo.String("$linkedIn"),
-				Name:            githubcomlightfldlightfieldgo.String("$name"),
-				PrimaryAddress: githubcomlightfldlightfieldgo.AccountUpdateParamsFieldsPrimaryAddress{
-					City:       githubcomlightfldlightfieldgo.String("city"),
-					Country:    githubcomlightfldlightfieldgo.String("country"),
-					Latitude:   githubcomlightfldlightfieldgo.Float(0),
-					Longitude:  githubcomlightfldlightfieldgo.Float(0),
-					PostalCode: githubcomlightfldlightfieldgo.String("postalCode"),
-					State:      githubcomlightfldlightfieldgo.String("state"),
-					Street:     githubcomlightfldlightfieldgo.String("street"),
-					Street2:    githubcomlightfldlightfieldgo.String("street2"),
+			Fields: map[string]githubcomlightfldlightfieldgo.AccountUpdateParamsFieldUnion{
+				"foo": {
+					OfString: githubcomlightfldlightfieldgo.String("string"),
 				},
-				Twitter: githubcomlightfldlightfieldgo.String("$twitter"),
-				Website: []string{"string"},
 			},
-			Relationships: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationships{
-				Contact: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContact{
-					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactAddUnion{
+			Relationships: map[string]githubcomlightfldlightfieldgo.AccountUpdateParamsRelationship{
+				"foo": {
+					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
-				Owner: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsOwner{
-					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsOwnerAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsOwnerRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsOwnerReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
