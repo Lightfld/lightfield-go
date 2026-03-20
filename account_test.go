@@ -34,14 +34,21 @@ func TestAccountNewWithOptionalParams(t *testing.T) {
 			Instagram:       githubcomlightfldlightfieldgo.String("$instagram"),
 			LastFundingType: githubcomlightfldlightfieldgo.String("$lastFundingType"),
 			LinkedIn:        githubcomlightfldlightfieldgo.String("$linkedIn"),
-			PrimaryAddress: map[string]string{
-				"foo": "string",
+			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
+				City:       githubcomlightfldlightfieldgo.String("city"),
+				Country:    githubcomlightfldlightfieldgo.String("country"),
+				Latitude:   githubcomlightfldlightfieldgo.Float(0),
+				Longitude:  githubcomlightfldlightfieldgo.Float(0),
+				PostalCode: githubcomlightfldlightfieldgo.String("postalCode"),
+				State:      githubcomlightfldlightfieldgo.String("state"),
+				Street:     githubcomlightfldlightfieldgo.String("street"),
+				Street2:    githubcomlightfldlightfieldgo.String("street2"),
 			},
 			Twitter: githubcomlightfldlightfieldgo.String("$twitter"),
 			Website: []string{"string"},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
@@ -104,21 +111,28 @@ func TestAccountUpdateWithOptionalParams(t *testing.T) {
 				LastFundingType: githubcomlightfldlightfieldgo.String("$lastFundingType"),
 				LinkedIn:        githubcomlightfldlightfieldgo.String("$linkedIn"),
 				Name:            githubcomlightfldlightfieldgo.String("$name"),
-				PrimaryAddress: map[string]string{
-					"foo": "string",
+				PrimaryAddress: githubcomlightfldlightfieldgo.AccountUpdateParamsFieldsPrimaryAddress{
+					City:       githubcomlightfldlightfieldgo.String("city"),
+					Country:    githubcomlightfldlightfieldgo.String("country"),
+					Latitude:   githubcomlightfldlightfieldgo.Float(0),
+					Longitude:  githubcomlightfldlightfieldgo.Float(0),
+					PostalCode: githubcomlightfldlightfieldgo.String("postalCode"),
+					State:      githubcomlightfldlightfieldgo.String("state"),
+					Street:     githubcomlightfldlightfieldgo.String("street"),
+					Street2:    githubcomlightfldlightfieldgo.String("street2"),
 				},
 				Twitter: githubcomlightfldlightfieldgo.String("$twitter"),
 				Website: []string{"string"},
 			},
 			Relationships: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationships{
-				Contacts: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContacts{
-					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsAddUnion{
+				Contact: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContact{
+					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},

@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.0-alpha (2026-03-20)
+
+Full Changelog: [v0.2.0...v0.3.0-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.2.0...v0.3.0-alpha)
+
+### Features
+
+* **api:** add field/relationship param descriptions ([5ba8e7d](https://github.com/Lightfld/lightfield-go/commit/5ba8e7d9e6c3b12a8f1298def4b19cb7440c216a))
+* **api:** manual updates ([0f6c7b9](https://github.com/Lightfld/lightfield-go/commit/0f6c7b9758907363cf5bd0de1721ad43bc485c59))
+* **api:** manual updates ([e10ee46](https://github.com/Lightfld/lightfield-go/commit/e10ee4610017f096b1ece73bc026ab84d3b24c06))
+* **api:** member and workflow run ([088de79](https://github.com/Lightfld/lightfield-go/commit/088de79fcd696f449732cba4903a5f416a9ae47a))
+* **api:** update field descriptions, plural to singular keys, change READONLY_MARKDOWN type to MARKDOWN ([efb8037](https://github.com/Lightfld/lightfield-go/commit/efb8037fc297fa90dbb55df237bf1d64d4461ebe))
+
+
+### Chores
+
+* configure new SDK language ([c9184c1](https://github.com/Lightfld/lightfield-go/commit/c9184c137ffa4c21ca94cfd75cb72277a9296fe3))
+* **internal:** codegen related update ([21b4113](https://github.com/Lightfld/lightfield-go/commit/21b411308e7fd831a33b437479e04b60a7991fa8))
+* **internal:** tweak CI branches ([15774cc](https://github.com/Lightfld/lightfield-go/commit/15774cc3ea3327e98676e6a95e0228c4fa28b872))
+
+
+### Refactors
+
+* **tests:** switch from prism to steady ([ac726e9](https://github.com/Lightfld/lightfield-go/commit/ac726e9f4ef2b1b3d728808eca159fe6c851fffe))
+
 ## 0.2.0 (2026-03-17)
 
 Full Changelog: [v0.1.0...v0.2.0](https://github.com/Lightfld/lightfield-go/compare/v0.1.0...v0.2.0)

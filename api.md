@@ -51,3 +51,25 @@ Methods:
 - <code title="post /v1/opportunities/{id}">client.Opportunity.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityService.Update">Update</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>, body <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityUpdateParams">OpportunityUpdateParams</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityUpdateResponse">OpportunityUpdateResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /v1/opportunities">client.Opportunity.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityListParams">OpportunityListParams</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityListResponse">OpportunityListResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
 - <code title="get /v1/opportunities/definitions">client.Opportunity.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityService.Definitions">Definitions</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#OpportunityDefinitionsResponse">OpportunityDefinitionsResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# Member
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberGetResponse">MemberGetResponse</a>
+- <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberListResponse">MemberListResponse</a>
+
+Methods:
+
+- <code title="get /v1/members/{id}">client.Member.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberService.Get">Get</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, id <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberGetResponse">MemberGetResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+- <code title="get /v1/members">client.Member.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberService.List">List</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, query <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberListParams">MemberListParams</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#MemberListResponse">MemberListResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
+# WorkflowRun
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#WorkflowRunStatusResponse">WorkflowRunStatusResponse</a>
+
+Methods:
+
+- <code title="get /v1/workflowRun/{runId}/status">client.WorkflowRun.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#WorkflowRunService.Status">Status</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>, runID <a href="https://pkg.go.dev/builtin#string">string</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#WorkflowRunStatusResponse">WorkflowRunStatusResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>

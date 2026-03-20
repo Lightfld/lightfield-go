@@ -19,6 +19,9 @@ import (
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
+// Accounts represent companies or organizations in Lightfield. Each account can
+// have contacts, opportunities, tasks, and notes associated with it.
+//
 // AccountService contains methods and other services that help with interacting
 // with the Lightfield API.
 //
@@ -38,54 +41,109 @@ func NewAccountService(opts ...option.RequestOption) (r AccountService) {
 	return
 }
 
+// Creates a new account record. The `$name` field is required.
+//
+// If a `$website` is provided, Lightfield automatically enriches the account in
+// the background. The `$howTheyMakeMoney` and `$accountStatus` fields are
+// read-only and cannot be set via the API. The `$opportunity`, `$task`, and
+// `$note` relationships are also read-only — manage them via the `$account`
+// relationship on the opportunity or task, or the `$account`/`$opportunity` note
+// relationships instead.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *AccountService) New(ctx context.Context, body AccountNewParams, opts ...option.RequestOption) (res *AccountNewResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/accounts"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
+// Retrieves a single account by its ID.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
 func (r *AccountService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *AccountGetResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/accounts/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
+// Updates an existing account by ID. Only included fields and relationships are
+// modified.
+//
+// The `$howTheyMakeMoney` and `$accountStatus` fields are read-only and cannot be
+// updated. The `$opportunity`, `$task`, and `$note` relationships are also
+// read-only — manage them via the `$account` relationship on the opportunity or
+// task, or the `$account`/`$opportunity` note relationships instead.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *AccountService) Update(ctx context.Context, id string, body AccountUpdateParams, opts ...option.RequestOption) (res *AccountUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
-		return
+		return nil, err
 	}
 	path := fmt.Sprintf("v1/accounts/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return
+	return res, err
 }
 
+// Returns a paginated list of accounts. Use `offset` and `limit` to paginate
+// through results. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for
+// more information about pagination.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Search
 func (r *AccountService) List(ctx context.Context, query AccountListParams, opts ...option.RequestOption) (res *AccountListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/accounts"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
-	return
+	return res, err
 }
 
+// Returns the schema for all field and relationship definitions available on
+// accounts, including both system-defined and custom fields. Useful for
+// understanding the shape of account data before creating or updating records. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// more details.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
 func (r *AccountService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *AccountDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/accounts/definitions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return
+	return res, err
 }
 
 type AccountNewResponse struct {
-	ID            string                                    `json:"id" api:"required"`
-	CreatedAt     string                                    `json:"createdAt" api:"required"`
-	Fields        map[string]AccountNewResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                    `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]AccountNewResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]AccountNewResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]AccountNewResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -107,8 +165,14 @@ func (r *AccountNewResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AccountNewResponseField struct {
-	Value     AccountNewResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                            `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value AccountNewResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -314,9 +378,12 @@ func (r *AccountNewResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) er
 }
 
 type AccountNewResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -522,10 +589,17 @@ func (r *AccountNewResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type AccountGetResponse struct {
-	ID            string                                    `json:"id" api:"required"`
-	CreatedAt     string                                    `json:"createdAt" api:"required"`
-	Fields        map[string]AccountGetResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                    `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]AccountGetResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]AccountGetResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]AccountGetResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -547,8 +621,14 @@ func (r *AccountGetResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AccountGetResponseField struct {
-	Value     AccountGetResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                            `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value AccountGetResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -754,9 +834,12 @@ func (r *AccountGetResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) er
 }
 
 type AccountGetResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -962,10 +1045,17 @@ func (r *AccountGetResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type AccountUpdateResponse struct {
-	ID            string                                       `json:"id" api:"required"`
-	CreatedAt     string                                       `json:"createdAt" api:"required"`
-	Fields        map[string]AccountUpdateResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                       `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]AccountUpdateResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]AccountUpdateResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]AccountUpdateResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -987,8 +1077,14 @@ func (r *AccountUpdateResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AccountUpdateResponseField struct {
-	Value     AccountUpdateResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                               `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value AccountUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1194,9 +1290,12 @@ func (r *AccountUpdateResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte)
 }
 
 type AccountUpdateResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1402,9 +1501,12 @@ func (r *AccountUpdateResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type AccountListResponse struct {
-	Data       []AccountListResponseData `json:"data" api:"required"`
-	Object     string                    `json:"object" api:"required"`
-	TotalCount int64                     `json:"totalCount" api:"required"`
+	// Array of entity objects for the current page.
+	Data []AccountListResponseData `json:"data" api:"required"`
+	// The object type, always `"list"`.
+	Object string `json:"object" api:"required"`
+	// Total number of entities matching the query.
+	TotalCount int64 `json:"totalCount" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Data        respjson.Field
@@ -1422,10 +1524,17 @@ func (r *AccountListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AccountListResponseData struct {
-	ID            string                                         `json:"id" api:"required"`
-	CreatedAt     string                                         `json:"createdAt" api:"required"`
-	Fields        map[string]AccountListResponseDataField        `json:"fields" api:"required"`
-	HTTPLink      string                                         `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]AccountListResponseDataField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]AccountListResponseDataRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]AccountListResponseDataUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1447,8 +1556,14 @@ func (r *AccountListResponseData) UnmarshalJSON(data []byte) error {
 }
 
 type AccountListResponseDataField struct {
-	Value     AccountListResponseDataFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                 `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value AccountListResponseDataFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1654,9 +1769,12 @@ func (r *AccountListResponseDataFieldValueMapItemUnion) UnmarshalJSON(data []byt
 }
 
 type AccountListResponseDataRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1862,8 +1980,11 @@ func (r *AccountListResponseDataMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type AccountDefinitionsResponse struct {
-	FieldDefinitions        map[string]AccountDefinitionsResponseFieldDefinition        `json:"fieldDefinitions" api:"required"`
-	ObjectType              string                                                      `json:"objectType" api:"required"`
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]AccountDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions.
 	RelationshipDefinitions map[string]AccountDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1882,11 +2003,23 @@ func (r *AccountDefinitionsResponse) UnmarshalJSON(data []byte) error {
 }
 
 type AccountDefinitionsResponseFieldDefinition struct {
-	Description       string                                                                     `json:"description" api:"required"`
-	Label             string                                                                     `json:"label" api:"required"`
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code).
 	TypeConfiguration map[string]AccountDefinitionsResponseFieldDefinitionTypeConfigurationUnion `json:"typeConfiguration" api:"required"`
-	ValueType         string                                                                     `json:"valueType" api:"required"`
-	ID                string                                                                     `json:"id"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Description       respjson.Field
@@ -1894,6 +2027,7 @@ type AccountDefinitionsResponseFieldDefinition struct {
 		TypeConfiguration respjson.Field
 		ValueType         respjson.Field
 		ID                respjson.Field
+		ReadOnly          respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -2105,12 +2239,18 @@ func (r *AccountDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion)
 }
 
 type AccountDefinitionsResponseRelationshipDefinition struct {
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
 	// Any of "HAS_ONE", "HAS_MANY".
 	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
 	Description string `json:"description" api:"required"`
-	Label       string `json:"label" api:"required"`
-	ObjectType  string `json:"objectType" api:"required"`
-	ID          string `json:"id"`
+	// Human-readable display name of the relationship.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -2130,7 +2270,21 @@ func (r *AccountDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []
 }
 
 type AccountNewParams struct {
-	Fields        AccountNewParamsFields        `json:"fields,omitzero" api:"required"`
+	// Field values for the new account. System fields use a `$` prefix (e.g. `$name`,
+	// `$website`); custom attributes use their bare slug (e.g. `tier`, `renewalDate`).
+	// Required: `$name` (string). Fields of type `SINGLE_SELECT` or `MULTI_SELECT`
+	// accept either an option ID or label from the field's `typeConfiguration.options`
+	// — call the
+	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
+	// discover available fields and options. See
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+	// value type details.
+	Fields AccountNewParamsFields `json:"fields,omitzero" api:"required"`
+	// Relationships to set on the new account. System relationships use a `$` prefix
+	// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
+	// value is a single entity ID or an array of IDs. Call the
+	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
+	// list available relationship keys.
 	Relationships AccountNewParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2143,19 +2297,42 @@ func (r *AccountNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values for the new account. System fields use a `$` prefix (e.g. `$name`,
+// `$website`); custom attributes use their bare slug (e.g. `tier`, `renewalDate`).
+// Required: `$name` (string). Fields of type `SINGLE_SELECT` or `MULTI_SELECT`
+// accept either an option ID or label from the field's `typeConfiguration.options`
+// — call the
+// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
+// discover available fields and options. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// value type details.
+//
 // The property Name is required.
 type AccountNewParamsFields struct {
-	Name            string                                `json:"$name" api:"required"`
-	Facebook        param.Opt[string]                     `json:"$facebook,omitzero"`
-	Headcount       param.Opt[string]                     `json:"$headcount,omitzero"`
-	Instagram       param.Opt[string]                     `json:"$instagram,omitzero"`
-	LastFundingType param.Opt[string]                     `json:"$lastFundingType,omitzero"`
-	LinkedIn        param.Opt[string]                     `json:"$linkedIn,omitzero"`
-	Twitter         param.Opt[string]                     `json:"$twitter,omitzero"`
-	Industry        []string                              `json:"$industry,omitzero"`
-	PrimaryAddress  map[string]string                     `json:"$primaryAddress,omitzero"`
-	Website         []string                              `json:"$website,omitzero"`
-	ExtraFields     map[string]AccountNewParamsFieldUnion `json:"-"`
+	// Display name of the account.
+	Name string `json:"$name" api:"required"`
+	// Facebook handle or profile identifier (`SOCIAL_HANDLE`).
+	Facebook param.Opt[string] `json:"$facebook,omitzero"`
+	// Employee count range (`SINGLE_SELECT`). Pass the option ID or label from the
+	// field definition.
+	Headcount param.Opt[string] `json:"$headcount,omitzero"`
+	// Instagram handle or profile identifier (`SOCIAL_HANDLE`).
+	Instagram param.Opt[string] `json:"$instagram,omitzero"`
+	// Most recent funding round type (`SINGLE_SELECT`). Pass the option ID or label
+	// from the field definition.
+	LastFundingType param.Opt[string] `json:"$lastFundingType,omitzero"`
+	// LinkedIn handle or profile identifier (`SOCIAL_HANDLE`).
+	LinkedIn param.Opt[string] `json:"$linkedIn,omitzero"`
+	// Twitter/X handle (`SOCIAL_HANDLE`).
+	Twitter param.Opt[string] `json:"$twitter,omitzero"`
+	// Industries the account operates in (`MULTI_SELECT`). Pass option IDs or labels
+	// from the field definition.
+	Industry []string `json:"$industry,omitzero"`
+	// Primary address (`ADDRESS`).
+	PrimaryAddress AccountNewParamsFieldsPrimaryAddress `json:"$primaryAddress,omitzero"`
+	// Website URLs associated with the account (`URL`, multi-value).
+	Website     []string                              `json:"$website,omitzero"`
+	ExtraFields map[string]AccountNewParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -2164,6 +2341,35 @@ func (r AccountNewParamsFields) MarshalJSON() (data []byte, err error) {
 	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
 }
 func (r *AccountNewParamsFields) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Primary address (`ADDRESS`).
+type AccountNewParamsFieldsPrimaryAddress struct {
+	// City name.
+	City param.Opt[string] `json:"city,omitzero"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country param.Opt[string] `json:"country,omitzero"`
+	// Latitude coordinate.
+	Latitude param.Opt[float64] `json:"latitude,omitzero"`
+	// Longitude coordinate.
+	Longitude param.Opt[float64] `json:"longitude,omitzero"`
+	// Postal or ZIP code.
+	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
+	// State or province.
+	State param.Opt[string] `json:"state,omitzero"`
+	// Street address line 1.
+	Street param.Opt[string] `json:"street,omitzero"`
+	// Street address line 2.
+	Street2 param.Opt[string] `json:"street2,omitzero"`
+	paramObj
+}
+
+func (r AccountNewParamsFieldsPrimaryAddress) MarshalJSON() (data []byte, err error) {
+	type shadow AccountNewParamsFieldsPrimaryAddress
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountNewParamsFieldsPrimaryAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2236,8 +2442,15 @@ func (u *AccountNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationships to set on the new account. System relationships use a `$` prefix
+// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
+// value is a single entity ID or an array of IDs. Call the
+// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
+// list available relationship keys.
 type AccountNewParamsRelationships struct {
-	Contacts    AccountNewParamsRelationshipsContactsUnion   `json:"$contacts,omitzero"`
+	// ID(s) of contacts to associate with this account.
+	Contact AccountNewParamsRelationshipsContactUnion `json:"$contact,omitzero"`
+	// ID of the user who owns this account.
 	Owner       AccountNewParamsRelationshipsOwnerUnion      `json:"$owner,omitzero"`
 	ExtraFields map[string]AccountNewParamsRelationshipUnion `json:"-"`
 	paramObj
@@ -2254,16 +2467,16 @@ func (r *AccountNewParamsRelationships) UnmarshalJSON(data []byte) error {
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type AccountNewParamsRelationshipsContactsUnion struct {
+type AccountNewParamsRelationshipsContactUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u AccountNewParamsRelationshipsContactsUnion) MarshalJSON() ([]byte, error) {
+func (u AccountNewParamsRelationshipsContactUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *AccountNewParamsRelationshipsContactsUnion) UnmarshalJSON(data []byte) error {
+func (u *AccountNewParamsRelationshipsContactUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2300,7 +2513,18 @@ func (u *AccountNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 }
 
 type AccountUpdateParams struct {
-	Fields        AccountUpdateParamsFields        `json:"fields,omitzero"`
+	// Field values to update — only provided fields are modified; omitted fields are
+	// left unchanged. System fields use a `$` prefix (e.g. `$name`); custom attributes
+	// use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept an option
+	// ID or label — call the
+	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> for
+	// available options. See
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+	// value type details.
+	Fields AccountUpdateParamsFields `json:"fields,omitzero"`
+	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+	// `$owner`, `$contact`). Each value is an operation object with `add`, `remove`,
+	// or `replace`.
 	Relationships AccountUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2313,18 +2537,39 @@ func (r *AccountUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values to update — only provided fields are modified; omitted fields are
+// left unchanged. System fields use a `$` prefix (e.g. `$name`); custom attributes
+// use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept an option
+// ID or label — call the
+// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> for
+// available options. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// value type details.
 type AccountUpdateParamsFields struct {
-	Facebook        param.Opt[string]                        `json:"$facebook,omitzero"`
-	Headcount       param.Opt[string]                        `json:"$headcount,omitzero"`
-	Instagram       param.Opt[string]                        `json:"$instagram,omitzero"`
-	LastFundingType param.Opt[string]                        `json:"$lastFundingType,omitzero"`
-	LinkedIn        param.Opt[string]                        `json:"$linkedIn,omitzero"`
-	Name            param.Opt[string]                        `json:"$name,omitzero"`
-	Twitter         param.Opt[string]                        `json:"$twitter,omitzero"`
-	Industry        []string                                 `json:"$industry,omitzero"`
-	PrimaryAddress  map[string]string                        `json:"$primaryAddress,omitzero"`
-	Website         []string                                 `json:"$website,omitzero"`
-	ExtraFields     map[string]AccountUpdateParamsFieldUnion `json:"-"`
+	// Facebook handle or profile identifier (`SOCIAL_HANDLE`).
+	Facebook param.Opt[string] `json:"$facebook,omitzero"`
+	// Employee count range (`SINGLE_SELECT`). Pass the option ID or label from the
+	// field definition.
+	Headcount param.Opt[string] `json:"$headcount,omitzero"`
+	// Instagram handle or profile identifier (`SOCIAL_HANDLE`).
+	Instagram param.Opt[string] `json:"$instagram,omitzero"`
+	// Most recent funding round type (`SINGLE_SELECT`). Pass the option ID or label
+	// from the field definition.
+	LastFundingType param.Opt[string] `json:"$lastFundingType,omitzero"`
+	// LinkedIn handle or profile identifier (`SOCIAL_HANDLE`).
+	LinkedIn param.Opt[string] `json:"$linkedIn,omitzero"`
+	// Display name of the account.
+	Name param.Opt[string] `json:"$name,omitzero"`
+	// Twitter/X handle (`SOCIAL_HANDLE`).
+	Twitter param.Opt[string] `json:"$twitter,omitzero"`
+	// Industries the account operates in (`MULTI_SELECT`). Pass option IDs or labels
+	// from the field definition.
+	Industry []string `json:"$industry,omitzero"`
+	// Primary address (`ADDRESS`).
+	PrimaryAddress AccountUpdateParamsFieldsPrimaryAddress `json:"$primaryAddress,omitzero"`
+	// Website URLs associated with the account (`URL`, multi-value).
+	Website     []string                                 `json:"$website,omitzero"`
+	ExtraFields map[string]AccountUpdateParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -2333,6 +2578,35 @@ func (r AccountUpdateParamsFields) MarshalJSON() (data []byte, err error) {
 	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
 }
 func (r *AccountUpdateParamsFields) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Primary address (`ADDRESS`).
+type AccountUpdateParamsFieldsPrimaryAddress struct {
+	// City name.
+	City param.Opt[string] `json:"city,omitzero"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country param.Opt[string] `json:"country,omitzero"`
+	// Latitude coordinate.
+	Latitude param.Opt[float64] `json:"latitude,omitzero"`
+	// Longitude coordinate.
+	Longitude param.Opt[float64] `json:"longitude,omitzero"`
+	// Postal or ZIP code.
+	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
+	// State or province.
+	State param.Opt[string] `json:"state,omitzero"`
+	// Street address line 1.
+	Street param.Opt[string] `json:"street,omitzero"`
+	// Street address line 2.
+	Street2 param.Opt[string] `json:"street2,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateParamsFieldsPrimaryAddress) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateParamsFieldsPrimaryAddress
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateParamsFieldsPrimaryAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2405,8 +2679,13 @@ func (u *AccountUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error 
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+// `$owner`, `$contact`). Each value is an operation object with `add`, `remove`,
+// or `replace`.
 type AccountUpdateParamsRelationships struct {
-	Contacts    AccountUpdateParamsRelationshipsContacts   `json:"$contacts,omitzero"`
+	// Operation to modify associated contacts.
+	Contact AccountUpdateParamsRelationshipsContact `json:"$contact,omitzero"`
+	// Operation to modify the account owner.
 	Owner       AccountUpdateParamsRelationshipsOwner      `json:"$owner,omitzero"`
 	ExtraFields map[string]AccountUpdateParamsRelationship `json:"-"`
 	paramObj
@@ -2420,72 +2699,82 @@ func (r *AccountUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type AccountUpdateParamsRelationshipsContacts struct {
-	Add     AccountUpdateParamsRelationshipsContactsAddUnion     `json:"add,omitzero"`
-	Remove  AccountUpdateParamsRelationshipsContactsRemoveUnion  `json:"remove,omitzero"`
-	Replace AccountUpdateParamsRelationshipsContactsReplaceUnion `json:"replace,omitzero"`
+// Operation to modify associated contacts.
+type AccountUpdateParamsRelationshipsContact struct {
+	// Entity ID(s) to add to the relationship.
+	Add AccountUpdateParamsRelationshipsContactAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove AccountUpdateParamsRelationshipsContactRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
+	Replace AccountUpdateParamsRelationshipsContactReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r AccountUpdateParamsRelationshipsContacts) MarshalJSON() (data []byte, err error) {
-	type shadow AccountUpdateParamsRelationshipsContacts
+func (r AccountUpdateParamsRelationshipsContact) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateParamsRelationshipsContact
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *AccountUpdateParamsRelationshipsContacts) UnmarshalJSON(data []byte) error {
+func (r *AccountUpdateParamsRelationshipsContact) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactsAddUnion struct {
+type AccountUpdateParamsRelationshipsContactAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u AccountUpdateParamsRelationshipsContactsAddUnion) MarshalJSON() ([]byte, error) {
+func (u AccountUpdateParamsRelationshipsContactAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *AccountUpdateParamsRelationshipsContactsAddUnion) UnmarshalJSON(data []byte) error {
+func (u *AccountUpdateParamsRelationshipsContactAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactsRemoveUnion struct {
+type AccountUpdateParamsRelationshipsContactRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u AccountUpdateParamsRelationshipsContactsRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u AccountUpdateParamsRelationshipsContactRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *AccountUpdateParamsRelationshipsContactsRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *AccountUpdateParamsRelationshipsContactRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type AccountUpdateParamsRelationshipsContactsReplaceUnion struct {
+type AccountUpdateParamsRelationshipsContactReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u AccountUpdateParamsRelationshipsContactsReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u AccountUpdateParamsRelationshipsContactReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *AccountUpdateParamsRelationshipsContactsReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *AccountUpdateParamsRelationshipsContactReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Operation to modify the account owner.
 type AccountUpdateParamsRelationshipsOwner struct {
-	Add     AccountUpdateParamsRelationshipsOwnerAddUnion     `json:"add,omitzero"`
-	Remove  AccountUpdateParamsRelationshipsOwnerRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add AccountUpdateParamsRelationshipsOwnerAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove AccountUpdateParamsRelationshipsOwnerRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace AccountUpdateParamsRelationshipsOwnerReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2546,9 +2835,15 @@ func (u *AccountUpdateParamsRelationshipsOwnerReplaceUnion) UnmarshalJSON(data [
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// An operation to modify a relationship. Provide one of `add`, `remove`, or
+// `replace`.
 type AccountUpdateParamsRelationship struct {
-	Add     AccountUpdateParamsRelationshipAddUnion     `json:"add,omitzero"`
-	Remove  AccountUpdateParamsRelationshipRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add AccountUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove AccountUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace AccountUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2610,7 +2905,9 @@ func (u *AccountUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte)
 }
 
 type AccountListParams struct {
-	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Maximum number of records to return. Defaults to 25, maximum 25.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	paramObj
 }

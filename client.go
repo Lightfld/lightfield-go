@@ -16,10 +16,22 @@ import (
 // interacting with the Lightfield API. You should not instantiate this client
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
-	Options     []option.RequestOption
-	Account     AccountService
-	Contact     ContactService
+	Options []option.RequestOption
+	// Accounts represent companies or organizations in Lightfield. Each account can
+	// have contacts, opportunities, tasks, and notes associated with it.
+	Account AccountService
+	// Contacts represent individual people in Lightfield. Contacts can be associated
+	// with one or more accounts.
+	Contact ContactService
+	// Opportunities represent potential deals or sales in Lightfield. Each opportunity
+	// belongs to an account and can have tasks and notes associated with it.
 	Opportunity OpportunityService
+	// Members represent users in your Lightfield workspace. Members can own accounts
+	// and opportunities, and are referenced in relationships like `$owner` and
+	// `$createdBy`.
+	Member MemberService
+	// Workflow runs represent executions of automated workflows.
+	WorkflowRun WorkflowRunService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -44,6 +56,8 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
 	r.Opportunity = NewOpportunityService(opts...)
+	r.Member = NewMemberService(opts...)
+	r.WorkflowRun = NewWorkflowRunService(opts...)
 
 	return
 }
