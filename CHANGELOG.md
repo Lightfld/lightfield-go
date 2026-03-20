@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.3.1-alpha (2026-03-20)
+
+Full Changelog: [v0.3.0-alpha...v0.3.1-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.0-alpha...v0.3.1-alpha)
+
+### Chores
+
+* **api:** add response model refs ([1e3a1ac](https://github.com/Lightfld/lightfield-go/commit/1e3a1acf910aa3e2fb2c46b5ba5ab7b2f9c1ce23))
+
 ## 0.3.0-alpha (2026-03-20)
 
 Full Changelog: [v0.2.0...v0.3.0-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.2.0...v0.3.0-alpha)
