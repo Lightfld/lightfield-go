@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/Lightfld/lightfield-go@v0.3.0-alpha'
+go get -u 'github.com/Lightfld/lightfield-go@v0.3.1-alpha'
 ```
 
 <!-- x-release-please-end -->
