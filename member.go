@@ -74,10 +74,14 @@ func (r *MemberService) List(ctx context.Context, query MemberListParams, opts .
 }
 
 type MemberGetResponse struct {
-	ID        string                            `json:"id" api:"required"`
-	CreatedAt string                            `json:"createdAt" api:"required"`
-	Fields    map[string]MemberGetResponseField `json:"fields" api:"required"`
-	HTTPLink  string                            `json:"httpLink" api:"required"`
+	// Unique identifier for the member.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the member was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values.
+	Fields map[string]MemberGetResponseField `json:"fields" api:"required"`
+	// URL to view the member in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -96,8 +100,14 @@ func (r *MemberGetResponse) UnmarshalJSON(data []byte) error {
 }
 
 type MemberGetResponseField struct {
-	Value     MemberGetResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                           `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value MemberGetResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field value.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -302,9 +312,12 @@ func (r *MemberGetResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) err
 }
 
 type MemberListResponse struct {
-	Data       []MemberListResponseData `json:"data" api:"required"`
-	Object     string                   `json:"object" api:"required"`
-	TotalCount int64                    `json:"totalCount" api:"required"`
+	// Array of member objects for the current page.
+	Data []MemberListResponseData `json:"data" api:"required"`
+	// The object type, always `"list"`.
+	Object string `json:"object" api:"required"`
+	// Total number of members in the workspace.
+	TotalCount int64 `json:"totalCount" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Data        respjson.Field
@@ -322,10 +335,14 @@ func (r *MemberListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type MemberListResponseData struct {
-	ID        string                                 `json:"id" api:"required"`
-	CreatedAt string                                 `json:"createdAt" api:"required"`
-	Fields    map[string]MemberListResponseDataField `json:"fields" api:"required"`
-	HTTPLink  string                                 `json:"httpLink" api:"required"`
+	// Unique identifier for the member.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the member was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values.
+	Fields map[string]MemberListResponseDataField `json:"fields" api:"required"`
+	// URL to view the member in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -344,8 +361,14 @@ func (r *MemberListResponseData) UnmarshalJSON(data []byte) error {
 }
 
 type MemberListResponseDataField struct {
-	Value     MemberListResponseDataFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value MemberListResponseDataFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field value.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -551,7 +574,9 @@ func (r *MemberListResponseDataFieldValueMapItemUnion) UnmarshalJSON(data []byte
 }
 
 type MemberListParams struct {
-	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Maximum number of records to return. Defaults to 25, maximum 25.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	paramObj
 }

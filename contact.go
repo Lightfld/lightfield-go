@@ -123,10 +123,17 @@ func (r *ContactService) Definitions(ctx context.Context, opts ...option.Request
 }
 
 type ContactNewResponse struct {
-	ID            string                                    `json:"id" api:"required"`
-	CreatedAt     string                                    `json:"createdAt" api:"required"`
-	Fields        map[string]ContactNewResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                    `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]ContactNewResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]ContactNewResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactNewResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -148,8 +155,14 @@ func (r *ContactNewResponse) UnmarshalJSON(data []byte) error {
 }
 
 type ContactNewResponseField struct {
-	Value     ContactNewResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                            `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value ContactNewResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -355,9 +368,12 @@ func (r *ContactNewResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) er
 }
 
 type ContactNewResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -563,10 +579,17 @@ func (r *ContactNewResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactGetResponse struct {
-	ID            string                                    `json:"id" api:"required"`
-	CreatedAt     string                                    `json:"createdAt" api:"required"`
-	Fields        map[string]ContactGetResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                    `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]ContactGetResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]ContactGetResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactGetResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -588,8 +611,14 @@ func (r *ContactGetResponse) UnmarshalJSON(data []byte) error {
 }
 
 type ContactGetResponseField struct {
-	Value     ContactGetResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                            `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value ContactGetResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -795,9 +824,12 @@ func (r *ContactGetResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) er
 }
 
 type ContactGetResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1003,10 +1035,17 @@ func (r *ContactGetResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactUpdateResponse struct {
-	ID            string                                       `json:"id" api:"required"`
-	CreatedAt     string                                       `json:"createdAt" api:"required"`
-	Fields        map[string]ContactUpdateResponseField        `json:"fields" api:"required"`
-	HTTPLink      string                                       `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]ContactUpdateResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]ContactUpdateResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactUpdateResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1028,8 +1067,14 @@ func (r *ContactUpdateResponse) UnmarshalJSON(data []byte) error {
 }
 
 type ContactUpdateResponseField struct {
-	Value     ContactUpdateResponseFieldValueUnion `json:"value" api:"required"`
-	ValueType string                               `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value ContactUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1235,9 +1280,12 @@ func (r *ContactUpdateResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte)
 }
 
 type ContactUpdateResponseRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1443,9 +1491,12 @@ func (r *ContactUpdateResponseMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactListResponse struct {
-	Data       []ContactListResponseData `json:"data" api:"required"`
-	Object     string                    `json:"object" api:"required"`
-	TotalCount int64                     `json:"totalCount" api:"required"`
+	// Array of entity objects for the current page.
+	Data []ContactListResponseData `json:"data" api:"required"`
+	// The object type, always `"list"`.
+	Object string `json:"object" api:"required"`
+	// Total number of entities matching the query.
+	TotalCount int64 `json:"totalCount" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Data        respjson.Field
@@ -1463,10 +1514,17 @@ func (r *ContactListResponse) UnmarshalJSON(data []byte) error {
 }
 
 type ContactListResponseData struct {
-	ID            string                                         `json:"id" api:"required"`
-	CreatedAt     string                                         `json:"createdAt" api:"required"`
-	Fields        map[string]ContactListResponseDataField        `json:"fields" api:"required"`
-	HTTPLink      string                                         `json:"httpLink" api:"required"`
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]ContactListResponseDataField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contacts`).
 	Relationships map[string]ContactListResponseDataRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactListResponseDataUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1488,8 +1546,14 @@ func (r *ContactListResponseData) UnmarshalJSON(data []byte) error {
 }
 
 type ContactListResponseDataField struct {
-	Value     ContactListResponseDataFieldValueUnion `json:"value" api:"required"`
-	ValueType string                                 `json:"valueType" api:"required"`
+	// The field value, or null if unset.
+	Value ContactListResponseDataFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Value       respjson.Field
@@ -1695,9 +1759,12 @@ func (r *ContactListResponseDataFieldValueMapItemUnion) UnmarshalJSON(data []byt
 }
 
 type ContactListResponseDataRelationship struct {
-	Cardinality string   `json:"cardinality" api:"required"`
-	ObjectType  string   `json:"objectType" api:"required"`
-	Values      []string `json:"values" api:"required"`
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -1903,8 +1970,11 @@ func (r *ContactListResponseDataMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactDefinitionsResponse struct {
-	FieldDefinitions        map[string]ContactDefinitionsResponseFieldDefinition        `json:"fieldDefinitions" api:"required"`
-	ObjectType              string                                                      `json:"objectType" api:"required"`
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]ContactDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions.
 	RelationshipDefinitions map[string]ContactDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1923,11 +1993,20 @@ func (r *ContactDefinitionsResponse) UnmarshalJSON(data []byte) error {
 }
 
 type ContactDefinitionsResponseFieldDefinition struct {
-	Description       string                                                                     `json:"description" api:"required"`
-	Label             string                                                                     `json:"label" api:"required"`
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code).
 	TypeConfiguration map[string]ContactDefinitionsResponseFieldDefinitionTypeConfigurationUnion `json:"typeConfiguration" api:"required"`
-	ValueType         string                                                                     `json:"valueType" api:"required"`
-	ID                string                                                                     `json:"id"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Description       respjson.Field
@@ -2146,12 +2225,18 @@ func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationMapItemUnion)
 }
 
 type ContactDefinitionsResponseRelationshipDefinition struct {
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
 	// Any of "HAS_ONE", "HAS_MANY".
 	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
 	Description string `json:"description" api:"required"`
-	Label       string `json:"label" api:"required"`
-	ObjectType  string `json:"objectType" api:"required"`
-	ID          string `json:"id"`
+	// Human-readable display name of the relationship.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -2171,7 +2256,19 @@ func (r *ContactDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []
 }
 
 type ContactNewParams struct {
-	Fields        ContactNewParamsFields        `json:"fields,omitzero" api:"required"`
+	// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
+	// `$name`); custom attributes use their bare slug. Note: `$name` is an object
+	// `{ firstName, lastName }`, not a plain string. Call the
+	// **[definitions endpoint](/api/resources/contact/methods/definitions)** to
+	// discover available fields and their types. See
+	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// value type details.
+	Fields ContactNewParamsFields `json:"fields,omitzero" api:"required"`
+	// Relationships to set on the new contact. System relationships use a `$` prefix
+	// (e.g. `$accounts`); custom relationships use their bare slug. Each value is a
+	// single entity ID or an array of IDs. Call the
+	// **[definitions endpoint](/api/resources/contact/methods/definitions)** to list
+	// available relationship keys.
 	Relationships ContactNewParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2184,11 +2281,22 @@ func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
+// `$name`); custom attributes use their bare slug. Note: `$name` is an object
+// `{ firstName, lastName }`, not a plain string. Call the
+// **[definitions endpoint](/api/resources/contact/methods/definitions)** to
+// discover available fields and their types. See
+// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// value type details.
 type ContactNewParamsFields struct {
-	ProfilePhotoURL param.Opt[string]                     `json:"$profilePhotoUrl,omitzero"`
-	Email           []string                              `json:"$email,omitzero"`
-	Name            ContactNewParamsFieldsName            `json:"$name,omitzero"`
-	ExtraFields     map[string]ContactNewParamsFieldUnion `json:"-"`
+	// URL of the contact's profile photo.
+	ProfilePhotoURL param.Opt[string] `json:"$profilePhotoUrl,omitzero"`
+	// List of email addresses for the contact.
+	Email []string `json:"$email,omitzero"`
+	// The contact's name. Unlike other resources, this is an object:
+	// `{ firstName?: string, lastName?: string }`, not a plain string.
+	Name        ContactNewParamsFieldsName            `json:"$name,omitzero"`
+	ExtraFields map[string]ContactNewParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -2200,9 +2308,13 @@ func (r *ContactNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// The contact's name. Unlike other resources, this is an object:
+// `{ firstName?: string, lastName?: string }`, not a plain string.
 type ContactNewParamsFieldsName struct {
+	// The contact's first name.
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
-	LastName  param.Opt[string] `json:"lastName,omitzero"`
+	// The contact's last name.
+	LastName param.Opt[string] `json:"lastName,omitzero"`
 	paramObj
 }
 
@@ -2283,7 +2395,13 @@ func (u *ContactNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationships to set on the new contact. System relationships use a `$` prefix
+// (e.g. `$accounts`); custom relationships use their bare slug. Each value is a
+// single entity ID or an array of IDs. Call the
+// **[definitions endpoint](/api/resources/contact/methods/definitions)** to list
+// available relationship keys.
 type ContactNewParamsRelationships struct {
+	// ID(s) of accounts to associate with this contact.
 	Accounts    ContactNewParamsRelationshipsAccountsUnion   `json:"$accounts,omitzero"`
 	ExtraFields map[string]ContactNewParamsRelationshipUnion `json:"-"`
 	paramObj
@@ -2330,7 +2448,18 @@ func (u *ContactNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 }
 
 type ContactUpdateParams struct {
-	Fields        ContactUpdateParamsFields        `json:"fields,omitzero"`
+	// Field values to update — only provided fields are modified; omitted fields are
+	// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
+	// attributes use their bare slug. Note: `$name` is an object
+	// `{ firstName, lastName }`, not a plain string. Call the
+	// **[definitions endpoint](/api/resources/contact/methods/definitions)** for
+	// available fields and types. See
+	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// value type details.
+	Fields ContactUpdateParamsFields `json:"fields,omitzero"`
+	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+	// `$accounts`). Each value is an operation object with `add`, `remove`, or
+	// `replace`.
 	Relationships ContactUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2343,11 +2472,23 @@ func (r *ContactUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Field values to update — only provided fields are modified; omitted fields are
+// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
+// attributes use their bare slug. Note: `$name` is an object
+// `{ firstName, lastName }`, not a plain string. Call the
+// **[definitions endpoint](/api/resources/contact/methods/definitions)** for
+// available fields and types. See
+// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// value type details.
 type ContactUpdateParamsFields struct {
-	ProfilePhotoURL param.Opt[string]                        `json:"$profilePhotoUrl,omitzero"`
-	Email           []string                                 `json:"$email,omitzero"`
-	Name            ContactUpdateParamsFieldsName            `json:"$name,omitzero"`
-	ExtraFields     map[string]ContactUpdateParamsFieldUnion `json:"-"`
+	// URL of the contact's profile photo.
+	ProfilePhotoURL param.Opt[string] `json:"$profilePhotoUrl,omitzero"`
+	// List of email addresses for the contact.
+	Email []string `json:"$email,omitzero"`
+	// The contact's name. Unlike other resources, this is an object:
+	// `{ firstName?: string, lastName?: string }`, not a plain string.
+	Name        ContactUpdateParamsFieldsName            `json:"$name,omitzero"`
+	ExtraFields map[string]ContactUpdateParamsFieldUnion `json:"-"`
 	paramObj
 }
 
@@ -2359,9 +2500,13 @@ func (r *ContactUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// The contact's name. Unlike other resources, this is an object:
+// `{ firstName?: string, lastName?: string }`, not a plain string.
 type ContactUpdateParamsFieldsName struct {
+	// The contact's first name.
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
-	LastName  param.Opt[string] `json:"lastName,omitzero"`
+	// The contact's last name.
+	LastName param.Opt[string] `json:"lastName,omitzero"`
 	paramObj
 }
 
@@ -2442,7 +2587,11 @@ func (u *ContactUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error 
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+// `$accounts`). Each value is an operation object with `add`, `remove`, or
+// `replace`.
 type ContactUpdateParamsRelationships struct {
+	// Operation to modify associated accounts.
 	Accounts    ContactUpdateParamsRelationshipsAccounts   `json:"$accounts,omitzero"`
 	ExtraFields map[string]ContactUpdateParamsRelationship `json:"-"`
 	paramObj
@@ -2456,9 +2605,14 @@ func (r *ContactUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Operation to modify associated accounts.
 type ContactUpdateParamsRelationshipsAccounts struct {
-	Add     ContactUpdateParamsRelationshipsAccountsAddUnion     `json:"add,omitzero"`
-	Remove  ContactUpdateParamsRelationshipsAccountsRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add ContactUpdateParamsRelationshipsAccountsAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove ContactUpdateParamsRelationshipsAccountsRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace ContactUpdateParamsRelationshipsAccountsReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2519,9 +2673,15 @@ func (u *ContactUpdateParamsRelationshipsAccountsReplaceUnion) UnmarshalJSON(dat
 	return apijson.UnmarshalRoot(data, u)
 }
 
+// An operation to modify a relationship. Provide one of `add`, `remove`, or
+// `replace`.
 type ContactUpdateParamsRelationship struct {
-	Add     ContactUpdateParamsRelationshipAddUnion     `json:"add,omitzero"`
-	Remove  ContactUpdateParamsRelationshipRemoveUnion  `json:"remove,omitzero"`
+	// Entity ID(s) to add to the relationship.
+	Add ContactUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove ContactUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
+	// Entity ID(s) to set as the entire relationship, replacing all existing
+	// associations.
 	Replace ContactUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
@@ -2583,7 +2743,9 @@ func (u *ContactUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte)
 }
 
 type ContactListParams struct {
-	Limit  param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Maximum number of records to return. Defaults to 25, maximum 100.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	paramObj
 }
