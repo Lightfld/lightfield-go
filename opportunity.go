@@ -2289,14 +2289,14 @@ type OpportunityNewParams struct {
 	// discover available fields and options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields OpportunityNewParamsFields `json:"fields,omitzero" api:"required"`
+	Fields map[string]OpportunityNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new opportunity. System relationships use a `$`
 	// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
 	// `$account` is required. Each value is a single entity ID or an array of IDs.
 	// Call the
 	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 	// list available relationship keys.
-	Relationships OpportunityNewParamsRelationships `json:"relationships,omitzero" api:"required"`
+	Relationships map[string]OpportunityNewParamsRelationshipUnion `json:"relationships,omitzero" api:"required"`
 	paramObj
 }
 
@@ -2305,35 +2305,6 @@ func (r OpportunityNewParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *OpportunityNewParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Field values for the new opportunity. System fields use a `$` prefix (e.g.
-// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
-// (string) and `$stage` (option ID or label). Fields of type `SINGLE_SELECT` or
-// `MULTI_SELECT` accept either an option ID or label from the field's
-// `typeConfiguration.options` — call the
-// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
-// discover available fields and options. See
-// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-// value type details.
-//
-// The properties Name, Stage are required.
-type OpportunityNewParamsFields struct {
-	// Display name of the opportunity.
-	Name string `json:"$name" api:"required"`
-	// Pipeline stage (`SINGLE_SELECT`). Pass the option ID or label from the field
-	// definition.
-	Stage       string                                    `json:"$stage" api:"required"`
-	ExtraFields map[string]OpportunityNewParamsFieldUnion `json:"-"`
-	paramObj
-}
-
-func (r OpportunityNewParamsFields) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityNewParamsFields
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *OpportunityNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2406,117 +2377,6 @@ func (u *OpportunityNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// Relationships to set on the new opportunity. System relationships use a `$`
-// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
-// `$account` is required. Each value is a single entity ID or an array of IDs.
-// Call the
-// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
-// list available relationship keys.
-//
-// The property Account is required.
-type OpportunityNewParamsRelationships struct {
-	// ID of the account this opportunity belongs to.
-	Account OpportunityNewParamsRelationshipsAccountUnion `json:"$account,omitzero" api:"required"`
-	// ID of the contact who is the internal champion.
-	Champion OpportunityNewParamsRelationshipsChampionUnion `json:"$champion,omitzero"`
-	// ID of the user who created this opportunity.
-	CreatedBy OpportunityNewParamsRelationshipsCreatedByUnion `json:"$createdBy,omitzero"`
-	// ID of the contact who is the evaluator.
-	Evaluator OpportunityNewParamsRelationshipsEvaluatorUnion `json:"$evaluator,omitzero"`
-	// ID of the user who owns this opportunity.
-	Owner       OpportunityNewParamsRelationshipsOwnerUnion      `json:"$owner,omitzero"`
-	ExtraFields map[string]OpportunityNewParamsRelationshipUnion `json:"-"`
-	paramObj
-}
-
-func (r OpportunityNewParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityNewParamsRelationships
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *OpportunityNewParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsAccountUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityNewParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityNewParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsChampionUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityNewParamsRelationshipsChampionUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityNewParamsRelationshipsChampionUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsCreatedByUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityNewParamsRelationshipsCreatedByUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityNewParamsRelationshipsCreatedByUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsEvaluatorUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityNewParamsRelationshipsEvaluatorUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityNewParamsRelationshipsEvaluatorUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipsOwnerUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityNewParamsRelationshipsOwnerUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityNewParamsRelationshipsOwnerUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
@@ -2542,11 +2402,11 @@ type OpportunityUpdateParams struct {
 	// for available options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields OpportunityUpdateParamsFields `json:"fields,omitzero"`
+	Fields map[string]OpportunityUpdateParamsFieldUnion `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
 	// `$owner`, `$champion`). Each value is an operation object with `add`, `remove`,
 	// or `replace`.
-	Relationships OpportunityUpdateParamsRelationships `json:"relationships,omitzero"`
+	Relationships map[string]OpportunityUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -2555,32 +2415,6 @@ func (r OpportunityUpdateParams) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *OpportunityUpdateParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Field values to update — only provided fields are modified; omitted fields are
-// left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
-// attributes use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept
-// an option ID or label — call the
-// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u>
-// for available options. See
-// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-// value type details.
-type OpportunityUpdateParamsFields struct {
-	// Display name of the opportunity.
-	Name param.Opt[string] `json:"$name,omitzero"`
-	// Pipeline stage (`SINGLE_SELECT`). Pass the option ID or label from the field
-	// definition.
-	Stage       param.Opt[string]                            `json:"$stage,omitzero"`
-	ExtraFields map[string]OpportunityUpdateParamsFieldUnion `json:"-"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsFields) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsFields
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *OpportunityUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2650,232 +2484,6 @@ func (u OpportunityUpdateParamsFieldMapItemUnion) MarshalJSON() ([]byte, error) 
 		u.OfAnyMap)
 }
 func (u *OpportunityUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-// `$owner`, `$champion`). Each value is an operation object with `add`, `remove`,
-// or `replace`.
-type OpportunityUpdateParamsRelationships struct {
-	// Operation to modify the internal champion.
-	Champion OpportunityUpdateParamsRelationshipsChampion `json:"$champion,omitzero"`
-	// Operation to modify the evaluator.
-	Evaluator OpportunityUpdateParamsRelationshipsEvaluator `json:"$evaluator,omitzero"`
-	// Operation to modify the opportunity owner.
-	Owner       OpportunityUpdateParamsRelationshipsOwner      `json:"$owner,omitzero"`
-	ExtraFields map[string]OpportunityUpdateParamsRelationship `json:"-"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationships
-	return param.MarshalWithExtras(r, (*shadow)(&r), r.ExtraFields)
-}
-func (r *OpportunityUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Operation to modify the internal champion.
-type OpportunityUpdateParamsRelationshipsChampion struct {
-	// Entity ID(s) to add to the relationship.
-	Add OpportunityUpdateParamsRelationshipsChampionAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove OpportunityUpdateParamsRelationshipsChampionRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace OpportunityUpdateParamsRelationshipsChampionReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationshipsChampion) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsChampion
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *OpportunityUpdateParamsRelationshipsChampion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsChampionAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsChampionAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsChampionAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsChampionRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsChampionRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsChampionRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsChampionReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsChampionReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsChampionReplaceUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Operation to modify the evaluator.
-type OpportunityUpdateParamsRelationshipsEvaluator struct {
-	// Entity ID(s) to add to the relationship.
-	Add OpportunityUpdateParamsRelationshipsEvaluatorAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationshipsEvaluator) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsEvaluator
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *OpportunityUpdateParamsRelationshipsEvaluator) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsEvaluatorAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsEvaluatorAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsEvaluatorAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Operation to modify the opportunity owner.
-type OpportunityUpdateParamsRelationshipsOwner struct {
-	// Entity ID(s) to add to the relationship.
-	Add OpportunityUpdateParamsRelationshipsOwnerAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove OpportunityUpdateParamsRelationshipsOwnerRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace OpportunityUpdateParamsRelationshipsOwnerReplaceUnion `json:"replace,omitzero"`
-	paramObj
-}
-
-func (r OpportunityUpdateParamsRelationshipsOwner) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationshipsOwner
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *OpportunityUpdateParamsRelationshipsOwner) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsOwnerAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsOwnerAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsOwnerAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsOwnerRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsOwnerRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsOwnerRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipsOwnerReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipsOwnerReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipsOwnerReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/Lightfld/lightfield-go/option"
 )
 
-func TestOpportunityNewWithOptionalParams(t *testing.T) {
+func TestOpportunityNew(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -26,24 +26,13 @@ func TestOpportunityNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Opportunity.New(context.TODO(), githubcomlightfldlightfieldgo.OpportunityNewParams{
-		Fields: githubcomlightfldlightfieldgo.OpportunityNewParamsFields{
-			Name:  "$name",
-			Stage: "$stage",
+		Fields: map[string]githubcomlightfldlightfieldgo.OpportunityNewParamsFieldUnion{
+			"foo": {
+				OfString: githubcomlightfldlightfieldgo.String("string"),
+			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationships{
-			Account: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsAccountUnion{
-				OfString: githubcomlightfldlightfieldgo.String("string"),
-			},
-			Champion: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsChampionUnion{
-				OfString: githubcomlightfldlightfieldgo.String("string"),
-			},
-			CreatedBy: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsCreatedByUnion{
-				OfString: githubcomlightfldlightfieldgo.String("string"),
-			},
-			Evaluator: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsEvaluatorUnion{
-				OfString: githubcomlightfldlightfieldgo.String("string"),
-			},
-			Owner: githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.OpportunityNewParamsRelationshipUnion{
+			"foo": {
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
@@ -95,41 +84,20 @@ func TestOpportunityUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		githubcomlightfldlightfieldgo.OpportunityUpdateParams{
-			Fields: githubcomlightfldlightfieldgo.OpportunityUpdateParamsFields{
-				Name:  githubcomlightfldlightfieldgo.String("$name"),
-				Stage: githubcomlightfldlightfieldgo.String("$stage"),
+			Fields: map[string]githubcomlightfldlightfieldgo.OpportunityUpdateParamsFieldUnion{
+				"foo": {
+					OfString: githubcomlightfldlightfieldgo.String("string"),
+				},
 			},
-			Relationships: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationships{
-				Champion: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampion{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionAddUnion{
+			Relationships: map[string]githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationship{
+				"foo": {
+					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsChampionReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
-				Evaluator: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluator{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsEvaluatorReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
-				Owner: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwner{
-					Add: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipsOwnerReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
