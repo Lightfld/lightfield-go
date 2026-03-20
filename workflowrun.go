@@ -50,6 +50,7 @@ func (r *WorkflowRunService) Status(ctx context.Context, runID string, opts ...o
 }
 
 type WorkflowRunStatusResponse struct {
+	// Current status of the workflow run (e.g. `running`, `completed`, `failed`).
 	Status string `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
