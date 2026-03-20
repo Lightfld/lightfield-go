@@ -357,7 +357,7 @@ client.Account.New(
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},

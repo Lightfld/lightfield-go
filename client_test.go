@@ -56,7 +56,7 @@ func TestUserAgentHeader(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -102,7 +102,7 @@ func TestRetryAfter(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -159,7 +159,7 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -211,7 +211,7 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -262,7 +262,7 @@ func TestRetryAfterMs(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -307,7 +307,7 @@ func TestContextCancel(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -349,7 +349,7 @@ func TestContextCancelDelay(t *testing.T) {
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -397,7 +397,7 @@ func TestContextDeadline(t *testing.T) {
 				Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
 					OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 				},
-				Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+				Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 					OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 				},
 			},
