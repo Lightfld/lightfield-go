@@ -133,7 +133,7 @@ type ContactNewResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]ContactNewResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactNewResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -589,7 +589,7 @@ type ContactGetResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]ContactGetResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactGetResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1045,7 +1045,7 @@ type ContactUpdateResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]ContactUpdateResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactUpdateResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1524,7 +1524,7 @@ type ContactListResponseData struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]ContactListResponseDataRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]ContactListResponseDataUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -2007,6 +2007,9 @@ type ContactDefinitionsResponseFieldDefinition struct {
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Description       respjson.Field
@@ -2014,6 +2017,7 @@ type ContactDefinitionsResponseFieldDefinition struct {
 		TypeConfiguration respjson.Field
 		ValueType         respjson.Field
 		ID                respjson.Field
+		ReadOnly          respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -2259,16 +2263,16 @@ type ContactNewParams struct {
 	// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
 	// `$name`); custom attributes use their bare slug. Note: `$name` is an object
 	// `{ firstName, lastName }`, not a plain string. Call the
-	// **[definitions endpoint](/api/resources/contact/methods/definitions)** to
+	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
 	// discover available fields and their types. See
-	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	Fields ContactNewParamsFields `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new contact. System relationships use a `$` prefix
-	// (e.g. `$accounts`); custom relationships use their bare slug. Each value is a
+	// (e.g. `$account`); custom relationships use their bare slug. Each value is a
 	// single entity ID or an array of IDs. Call the
-	// **[definitions endpoint](/api/resources/contact/methods/definitions)** to list
-	// available relationship keys.
+	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
+	// list available relationship keys.
 	Relationships ContactNewParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2284,14 +2288,14 @@ func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
 // Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
 // `$name`); custom attributes use their bare slug. Note: `$name` is an object
 // `{ firstName, lastName }`, not a plain string. Call the
-// **[definitions endpoint](/api/resources/contact/methods/definitions)** to
+// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
 // discover available fields and their types. See
-// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 // value type details.
 type ContactNewParamsFields struct {
-	// URL of the contact's profile photo.
+	// URL of the contact's profile photo (`URL`).
 	ProfilePhotoURL param.Opt[string] `json:"$profilePhotoUrl,omitzero"`
-	// List of email addresses for the contact.
+	// List of email addresses for the contact (`EMAIL`, multi-value).
 	Email []string `json:"$email,omitzero"`
 	// The contact's name. Unlike other resources, this is an object:
 	// `{ firstName?: string, lastName?: string }`, not a plain string.
@@ -2396,13 +2400,13 @@ func (u *ContactNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error {
 }
 
 // Relationships to set on the new contact. System relationships use a `$` prefix
-// (e.g. `$accounts`); custom relationships use their bare slug. Each value is a
+// (e.g. `$account`); custom relationships use their bare slug. Each value is a
 // single entity ID or an array of IDs. Call the
-// **[definitions endpoint](/api/resources/contact/methods/definitions)** to list
-// available relationship keys.
+// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
+// list available relationship keys.
 type ContactNewParamsRelationships struct {
 	// ID(s) of accounts to associate with this contact.
-	Accounts    ContactNewParamsRelationshipsAccountsUnion   `json:"$accounts,omitzero"`
+	Account     ContactNewParamsRelationshipsAccountUnion    `json:"$account,omitzero"`
 	ExtraFields map[string]ContactNewParamsRelationshipUnion `json:"-"`
 	paramObj
 }
@@ -2418,16 +2422,16 @@ func (r *ContactNewParamsRelationships) UnmarshalJSON(data []byte) error {
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsRelationshipsAccountsUnion struct {
+type ContactNewParamsRelationshipsAccountUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactNewParamsRelationshipsAccountsUnion) MarshalJSON() ([]byte, error) {
+func (u ContactNewParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactNewParamsRelationshipsAccountsUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactNewParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2452,13 +2456,13 @@ type ContactUpdateParams struct {
 	// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
 	// attributes use their bare slug. Note: `$name` is an object
 	// `{ firstName, lastName }`, not a plain string. Call the
-	// **[definitions endpoint](/api/resources/contact/methods/definitions)** for
+	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> for
 	// available fields and types. See
-	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	Fields ContactUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$accounts`). Each value is an operation object with `add`, `remove`, or
+	// `$account`). Each value is an operation object with `add`, `remove`, or
 	// `replace`.
 	Relationships ContactUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
@@ -2476,14 +2480,14 @@ func (r *ContactUpdateParams) UnmarshalJSON(data []byte) error {
 // left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
 // attributes use their bare slug. Note: `$name` is an object
 // `{ firstName, lastName }`, not a plain string. Call the
-// **[definitions endpoint](/api/resources/contact/methods/definitions)** for
+// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> for
 // available fields and types. See
-// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 // value type details.
 type ContactUpdateParamsFields struct {
-	// URL of the contact's profile photo.
+	// URL of the contact's profile photo (`URL`).
 	ProfilePhotoURL param.Opt[string] `json:"$profilePhotoUrl,omitzero"`
-	// List of email addresses for the contact.
+	// List of email addresses for the contact (`EMAIL`, multi-value).
 	Email []string `json:"$email,omitzero"`
 	// The contact's name. Unlike other resources, this is an object:
 	// `{ firstName?: string, lastName?: string }`, not a plain string.
@@ -2588,11 +2592,11 @@ func (u *ContactUpdateParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error 
 }
 
 // Relationship operations to apply. System relationships use a `$` prefix (e.g.
-// `$accounts`). Each value is an operation object with `add`, `remove`, or
+// `$account`). Each value is an operation object with `add`, `remove`, or
 // `replace`.
 type ContactUpdateParamsRelationships struct {
 	// Operation to modify associated accounts.
-	Accounts    ContactUpdateParamsRelationshipsAccounts   `json:"$accounts,omitzero"`
+	Account     ContactUpdateParamsRelationshipsAccount    `json:"$account,omitzero"`
 	ExtraFields map[string]ContactUpdateParamsRelationship `json:"-"`
 	paramObj
 }
@@ -2606,70 +2610,70 @@ func (r *ContactUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 }
 
 // Operation to modify associated accounts.
-type ContactUpdateParamsRelationshipsAccounts struct {
+type ContactUpdateParamsRelationshipsAccount struct {
 	// Entity ID(s) to add to the relationship.
-	Add ContactUpdateParamsRelationshipsAccountsAddUnion `json:"add,omitzero"`
+	Add ContactUpdateParamsRelationshipsAccountAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
-	Remove ContactUpdateParamsRelationshipsAccountsRemoveUnion `json:"remove,omitzero"`
+	Remove ContactUpdateParamsRelationshipsAccountRemoveUnion `json:"remove,omitzero"`
 	// Entity ID(s) to set as the entire relationship, replacing all existing
 	// associations.
-	Replace ContactUpdateParamsRelationshipsAccountsReplaceUnion `json:"replace,omitzero"`
+	Replace ContactUpdateParamsRelationshipsAccountReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParamsRelationshipsAccounts) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsRelationshipsAccounts
+func (r ContactUpdateParamsRelationshipsAccount) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateParamsRelationshipsAccount
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsRelationshipsAccounts) UnmarshalJSON(data []byte) error {
+func (r *ContactUpdateParamsRelationshipsAccount) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsAccountsAddUnion struct {
+type ContactUpdateParamsRelationshipsAccountAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsAccountsAddUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsAccountsAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsAccountsRemoveUnion struct {
+type ContactUpdateParamsRelationshipsAccountRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsAccountsRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsAccountsRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipsAccountsReplaceUnion struct {
+type ContactUpdateParamsRelationshipsAccountReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipsAccountsReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u ContactUpdateParamsRelationshipsAccountReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipsAccountsReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *ContactUpdateParamsRelationshipsAccountReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2743,7 +2747,7 @@ func (u *ContactUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte)
 }
 
 type ContactListParams struct {
-	// Maximum number of records to return. Defaults to 25, maximum 100.
+	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`

@@ -46,8 +46,9 @@ func NewOpportunityService(opts ...option.RequestOption) (r OpportunityService) 
 //
 // After creation, Lightfield automatically generates an opportunity summary in the
 // background. The `$opportunityStatus` field is read-only and cannot be set via
-// the API. The `$tasks` and `$notes` relationships are also read-only — manage
-// them via the `$opportunity` relationship on the task or note instead.
+// the API. The `$task` and `$note` relationships are also read-only — manage them
+// via the `$opportunity` relationship on the task, or the
+// `$account`/`$opportunity` note relationships instead.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -80,9 +81,10 @@ func (r *OpportunityService) Get(ctx context.Context, id string, opts ...option.
 // Updates an existing opportunity by ID. Only included fields and relationships
 // are modified.
 //
-// The `$opportunityStatus` field is read-only and cannot be updated. The `$tasks`
-// and `$notes` relationships are also read-only — manage them via the
-// `$opportunity` relationship on the task or note instead.
+// The `$opportunityStatus` field is read-only and cannot be updated. The `$task`
+// and `$note` relationships are also read-only — manage them via the
+// `$opportunity` relationship on the task, or the `$account`/`$opportunity` note
+// relationships instead.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -141,7 +143,7 @@ type OpportunityNewResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]OpportunityNewResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityNewResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -597,7 +599,7 @@ type OpportunityGetResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]OpportunityGetResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityGetResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1053,7 +1055,7 @@ type OpportunityUpdateResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]OpportunityUpdateResponseRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityUpdateResponseUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1534,7 +1536,7 @@ type OpportunityListResponseData struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contacts`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
 	Relationships map[string]OpportunityListResponseDataRelationship `json:"relationships" api:"required"`
 	ExtraFields   map[string]OpportunityListResponseDataUnion        `json:"" api:"extrafields"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -2020,6 +2022,9 @@ type OpportunityDefinitionsResponseFieldDefinition struct {
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Description       respjson.Field
@@ -2027,6 +2032,7 @@ type OpportunityDefinitionsResponseFieldDefinition struct {
 		TypeConfiguration respjson.Field
 		ValueType         respjson.Field
 		ID                respjson.Field
+		ReadOnly          respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -2271,19 +2277,19 @@ func (r *OpportunityDefinitionsResponseRelationshipDefinition) UnmarshalJSON(dat
 type OpportunityNewParams struct {
 	// Field values for the new opportunity. System fields use a `$` prefix (e.g.
 	// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
-	// (string) and `$stage` (option ID or label). Fields of type `single_select` or
-	// `multi_select` accept either an option ID or label from the field's
+	// (string) and `$stage` (option ID or label). Fields of type `SINGLE_SELECT` or
+	// `MULTI_SELECT` accept either an option ID or label from the field's
 	// `typeConfiguration.options` — call the
-	// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** to
+	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 	// discover available fields and options. See
-	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	Fields OpportunityNewParamsFields `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new opportunity. System relationships use a `$`
 	// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
 	// `$account` is required. Each value is a single entity ID or an array of IDs.
 	// Call the
-	// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** to
+	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 	// list available relationship keys.
 	Relationships OpportunityNewParamsRelationships `json:"relationships,omitzero" api:"required"`
 	paramObj
@@ -2299,19 +2305,20 @@ func (r *OpportunityNewParams) UnmarshalJSON(data []byte) error {
 
 // Field values for the new opportunity. System fields use a `$` prefix (e.g.
 // `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
-// (string) and `$stage` (option ID or label). Fields of type `single_select` or
-// `multi_select` accept either an option ID or label from the field's
+// (string) and `$stage` (option ID or label). Fields of type `SINGLE_SELECT` or
+// `MULTI_SELECT` accept either an option ID or label from the field's
 // `typeConfiguration.options` — call the
-// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** to
+// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 // discover available fields and options. See
-// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 // value type details.
 //
 // The properties Name, Stage are required.
 type OpportunityNewParamsFields struct {
 	// Display name of the opportunity.
 	Name string `json:"$name" api:"required"`
-	// Pipeline stage. Pass the option ID or label from the field definition.
+	// Pipeline stage (`SINGLE_SELECT`). Pass the option ID or label from the field
+	// definition.
 	Stage       string                                    `json:"$stage" api:"required"`
 	ExtraFields map[string]OpportunityNewParamsFieldUnion `json:"-"`
 	paramObj
@@ -2398,7 +2405,7 @@ func (u *OpportunityNewParamsFieldMapItemUnion) UnmarshalJSON(data []byte) error
 // prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
 // `$account` is required. Each value is a single entity ID or an array of IDs.
 // Call the
-// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** to
+// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 // list available relationship keys.
 //
 // The property Account is required.
@@ -2524,11 +2531,11 @@ func (u *OpportunityNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error
 type OpportunityUpdateParams struct {
 	// Field values to update — only provided fields are modified; omitted fields are
 	// left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
-	// attributes use their bare slug. Select-type fields accept an option ID or label
-	// — call the
-	// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** for
-	// available options. See
-	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// attributes use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept
+	// an option ID or label — call the
+	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u>
+	// for available options. See
+	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	Fields OpportunityUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
@@ -2548,16 +2555,17 @@ func (r *OpportunityUpdateParams) UnmarshalJSON(data []byte) error {
 
 // Field values to update — only provided fields are modified; omitted fields are
 // left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
-// attributes use their bare slug. Select-type fields accept an option ID or label
-// — call the
-// **[definitions endpoint](/api/resources/opportunity/methods/definitions)** for
-// available options. See
-// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// attributes use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept
+// an option ID or label — call the
+// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u>
+// for available options. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 // value type details.
 type OpportunityUpdateParamsFields struct {
 	// Display name of the opportunity.
 	Name param.Opt[string] `json:"$name,omitzero"`
-	// Pipeline stage. Pass the option ID or label from the field definition.
+	// Pipeline stage (`SINGLE_SELECT`). Pass the option ID or label from the field
+	// definition.
 	Stage       param.Opt[string]                            `json:"$stage,omitzero"`
 	ExtraFields map[string]OpportunityUpdateParamsFieldUnion `json:"-"`
 	paramObj

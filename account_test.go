@@ -48,7 +48,7 @@ func TestAccountNewWithOptionalParams(t *testing.T) {
 			Website: []string{"string"},
 		},
 		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Contacts: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactsUnion{
+			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
@@ -125,14 +125,14 @@ func TestAccountUpdateWithOptionalParams(t *testing.T) {
 				Website: []string{"string"},
 			},
 			Relationships: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationships{
-				Contacts: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContacts{
-					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsAddUnion{
+				Contact: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContact{
+					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactsReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipsContactReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
