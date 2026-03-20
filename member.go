@@ -47,7 +47,7 @@ func NewMemberService(opts ...option.RequestOption) (r MemberService) {
 // **[Required scope](/using-the-api/scopes/):** `members:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *MemberService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *MemberGetResponse, err error) {
+func (r *MemberService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *MemberRetrieveResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
@@ -71,244 +71,6 @@ func (r *MemberService) List(ctx context.Context, query MemberListParams, opts .
 	path := "v1/members"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
-}
-
-type MemberGetResponse struct {
-	// Unique identifier for the member.
-	ID string `json:"id" api:"required"`
-	// ISO 8601 timestamp of when the member was created.
-	CreatedAt string `json:"createdAt" api:"required"`
-	// Map of field names to their typed values.
-	Fields map[string]MemberGetResponseField `json:"fields" api:"required"`
-	// URL to view the member in the Lightfield web app, or null.
-	HTTPLink string `json:"httpLink" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID          respjson.Field
-		CreatedAt   respjson.Field
-		Fields      respjson.Field
-		HTTPLink    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r MemberGetResponse) RawJSON() string { return r.JSON.raw }
-func (r *MemberGetResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type MemberGetResponseField struct {
-	// The field value, or null if unset.
-	Value MemberGetResponseFieldValueUnion `json:"value" api:"required"`
-	// The data type of the field value.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Value       respjson.Field
-		ValueType   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r MemberGetResponseField) RawJSON() string { return r.JSON.raw }
-func (r *MemberGetResponseField) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// MemberGetResponseFieldValueUnion contains all possible properties and values
-// from [string], [float64], [bool], [[]MemberGetResponseFieldValueArrayItemUnion],
-// [map[string]MemberGetResponseFieldValueMapItemUnion].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfMemberGetResponseFieldValueArray
-// OfAnyArray OfMemberGetResponseFieldValueMapItemMapItem]
-type MemberGetResponseFieldValueUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a
-	// [[]MemberGetResponseFieldValueArrayItemUnion] instead of an object.
-	OfMemberGetResponseFieldValueArray []MemberGetResponseFieldValueArrayItemUnion `json:",inline"`
-	// This field will be present if the value is a [[]any] instead of an object.
-	OfAnyArray []any `json:",inline"`
-	// This field will be present if the value is a [any] instead of an object.
-	OfMemberGetResponseFieldValueMapItemMapItem any `json:",inline"`
-	JSON                                        struct {
-		OfString                                    respjson.Field
-		OfFloat                                     respjson.Field
-		OfBool                                      respjson.Field
-		OfMemberGetResponseFieldValueArray          respjson.Field
-		OfAnyArray                                  respjson.Field
-		OfMemberGetResponseFieldValueMapItemMapItem respjson.Field
-		raw                                         string
-	} `json:"-"`
-}
-
-func (u MemberGetResponseFieldValueUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueUnion) AsMemberGetResponseFieldValueArray() (v []MemberGetResponseFieldValueArrayItemUnion) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueUnion) AsMemberGetResponseFieldValueMapMap() (v map[string]MemberGetResponseFieldValueMapItemUnion) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u MemberGetResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *MemberGetResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// MemberGetResponseFieldValueArrayItemUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]any], [map[string]any].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfAnyArray
-// OfMemberGetResponseFieldValueArrayItemMapItem]
-type MemberGetResponseFieldValueArrayItemUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]any] instead of an object.
-	OfAnyArray []any `json:",inline"`
-	// This field will be present if the value is a [any] instead of an object.
-	OfMemberGetResponseFieldValueArrayItemMapItem any `json:",inline"`
-	JSON                                          struct {
-		OfString                                      respjson.Field
-		OfFloat                                       respjson.Field
-		OfBool                                        respjson.Field
-		OfAnyArray                                    respjson.Field
-		OfMemberGetResponseFieldValueArrayItemMapItem respjson.Field
-		raw                                           string
-	} `json:"-"`
-}
-
-func (u MemberGetResponseFieldValueArrayItemUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueArrayItemUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueArrayItemUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueArrayItemUnion) AsAnyArray() (v []any) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueArrayItemUnion) AsAnyMap() (v map[string]any) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u MemberGetResponseFieldValueArrayItemUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *MemberGetResponseFieldValueArrayItemUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// MemberGetResponseFieldValueMapItemUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]any], [map[string]any].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfAnyArray
-// OfMemberGetResponseFieldValueMapItemMapItem]
-type MemberGetResponseFieldValueMapItemUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]any] instead of an object.
-	OfAnyArray []any `json:",inline"`
-	// This field will be present if the value is a [any] instead of an object.
-	OfMemberGetResponseFieldValueMapItemMapItem any `json:",inline"`
-	JSON                                        struct {
-		OfString                                    respjson.Field
-		OfFloat                                     respjson.Field
-		OfBool                                      respjson.Field
-		OfAnyArray                                  respjson.Field
-		OfMemberGetResponseFieldValueMapItemMapItem respjson.Field
-		raw                                         string
-	} `json:"-"`
-}
-
-func (u MemberGetResponseFieldValueMapItemUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueMapItemUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueMapItemUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueMapItemUnion) AsAnyArray() (v []any) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u MemberGetResponseFieldValueMapItemUnion) AsAnyMap() (v map[string]any) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u MemberGetResponseFieldValueMapItemUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *MemberGetResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
 }
 
 type MemberListResponse struct {
@@ -570,6 +332,245 @@ func (u MemberListResponseDataFieldValueMapItemUnion) AsAnyMap() (v map[string]a
 func (u MemberListResponseDataFieldValueMapItemUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *MemberListResponseDataFieldValueMapItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MemberRetrieveResponse struct {
+	// Unique identifier for the member.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the member was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values.
+	Fields map[string]MemberRetrieveResponseField `json:"fields" api:"required"`
+	// URL to view the member in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CreatedAt   respjson.Field
+		Fields      respjson.Field
+		HTTPLink    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberRetrieveResponse) RawJSON() string { return r.JSON.raw }
+func (r *MemberRetrieveResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MemberRetrieveResponseField struct {
+	// The field value, or null if unset.
+	Value MemberRetrieveResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field value.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberRetrieveResponseField) RawJSON() string { return r.JSON.raw }
+func (r *MemberRetrieveResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// MemberRetrieveResponseFieldValueUnion contains all possible properties and
+// values from [string], [float64], [bool],
+// [[]MemberRetrieveResponseFieldValueArrayItemUnion],
+// [map[string]MemberRetrieveResponseFieldValueMapItemUnion].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfMemberRetrieveResponseFieldValueArray
+// OfAnyArray OfMemberRetrieveResponseFieldValueMapItemMapItem]
+type MemberRetrieveResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a
+	// [[]MemberRetrieveResponseFieldValueArrayItemUnion] instead of an object.
+	OfMemberRetrieveResponseFieldValueArray []MemberRetrieveResponseFieldValueArrayItemUnion `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfMemberRetrieveResponseFieldValueMapItemMapItem any `json:",inline"`
+	JSON                                             struct {
+		OfString                                         respjson.Field
+		OfFloat                                          respjson.Field
+		OfBool                                           respjson.Field
+		OfMemberRetrieveResponseFieldValueArray          respjson.Field
+		OfAnyArray                                       respjson.Field
+		OfMemberRetrieveResponseFieldValueMapItemMapItem respjson.Field
+		raw                                              string
+	} `json:"-"`
+}
+
+func (u MemberRetrieveResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueUnion) AsMemberRetrieveResponseFieldValueArray() (v []MemberRetrieveResponseFieldValueArrayItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueUnion) AsMemberRetrieveResponseFieldValueMapMap() (v map[string]MemberRetrieveResponseFieldValueMapItemUnion) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u MemberRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *MemberRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// MemberRetrieveResponseFieldValueArrayItemUnion contains all possible properties
+// and values from [string], [float64], [bool], [[]any], [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfMemberRetrieveResponseFieldValueArrayItemMapItem]
+type MemberRetrieveResponseFieldValueArrayItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfMemberRetrieveResponseFieldValueArrayItemMapItem any `json:",inline"`
+	JSON                                               struct {
+		OfString                                           respjson.Field
+		OfFloat                                            respjson.Field
+		OfBool                                             respjson.Field
+		OfAnyArray                                         respjson.Field
+		OfMemberRetrieveResponseFieldValueArrayItemMapItem respjson.Field
+		raw                                                string
+	} `json:"-"`
+}
+
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u MemberRetrieveResponseFieldValueArrayItemUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *MemberRetrieveResponseFieldValueArrayItemUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// MemberRetrieveResponseFieldValueMapItemUnion contains all possible properties
+// and values from [string], [float64], [bool], [[]any], [map[string]any].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfAnyArray
+// OfMemberRetrieveResponseFieldValueMapItemMapItem]
+type MemberRetrieveResponseFieldValueMapItemUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]any] instead of an object.
+	OfAnyArray []any `json:",inline"`
+	// This field will be present if the value is a [any] instead of an object.
+	OfMemberRetrieveResponseFieldValueMapItemMapItem any `json:",inline"`
+	JSON                                             struct {
+		OfString                                         respjson.Field
+		OfFloat                                          respjson.Field
+		OfBool                                           respjson.Field
+		OfAnyArray                                       respjson.Field
+		OfMemberRetrieveResponseFieldValueMapItemMapItem respjson.Field
+		raw                                              string
+	} `json:"-"`
+}
+
+func (u MemberRetrieveResponseFieldValueMapItemUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueMapItemUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueMapItemUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueMapItemUnion) AsAnyArray() (v []any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u MemberRetrieveResponseFieldValueMapItemUnion) AsAnyMap() (v map[string]any) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u MemberRetrieveResponseFieldValueMapItemUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *MemberRetrieveResponseFieldValueMapItemUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
