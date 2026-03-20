@@ -39,24 +39,53 @@ func TestUserAgentHeader(t *testing.T) {
 		}),
 	)
 	_, _ = client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -85,24 +114,53 @@ func TestRetryAfter(t *testing.T) {
 		}),
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -142,24 +200,53 @@ func TestDeleteRetryCountHeader(t *testing.T) {
 		option.WithHeaderDel("X-Stainless-Retry-Count"),
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -194,24 +281,53 @@ func TestOverwriteRetryCountHeader(t *testing.T) {
 		option.WithHeader("X-Stainless-Retry-Count", "42"),
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -245,24 +361,53 @@ func TestRetryAfterMs(t *testing.T) {
 		}),
 	)
 	_, err := client.Account.New(context.Background(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -290,24 +435,53 @@ func TestContextCancel(t *testing.T) {
 	cancelCtx, cancel := context.WithCancel(context.Background())
 	cancel()
 	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -332,24 +506,53 @@ func TestContextCancelDelay(t *testing.T) {
 	cancelCtx, cancel := context.WithTimeout(context.Background(), 2*time.Millisecond)
 	defer cancel()
 	_, err := client.Account.New(cancelCtx, githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-			Name:      "Acme Corp",
-			Website:   []string{"https://acme.com"},
-			Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-			Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-			LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-			PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-				Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-				City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-				State:   githubcomlightfldlightfieldgo.String("CA"),
-				Country: githubcomlightfldlightfieldgo.String("US"),
+		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+			"$name": {
+				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+			},
+			"$website": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+				}},
+			},
+			"$industry": {
+				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+				}, {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+				}},
+			},
+			"$headcount": {
+				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+			},
+			"$linkedIn": {
+				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+			},
+			"$primaryAddress": {
+				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+					"street": {
+						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+					},
+					"city": {
+						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+					},
+					"state": {
+						OfString: githubcomlightfldlightfieldgo.String("CA"),
+					},
+					"zip": {
+						OfString: githubcomlightfldlightfieldgo.String("94105"),
+					},
+					"country": {
+						OfString: githubcomlightfldlightfieldgo.String("US"),
+					},
+				},
 			},
 		},
-		Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-			Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+			"$owner": {
 				OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 			},
-			Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+			"$contact": {
 				OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 			},
 		},
@@ -380,24 +583,53 @@ func TestContextDeadline(t *testing.T) {
 			}),
 		)
 		_, err := client.Account.New(deadlineCtx, githubcomlightfldlightfieldgo.AccountNewParams{
-			Fields: githubcomlightfldlightfieldgo.AccountNewParamsFields{
-				Name:      "Acme Corp",
-				Website:   []string{"https://acme.com"},
-				Industry:  []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
-				Headcount: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
-				LinkedIn:  githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
-				PrimaryAddress: githubcomlightfldlightfieldgo.AccountNewParamsFieldsPrimaryAddress{
-					Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
-					City:    githubcomlightfldlightfieldgo.String("San Francisco"),
-					State:   githubcomlightfldlightfieldgo.String("CA"),
-					Country: githubcomlightfldlightfieldgo.String("US"),
+			Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+				"$name": {
+					OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
+				},
+				"$website": {
+					OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+						OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
+					}},
+				},
+				"$industry": {
+					OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
+						OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
+					}, {
+						OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
+					}},
+				},
+				"$headcount": {
+					OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
+				},
+				"$linkedIn": {
+					OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
+				},
+				"$primaryAddress": {
+					OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
+						"street": {
+							OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
+						},
+						"city": {
+							OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
+						},
+						"state": {
+							OfString: githubcomlightfldlightfieldgo.String("CA"),
+						},
+						"zip": {
+							OfString: githubcomlightfldlightfieldgo.String("94105"),
+						},
+						"country": {
+							OfString: githubcomlightfldlightfieldgo.String("US"),
+						},
+					},
 				},
 			},
-			Relationships: githubcomlightfldlightfieldgo.AccountNewParamsRelationships{
-				Owner: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsOwnerUnion{
+			Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
+				"$owner": {
 					OfString: githubcomlightfldlightfieldgo.String("mem_cm1abc123def456"),
 				},
-				Contact: githubcomlightfldlightfieldgo.AccountNewParamsRelationshipsContactUnion{
+				"$contact": {
 					OfStringArray: []string{"con_cm2ghi789jkl012", "con_cm3mno345pqr678"},
 				},
 			},

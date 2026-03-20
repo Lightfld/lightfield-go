@@ -26,16 +26,13 @@ func TestContactNewWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Contact.New(context.TODO(), githubcomlightfldlightfieldgo.ContactNewParams{
-		Fields: githubcomlightfldlightfieldgo.ContactNewParamsFields{
-			Email: []string{"string"},
-			Name: githubcomlightfldlightfieldgo.ContactNewParamsFieldsName{
-				FirstName: githubcomlightfldlightfieldgo.String("firstName"),
-				LastName:  githubcomlightfldlightfieldgo.String("lastName"),
+		Fields: map[string]githubcomlightfldlightfieldgo.ContactNewParamsFieldUnion{
+			"foo": {
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
-			ProfilePhotoURL: githubcomlightfldlightfieldgo.String("$profilePhotoUrl"),
 		},
-		Relationships: githubcomlightfldlightfieldgo.ContactNewParamsRelationships{
-			Account: githubcomlightfldlightfieldgo.ContactNewParamsRelationshipsAccountUnion{
+		Relationships: map[string]githubcomlightfldlightfieldgo.ContactNewParamsRelationshipUnion{
+			"foo": {
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
@@ -87,23 +84,20 @@ func TestContactUpdateWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"id",
 		githubcomlightfldlightfieldgo.ContactUpdateParams{
-			Fields: githubcomlightfldlightfieldgo.ContactUpdateParamsFields{
-				Email: []string{"string"},
-				Name: githubcomlightfldlightfieldgo.ContactUpdateParamsFieldsName{
-					FirstName: githubcomlightfldlightfieldgo.String("firstName"),
-					LastName:  githubcomlightfldlightfieldgo.String("lastName"),
+			Fields: map[string]githubcomlightfldlightfieldgo.ContactUpdateParamsFieldUnion{
+				"foo": {
+					OfString: githubcomlightfldlightfieldgo.String("string"),
 				},
-				ProfilePhotoURL: githubcomlightfldlightfieldgo.String("$profilePhotoUrl"),
 			},
-			Relationships: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationships{
-				Account: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccount{
-					Add: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountAddUnion{
+			Relationships: map[string]githubcomlightfldlightfieldgo.ContactUpdateParamsRelationship{
+				"foo": {
+					Add: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipAddUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountRemoveUnion{
+					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipsAccountReplaceUnion{
+					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipReplaceUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
