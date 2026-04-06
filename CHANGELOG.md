@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.4.0-alpha (2026-04-01)
+
+Full Changelog: [v0.3.2-alpha...v0.4.0-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.2-alpha...v0.4.0-alpha)
+
+### Features
+
+* **internal:** support comma format in multipart form encoding ([6c1ac2b](https://github.com/Lightfld/lightfield-go/commit/6c1ac2b645da5624342ffd6aa13bf2698cb89792))
+
+
+### Bug Fixes
+
+* prevent duplicate ? in query params ([fee8c86](https://github.com/Lightfld/lightfield-go/commit/fee8c862dee85bd5eca1da91e2b21aceaa9f9f36))
+
+
+### Chores
+
+* **ci:** skip lint on metadata-only changes ([7fa9b66](https://github.com/Lightfld/lightfield-go/commit/7fa9b669a8092772f68ac76f16f80c392356db41))
+* **ci:** support opting out of skipping builds on metadata-only commits ([b04ed47](https://github.com/Lightfld/lightfield-go/commit/b04ed47c747aabf5bd42621263902b157bc730e7))
+* **client:** fix multipart serialisation of Default() fields ([bc57e6b](https://github.com/Lightfld/lightfield-go/commit/bc57e6b350de76af5b88c200ca420bf67c01c262))
+* **internal:** support default value struct tag ([7815165](https://github.com/Lightfld/lightfield-go/commit/7815165c6a32d54c7eee5824a800210619c3d0ca))
+* **internal:** update gitignore ([0652d9f](https://github.com/Lightfld/lightfield-go/commit/0652d9f5502e92e34bbc0b9d2e015d78a6e61362))
+* remove unnecessary error check for url parsing ([6d7b968](https://github.com/Lightfld/lightfield-go/commit/6d7b9682aa567df9348a014ea17aebaa0d9a9741))
+* **tests:** bump steady to v0.19.4 ([49d9f32](https://github.com/Lightfld/lightfield-go/commit/49d9f3258f142d2af9161ea3606dbd4e4e2ce25b))
+* **tests:** bump steady to v0.19.5 ([19a61c4](https://github.com/Lightfld/lightfield-go/commit/19a61c41f15de858dadce3eb14966ea0630efe02))
+* **tests:** bump steady to v0.19.6 ([316f8f7](https://github.com/Lightfld/lightfield-go/commit/316f8f783b16e1dd489120a5c8febc04c6e91479))
+* **tests:** bump steady to v0.19.7 ([50e6868](https://github.com/Lightfld/lightfield-go/commit/50e6868bea14dfb128c819c03ce370f7b97635df))
+* **tests:** bump steady to v0.20.1 ([4a81542](https://github.com/Lightfld/lightfield-go/commit/4a815429f090e538643fded4635a2db1a2b360c4))
+* **tests:** bump steady to v0.20.2 ([8d20577](https://github.com/Lightfld/lightfield-go/commit/8d2057778c157efa0d48febbf0523e658856c802))
+* update docs for api:"required" ([d3b127d](https://github.com/Lightfld/lightfield-go/commit/d3b127d488f28c4c5107267e9955c26c29d5a148))
+
 ## 0.3.2-alpha (2026-03-20)
 
 Full Changelog: [v0.3.1-alpha...v0.3.2-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.1-alpha...v0.3.2-alpha)
