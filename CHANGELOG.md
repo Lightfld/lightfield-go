@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.4.1-alpha (2026-04-17)
+
+Full Changelog: [v0.4.0-alpha...v0.4.1-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.4.0-alpha...v0.4.1-alpha)
+
+### Bug Fixes
+
+* **api:** tighten object API schemas and remove recursive JsonValue from OpenAPI ([50eb8ac](https://github.com/Lightfld/lightfield-go/commit/50eb8ac0546d7c2c51ca7b4cf57b5ba3bd27c9e2))
+
 ## 0.4.0-alpha (2026-04-01)
 
 Full Changelog: [v0.3.2-alpha...v0.4.0-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.3.2-alpha...v0.4.0-alpha)
