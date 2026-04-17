@@ -23,15 +23,36 @@ type Client struct {
 	// Contacts represent individual people in Lightfield. Contacts can be associated
 	// with one or more accounts.
 	Contact ContactService
+	// Lists are curated collections of accounts, contacts, or opportunities in
+	// Lightfield. Each list contains entities of a single type.
+	List ListService
+	// Meetings represent synced or manually created interactions in Lightfield. Read
+	// responses are privacy-aware and may be redacted based on the caller. For
+	// transcript uploads and attachment flows, see
+	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
+	Meeting MeetingService
+	// Notes represent free-form text records in Lightfield. Each note can be
+	// associated with zero or more accounts and opportunities.
+	Note NoteService
 	// Opportunities represent potential deals or sales in Lightfield. Each opportunity
 	// belongs to an account and can have tasks and notes associated with it.
 	Opportunity OpportunityService
+	// Tasks represent action items in Lightfield. Each task belongs to an account, is
+	// assigned to a member, and can optionally be associated with an opportunity.
+	Task TaskService
 	// Members represent users in your Lightfield workspace. Members can own accounts
 	// and opportunities, and are referenced in relationships like `$owner` and
 	// `$createdBy`.
 	Member MemberService
 	// Workflow runs represent executions of automated workflows.
 	WorkflowRun WorkflowRunService
+	// Files are used to upload documents via presigned URLs. After uploading and
+	// completing a file, link it to resources through their own APIs (e.g. attach a
+	// transcript to a meeting). See
+	// <u>[File uploads](/using-the-api/file-uploads/)</u> for the full upload flow and
+	// supported purposes. For meeting transcript attachments, see
+	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
+	File FileService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -55,9 +76,14 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
+	r.List = NewListService(opts...)
+	r.Meeting = NewMeetingService(opts...)
+	r.Note = NewNoteService(opts...)
 	r.Opportunity = NewOpportunityService(opts...)
+	r.Task = NewTaskService(opts...)
 	r.Member = NewMemberService(opts...)
 	r.WorkflowRun = NewWorkflowRunService(opts...)
+	r.File = NewFileService(opts...)
 
 	return
 }

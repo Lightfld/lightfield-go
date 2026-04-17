@@ -28,7 +28,7 @@ Or to pin the version:
 <!-- x-release-please-start-version -->
 
 ```sh
-go get -u 'github.com/Lightfld/lightfield-go@v0.4.0-alpha'
+go get -u 'github.com/Lightfld/lightfield-go@v0.4.1-alpha'
 ```
 
 <!-- x-release-please-end -->
@@ -62,9 +62,7 @@ func main() {
 				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
 			},
 			"$industry": {
-				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
-					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
-				}},
+				OfStringArray: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
 			},
 		},
 	})
@@ -355,16 +353,10 @@ client.Account.New(
 				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
 			},
 			"$website": {
-				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
-					OfString: githubcomlightfldlightfieldgo.String("https://acme.com"),
-				}},
+				OfStringArray: []string{"https://acme.com"},
 			},
 			"$industry": {
-				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
-					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
-				}, {
-					OfString: githubcomlightfldlightfieldgo.String("opt_01h4b7c9d2e5f8g1j3k6m0n4p"),
-				}},
+				OfStringArray: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u", "opt_01h4b7c9d2e5f8g1j3k6m0n4p"},
 			},
 			"$headcount": {
 				OfString: githubcomlightfldlightfieldgo.String("opt_01r5t8y2u6i9o3p7a1s4d6f8g"),
@@ -373,22 +365,11 @@ client.Account.New(
 				OfString: githubcomlightfldlightfieldgo.String("https://linkedin.com/company/acme"),
 			},
 			"$primaryAddress": {
-				OfAccountNewsFieldMapMap: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldMapItemUnion{
-					"street": {
-						OfString: githubcomlightfldlightfieldgo.String("123 Market St"),
-					},
-					"city": {
-						OfString: githubcomlightfldlightfieldgo.String("San Francisco"),
-					},
-					"state": {
-						OfString: githubcomlightfldlightfieldgo.String("CA"),
-					},
-					"zip": {
-						OfString: githubcomlightfldlightfieldgo.String("94105"),
-					},
-					"country": {
-						OfString: githubcomlightfldlightfieldgo.String("US"),
-					},
+				OfAddress: &githubcomlightfldlightfieldgo.AccountNewParamsFieldAddress{
+					Street:  githubcomlightfldlightfieldgo.String("123 Market St"),
+					City:    githubcomlightfldlightfieldgo.String("San Francisco"),
+					State:   githubcomlightfldlightfieldgo.String("CA"),
+					Country: githubcomlightfldlightfieldgo.String("US"),
 				},
 			},
 		},
