@@ -30,9 +30,7 @@ func TestUsage(t *testing.T) {
 				OfString: githubcomlightfldlightfieldgo.String("Acme Corp"),
 			},
 			"$industry": {
-				OfAccountNewsFieldArray: []githubcomlightfldlightfieldgo.AccountNewParamsFieldArrayItemUnion{{
-					OfString: githubcomlightfldlightfieldgo.String("opt_01j0x6q3m9v2p4t7k8n5r1s2u"),
-				}},
+				OfStringArray: []string{"opt_01j0x6q3m9v2p4t7k8n5r1s2u"},
 			},
 		},
 	})

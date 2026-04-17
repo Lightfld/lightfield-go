@@ -19,128 +19,127 @@ import (
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
-// Contacts represent individual people in Lightfield. Contacts can be associated
-// with one or more accounts.
+// Tasks represent action items in Lightfield. Each task belongs to an account, is
+// assigned to a member, and can optionally be associated with an opportunity.
 //
-// ContactService contains methods and other services that help with interacting
-// with the Lightfield API.
+// TaskService contains methods and other services that help with interacting with
+// the Lightfield API.
 //
 // Note, unlike clients, this service does not read variables from the environment
 // automatically. You should not instantiate this service directly, and instead use
-// the [NewContactService] method instead.
-type ContactService struct {
+// the [NewTaskService] method instead.
+type TaskService struct {
 	Options []option.RequestOption
 }
 
-// NewContactService generates a new service that applies the given options to each
+// NewTaskService generates a new service that applies the given options to each
 // request. These options are applied after the parent client's options (if there
 // is one), and before any request-specific options.
-func NewContactService(opts ...option.RequestOption) (r ContactService) {
-	r = ContactService{}
+func NewTaskService(opts ...option.RequestOption) (r TaskService) {
+	r = TaskService{}
 	r.Options = opts
 	return
 }
 
-// Creates a new contact record.
+// Creates a new task record. The `$title` and `$status` fields and the
+// `$assignedTo` relationship are required.
 //
-// After creation, Lightfield automatically enriches the contact in the background.
+// If `$createdBy` is omitted it defaults to the authenticated user. The `$note`
+// relationship is read-only — manage notes via their own relationships.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
-// To avoid duplicates, we recommend a find-or-create pattern — use
-// <u>[list filtering](/using-the-api/list-endpoints/#filtering)</u> to check if a
-// record exists before creating.
-//
-// **[Required scope](/using-the-api/scopes/):** `contacts:create`
+// **[Required scope](/using-the-api/scopes/):** `tasks:create`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *ContactService) New(ctx context.Context, body ContactNewParams, opts ...option.RequestOption) (res *ContactCreateResponse, err error) {
+func (r *TaskService) New(ctx context.Context, body TaskNewParams, opts ...option.RequestOption) (res *TaskCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts"
+	path := "v1/tasks"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
-// Retrieves a single contact by its ID.
+// Retrieves a single task by its ID.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+// **[Required scope](/using-the-api/scopes/):** `tasks:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *ContactService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactRetrieveResponse, err error) {
+func (r *TaskService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *TaskRetrieveResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
+	path := fmt.Sprintf("v1/tasks/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-// Updates an existing contact by ID. Only included fields and relationships are
+// Updates an existing task by ID. Only included fields and relationships are
 // modified.
+//
+// The `$note` relationship is read-only — manage notes via their own
+// relationships.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:update`
+// **[Required scope](/using-the-api/scopes/):** `tasks:update`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *ContactService) Update(ctx context.Context, id string, body ContactUpdateParams, opts ...option.RequestOption) (res *ContactUpdateResponse, err error) {
+func (r *TaskService) Update(ctx context.Context, id string, body TaskUpdateParams, opts ...option.RequestOption) (res *TaskUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
+	path := fmt.Sprintf("v1/tasks/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
-// Returns a paginated list of contacts. Use `offset` and `limit` to paginate
-// through results, and `$field` query parameters to filter. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
-// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// Returns a paginated list of tasks. Use `offset` and `limit` to paginate through
+// results. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about pagination.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+// **[Required scope](/using-the-api/scopes/):** `tasks:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Search
-func (r *ContactService) List(ctx context.Context, query ContactListParams, opts ...option.RequestOption) (res *ContactListResponse, err error) {
+func (r *TaskService) List(ctx context.Context, query TaskListParams, opts ...option.RequestOption) (res *TaskListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts"
+	path := "v1/tasks"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
-// Returns the schema for all field and relationship definitions available on
-// contacts, including both system-defined and custom fields. Useful for
-// understanding the shape of contact data before creating or updating records. See
+// Returns the schema for the field and relationship definitions available on
+// tasks. Useful for understanding the shape of task data before creating or
+// updating records. See
 // <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 // more details.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+// **[Required scope](/using-the-api/scopes/):** `tasks:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *ContactService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *ContactDefinitionsResponse, err error) {
+func (r *TaskService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *TaskDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts/definitions"
+	path := "v1/tasks/definitions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-type ContactCreateResponse struct {
+type TaskCreateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactCreateResponseField `json:"fields" api:"required"`
+	Fields map[string]TaskCreateResponseField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactCreateResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]TaskCreateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -160,14 +159,14 @@ type ContactCreateResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponse) UnmarshalJSON(data []byte) error {
+func (r TaskCreateResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseField struct {
+type TaskCreateResponseField struct {
 	// The field value, or null if unset.
-	Value ContactCreateResponseFieldValueUnion `json:"value" api:"required"`
+	Value TaskCreateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -184,21 +183,20 @@ type ContactCreateResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseField) UnmarshalJSON(data []byte) error {
+func (r TaskCreateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *TaskCreateResponseField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// ContactCreateResponseFieldValueUnion contains all possible properties and values
+// TaskCreateResponseFieldValueUnion contains all possible properties and values
 // from [string], [float64], [bool], [[]string],
-// [ContactCreateResponseFieldValueAddress],
-// [ContactCreateResponseFieldValueFullName].
+// [TaskCreateResponseFieldValueAddress], [TaskCreateResponseFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactCreateResponseFieldValueUnion struct {
+type TaskCreateResponseFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -207,25 +205,25 @@ type ContactCreateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [TaskCreateResponseFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [ContactCreateResponseFieldValueFullName].
+	// This field is from variant [TaskCreateResponseFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [ContactCreateResponseFieldValueFullName].
+	// This field is from variant [TaskCreateResponseFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -246,44 +244,44 @@ type ContactCreateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsString() (v string) {
+func (u TaskCreateResponseFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u TaskCreateResponseFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsBool() (v bool) {
+func (u TaskCreateResponseFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u TaskCreateResponseFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsAddress() (v ContactCreateResponseFieldValueAddress) {
+func (u TaskCreateResponseFieldValueUnion) AsAddress() (v TaskCreateResponseFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsFullName() (v ContactCreateResponseFieldValueFullName) {
+func (u TaskCreateResponseFieldValueUnion) AsFullName() (v TaskCreateResponseFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u ContactCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u TaskCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *ContactCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *TaskCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseFieldValueAddress struct {
+type TaskCreateResponseFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -316,12 +314,12 @@ type ContactCreateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r TaskCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *TaskCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseFieldValueFullName struct {
+type TaskCreateResponseFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -336,12 +334,12 @@ type ContactCreateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r TaskCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *TaskCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseRelationship struct {
+type TaskCreateResponseRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -359,18 +357,18 @@ type ContactCreateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r TaskCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *TaskCreateResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactDefinitionsResponse struct {
+type TaskDefinitionsResponse struct {
 	// Map of field keys to their definitions, including both system and custom fields.
-	FieldDefinitions map[string]ContactDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	FieldDefinitions map[string]TaskDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
 	// The object type these definitions belong to (e.g. `account`).
 	ObjectType string `json:"objectType" api:"required"`
 	// Map of relationship keys to their definitions.
-	RelationshipDefinitions map[string]ContactDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	RelationshipDefinitions map[string]TaskDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		FieldDefinitions        respjson.Field
@@ -382,18 +380,18 @@ type ContactDefinitionsResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponse) UnmarshalJSON(data []byte) error {
+func (r TaskDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactDefinitionsResponseFieldDefinition struct {
+type TaskDefinitionsResponseFieldDefinition struct {
 	// Description of the field, or null.
 	Description string `json:"description" api:"required"`
 	// Human-readable display name of the field.
 	Label string `json:"label" api:"required"`
 	// Type-specific configuration (e.g. select options, currency code).
-	TypeConfiguration ContactDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	TypeConfiguration TaskDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
 	// Data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -419,13 +417,13 @@ type ContactDefinitionsResponseFieldDefinition struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+func (r TaskDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Type-specific configuration (e.g. select options, currency code).
-type ContactDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+type TaskDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 	// ISO 4217 3-letter currency code.
 	Currency string `json:"currency"`
 	// Social platform associated with this handle field.
@@ -435,7 +433,7 @@ type ContactDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 	// Whether this field accepts multiple values.
 	MultipleValues bool `json:"multipleValues"`
 	// Available options for select fields.
-	Options []ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	Options []TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
 	// Whether values for this field must be unique.
 	Unique bool `json:"unique"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -451,14 +449,12 @@ type ContactDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
-	return r.JSON.raw
-}
-func (r *ContactDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+func (r TaskDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+type TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	// Unique identifier of the select option.
 	ID string `json:"id" api:"required"`
 	// Human-readable display name of the option.
@@ -476,14 +472,14 @@ type ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+func (r TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
 	return r.JSON.raw
 }
-func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+func (r *TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactDefinitionsResponseRelationshipDefinition struct {
+type TaskDefinitionsResponseRelationshipDefinition struct {
 	// Whether this is a `has_one` or `has_many` relationship.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -509,14 +505,14 @@ type ContactDefinitionsResponseRelationshipDefinition struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+func (r TaskDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactListResponse struct {
+type TaskListResponse struct {
 	// Array of entity objects for the current page.
-	Data []ContactListResponseData `json:"data" api:"required"`
+	Data []TaskListResponseData `json:"data" api:"required"`
 	// The object type, always `"list"`.
 	Object string `json:"object" api:"required"`
 	// Total number of entities matching the query.
@@ -532,24 +528,24 @@ type ContactListResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponse) UnmarshalJSON(data []byte) error {
+func (r TaskListResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactListResponseData struct {
+type TaskListResponseData struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactListResponseDataField `json:"fields" api:"required"`
+	Fields map[string]TaskListResponseDataField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactListResponseDataRelationship `json:"relationships" api:"required"`
+	Relationships map[string]TaskListResponseDataRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -569,14 +565,14 @@ type ContactListResponseData struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponseData) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseData) UnmarshalJSON(data []byte) error {
+func (r TaskListResponseData) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponseData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactListResponseDataField struct {
+type TaskListResponseDataField struct {
 	// The field value, or null if unset.
-	Value ContactListResponseDataFieldValueUnion `json:"value" api:"required"`
+	Value TaskListResponseDataFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -593,493 +589,21 @@ type ContactListResponseDataField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponseDataField) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataField) UnmarshalJSON(data []byte) error {
+func (r TaskListResponseDataField) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponseDataField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// ContactListResponseDataFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [ContactListResponseDataFieldValueAddress],
-// [ContactListResponseDataFieldValueFullName].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactListResponseDataFieldValueUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]string] instead of an object.
-	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	City string `json:"city"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Country string `json:"country"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	State string `json:"state"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Street string `json:"street"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Street2 string `json:"street2"`
-	// This field is from variant [ContactListResponseDataFieldValueFullName].
-	FirstName string `json:"firstName"`
-	// This field is from variant [ContactListResponseDataFieldValueFullName].
-	LastName string `json:"lastName"`
-	JSON     struct {
-		OfString      respjson.Field
-		OfFloat       respjson.Field
-		OfBool        respjson.Field
-		OfStringArray respjson.Field
-		City          respjson.Field
-		Country       respjson.Field
-		Latitude      respjson.Field
-		Longitude     respjson.Field
-		PostalCode    respjson.Field
-		State         respjson.Field
-		Street        respjson.Field
-		Street2       respjson.Field
-		FirstName     respjson.Field
-		LastName      respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsStringArray() (v []string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsAddress() (v ContactListResponseDataFieldValueAddress) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsFullName() (v ContactListResponseDataFieldValueFullName) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u ContactListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *ContactListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataFieldValueAddress struct {
-	// City name.
-	City string `json:"city" api:"nullable"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country string `json:"country" api:"nullable"`
-	// Latitude coordinate.
-	Latitude float64 `json:"latitude" api:"nullable"`
-	// Longitude coordinate.
-	Longitude float64 `json:"longitude" api:"nullable"`
-	// Postal or ZIP code.
-	PostalCode string `json:"postalCode" api:"nullable"`
-	// State or province.
-	State string `json:"state" api:"nullable"`
-	// Street address line 1.
-	Street string `json:"street" api:"nullable"`
-	// Street address line 2.
-	Street2 string `json:"street2" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		City        respjson.Field
-		Country     respjson.Field
-		Latitude    respjson.Field
-		Longitude   respjson.Field
-		PostalCode  respjson.Field
-		State       respjson.Field
-		Street      respjson.Field
-		Street2     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataFieldValueFullName struct {
-	// The contact's first name.
-	FirstName string `json:"firstName" api:"nullable"`
-	// The contact's last name.
-	LastName string `json:"lastName" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		FirstName   respjson.Field
-		LastName    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataRelationship struct {
-	// Whether the relationship is `has_one` or `has_many`.
-	Cardinality string `json:"cardinality" api:"required"`
-	// The type of the related object (e.g. `account`, `contact`).
-	ObjectType string `json:"objectType" api:"required"`
-	// IDs of the related entities.
-	Values []string `json:"values" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Cardinality respjson.Field
-		ObjectType  respjson.Field
-		Values      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataRelationship) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponse struct {
-	// Unique identifier for the entity.
-	ID string `json:"id" api:"required"`
-	// ISO 8601 timestamp of when the entity was created.
-	CreatedAt string `json:"createdAt" api:"required"`
-	// Map of field names to their typed values. System fields are prefixed with `$`
-	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactRetrieveResponseField `json:"fields" api:"required"`
-	// URL to view the entity in the Lightfield web app, or null.
-	HTTPLink string `json:"httpLink" api:"required"`
-	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactRetrieveResponseRelationship `json:"relationships" api:"required"`
-	// ISO 8601 timestamp of when the entity was last updated, or null.
-	UpdatedAt string `json:"updatedAt" api:"required"`
-	// External identifier for the entity, or null if unset.
-	ExternalID string `json:"externalId" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID            respjson.Field
-		CreatedAt     respjson.Field
-		Fields        respjson.Field
-		HTTPLink      respjson.Field
-		Relationships respjson.Field
-		UpdatedAt     respjson.Field
-		ExternalID    respjson.Field
-		ExtraFields   map[string]respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseField struct {
-	// The field value, or null if unset.
-	Value ContactRetrieveResponseFieldValueUnion `json:"value" api:"required"`
-	// The data type of the field.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Value       respjson.Field
-		ValueType   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseField) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ContactRetrieveResponseFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [ContactRetrieveResponseFieldValueAddress],
-// [ContactRetrieveResponseFieldValueFullName].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactRetrieveResponseFieldValueUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]string] instead of an object.
-	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	City string `json:"city"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Country string `json:"country"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	State string `json:"state"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Street string `json:"street"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Street2 string `json:"street2"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
-	FirstName string `json:"firstName"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
-	LastName string `json:"lastName"`
-	JSON     struct {
-		OfString      respjson.Field
-		OfFloat       respjson.Field
-		OfBool        respjson.Field
-		OfStringArray respjson.Field
-		City          respjson.Field
-		Country       respjson.Field
-		Latitude      respjson.Field
-		Longitude     respjson.Field
-		PostalCode    respjson.Field
-		State         respjson.Field
-		Street        respjson.Field
-		Street2       respjson.Field
-		FirstName     respjson.Field
-		LastName      respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsAddress() (v ContactRetrieveResponseFieldValueAddress) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsFullName() (v ContactRetrieveResponseFieldValueFullName) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u ContactRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *ContactRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseFieldValueAddress struct {
-	// City name.
-	City string `json:"city" api:"nullable"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country string `json:"country" api:"nullable"`
-	// Latitude coordinate.
-	Latitude float64 `json:"latitude" api:"nullable"`
-	// Longitude coordinate.
-	Longitude float64 `json:"longitude" api:"nullable"`
-	// Postal or ZIP code.
-	PostalCode string `json:"postalCode" api:"nullable"`
-	// State or province.
-	State string `json:"state" api:"nullable"`
-	// Street address line 1.
-	Street string `json:"street" api:"nullable"`
-	// Street address line 2.
-	Street2 string `json:"street2" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		City        respjson.Field
-		Country     respjson.Field
-		Latitude    respjson.Field
-		Longitude   respjson.Field
-		PostalCode  respjson.Field
-		State       respjson.Field
-		Street      respjson.Field
-		Street2     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseFieldValueFullName struct {
-	// The contact's first name.
-	FirstName string `json:"firstName" api:"nullable"`
-	// The contact's last name.
-	LastName string `json:"lastName" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		FirstName   respjson.Field
-		LastName    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseRelationship struct {
-	// Whether the relationship is `has_one` or `has_many`.
-	Cardinality string `json:"cardinality" api:"required"`
-	// The type of the related object (e.g. `account`, `contact`).
-	ObjectType string `json:"objectType" api:"required"`
-	// IDs of the related entities.
-	Values []string `json:"values" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Cardinality respjson.Field
-		ObjectType  respjson.Field
-		Values      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateResponse struct {
-	// Unique identifier for the entity.
-	ID string `json:"id" api:"required"`
-	// ISO 8601 timestamp of when the entity was created.
-	CreatedAt string `json:"createdAt" api:"required"`
-	// Map of field names to their typed values. System fields are prefixed with `$`
-	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactUpdateResponseField `json:"fields" api:"required"`
-	// URL to view the entity in the Lightfield web app, or null.
-	HTTPLink string `json:"httpLink" api:"required"`
-	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactUpdateResponseRelationship `json:"relationships" api:"required"`
-	// ISO 8601 timestamp of when the entity was last updated, or null.
-	UpdatedAt string `json:"updatedAt" api:"required"`
-	// External identifier for the entity, or null if unset.
-	ExternalID string `json:"externalId" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID            respjson.Field
-		CreatedAt     respjson.Field
-		Fields        respjson.Field
-		HTTPLink      respjson.Field
-		Relationships respjson.Field
-		UpdatedAt     respjson.Field
-		ExternalID    respjson.Field
-		ExtraFields   map[string]respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactUpdateResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateResponseField struct {
-	// The field value, or null if unset.
-	Value ContactUpdateResponseFieldValueUnion `json:"value" api:"required"`
-	// The data type of the field.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Value       respjson.Field
-		ValueType   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseField) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ContactUpdateResponseFieldValueUnion contains all possible properties and values
+// TaskListResponseDataFieldValueUnion contains all possible properties and values
 // from [string], [float64], [bool], [[]string],
-// [ContactUpdateResponseFieldValueAddress],
-// [ContactUpdateResponseFieldValueFullName].
+// [TaskListResponseDataFieldValueAddress],
+// [TaskListResponseDataFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactUpdateResponseFieldValueUnion struct {
+type TaskListResponseDataFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -1088,25 +612,25 @@ type ContactUpdateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [TaskListResponseDataFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [ContactUpdateResponseFieldValueFullName].
+	// This field is from variant [TaskListResponseDataFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [ContactUpdateResponseFieldValueFullName].
+	// This field is from variant [TaskListResponseDataFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -1127,44 +651,44 @@ type ContactUpdateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsString() (v string) {
+func (u TaskListResponseDataFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u TaskListResponseDataFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsBool() (v bool) {
+func (u TaskListResponseDataFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u TaskListResponseDataFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsAddress() (v ContactUpdateResponseFieldValueAddress) {
+func (u TaskListResponseDataFieldValueUnion) AsAddress() (v TaskListResponseDataFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsFullName() (v ContactUpdateResponseFieldValueFullName) {
+func (u TaskListResponseDataFieldValueUnion) AsFullName() (v TaskListResponseDataFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u ContactUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u TaskListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *ContactUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *TaskListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseFieldValueAddress struct {
+type TaskListResponseDataFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -1197,12 +721,12 @@ type ContactUpdateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r TaskListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseFieldValueFullName struct {
+type TaskListResponseDataFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -1217,12 +741,12 @@ type ContactUpdateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r TaskListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseRelationship struct {
+type TaskListResponseDataRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -1240,286 +764,674 @@ type ContactUpdateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r TaskListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
+func (r *TaskListResponseDataRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactNewParams struct {
-	// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
-	// `$name`); custom attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
-	// discover available fields and their types. See
+type TaskRetrieveResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]TaskRetrieveResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]TaskRetrieveResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskRetrieveResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskRetrieveResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskRetrieveResponseField struct {
+	// The field value, or null if unset.
+	Value TaskRetrieveResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskRetrieveResponseField) RawJSON() string { return r.JSON.raw }
+func (r *TaskRetrieveResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// TaskRetrieveResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [TaskRetrieveResponseFieldValueAddress],
+// [TaskRetrieveResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type TaskRetrieveResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [TaskRetrieveResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [TaskRetrieveResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [TaskRetrieveResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsAddress() (v TaskRetrieveResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskRetrieveResponseFieldValueUnion) AsFullName() (v TaskRetrieveResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u TaskRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *TaskRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskRetrieveResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *TaskRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskRetrieveResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *TaskRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskRetrieveResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *TaskRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskUpdateResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]TaskUpdateResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]TaskUpdateResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskUpdateResponseField struct {
+	// The field value, or null if unset.
+	Value TaskUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskUpdateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *TaskUpdateResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// TaskUpdateResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [TaskUpdateResponseFieldValueAddress], [TaskUpdateResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type TaskUpdateResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [TaskUpdateResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [TaskUpdateResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [TaskUpdateResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsAddress() (v TaskUpdateResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskUpdateResponseFieldValueUnion) AsFullName() (v TaskUpdateResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u TaskUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *TaskUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskUpdateResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *TaskUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskUpdateResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *TaskUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskUpdateResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *TaskUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskNewParams struct {
+	// Field values for the new task. Tasks only support the documented system fields,
+	// all prefixed with `$` (e.g. `$title`, `$status`). Required: `$title` (string)
+	// and `$status` (one of `TODO`, `IN_PROGRESS`, `COMPLETE`, `CANCELLED`). Call the
+	// <u>[definitions endpoint](/api/resources/task/methods/definitions)</u> to
+	// discover the available fields. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields map[string]ContactNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
-	// Relationships to set on the new contact. System relationships use a `$` prefix
-	// (e.g. `$account`); custom relationships use their bare slug. Each value is a
-	// single entity ID or an array of IDs. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
-	// list available relationship keys.
-	Relationships map[string]ContactNewParamsRelationshipUnion `json:"relationships,omitzero"`
+	Fields TaskNewParamsFields `json:"fields,omitzero" api:"required"`
+	// Relationships to set on the new task. System relationships use a `$` prefix
+	// (e.g. `$account`, `$assignedTo`); custom relationships use their bare slug.
+	// `$assignedTo` is required. Each value is a single entity ID or an array of IDs.
+	// Call the <u>[definitions endpoint](/api/resources/task/methods/definitions)</u>
+	// to list available relationship keys.
+	Relationships map[string]TaskNewParamsRelationshipUnion `json:"relationships,omitzero" api:"required"`
 	paramObj
 }
 
-func (r ContactNewParams) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParams
+func (r TaskNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow TaskNewParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
+func (r *TaskNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Field values for the new task. Tasks only support the documented system fields,
+// all prefixed with `$` (e.g. `$title`, `$status`). Required: `$title` (string)
+// and `$status` (one of `TODO`, `IN_PROGRESS`, `COMPLETE`, `CANCELLED`). Call the
+// <u>[definitions endpoint](/api/resources/task/methods/definitions)</u> to
+// discover the available fields. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// value type details.
+//
+// The properties Status, Title are required.
+type TaskNewParamsFields struct {
+	// Task status. One of: `TODO`, `IN_PROGRESS`, `COMPLETE`, `CANCELLED`.
+	Status string `json:"$status" api:"required"`
+	// Title of the task.
+	Title string `json:"$title" api:"required"`
+	// Description of the task in markdown format.
+	Description param.Opt[string] `json:"$description,omitzero"`
+	// Due date as an ISO 8601 datetime string.
+	DueAt param.Opt[string] `json:"$dueAt,omitzero"`
+	paramObj
+}
+
+func (r TaskNewParamsFields) MarshalJSON() (data []byte, err error) {
+	type shadow TaskNewParamsFields
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *TaskNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsFieldUnion struct {
-	OfString      param.Opt[string]              `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]             `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                `json:",omitzero,inline"`
-	OfStringArray []string                       `json:",omitzero,inline"`
-	OfAddress     *ContactNewParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *ContactNewParamsFieldFullName `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u ContactNewParamsFieldUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString,
-		u.OfFloat,
-		u.OfBool,
-		u.OfStringArray,
-		u.OfAddress,
-		u.OfFullName)
-}
-func (u *ContactNewParamsFieldUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-type ContactNewParamsFieldAddress struct {
-	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
-	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
-	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
-	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
-	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
-	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
-	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
-	paramObj
-}
-
-func (r ContactNewParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParamsFieldAddress
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactNewParamsFieldAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactNewParamsFieldFullName struct {
-	// The contact's first name.
-	FirstName param.Opt[string] `json:"firstName,omitzero"`
-	// The contact's last name.
-	LastName param.Opt[string] `json:"lastName,omitzero"`
-	paramObj
-}
-
-func (r ContactNewParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParamsFieldFullName
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactNewParamsFieldFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsRelationshipUnion struct {
+type TaskNewParamsRelationshipUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
+func (u TaskNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
+func (u *TaskNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type ContactUpdateParams struct {
+type TaskUpdateParams struct {
 	// Field values to update — only provided fields are modified; omitted fields are
-	// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
-	// attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> for
-	// available fields and types. See
+	// left unchanged. Tasks only support the documented system fields, all prefixed
+	// with `$` (e.g. `$title`, `$status`). Call the
+	// <u>[definitions endpoint](/api/resources/task/methods/definitions)</u> for
+	// available fields. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
-	Fields map[string]ContactUpdateParamsFieldUnion `json:"fields,omitzero"`
+	Fields TaskUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$account`). Each value is an operation object with `add`, `remove`, or
-	// `replace`.
-	Relationships map[string]ContactUpdateParamsRelationship `json:"relationships,omitzero"`
+	// `$account`, `$assignedTo`). Each value is an operation object with `add`,
+	// `remove`, or `replace`.
+	Relationships map[string]TaskUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParams) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParams
+func (r TaskUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow TaskUpdateParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParams) UnmarshalJSON(data []byte) error {
+func (r *TaskUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsFieldUnion struct {
-	OfString      param.Opt[string]                 `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]                `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                   `json:",omitzero,inline"`
-	OfStringArray []string                          `json:",omitzero,inline"`
-	OfAddress     *ContactUpdateParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *ContactUpdateParamsFieldFullName `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u ContactUpdateParamsFieldUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString,
-		u.OfFloat,
-		u.OfBool,
-		u.OfStringArray,
-		u.OfAddress,
-		u.OfFullName)
-}
-func (u *ContactUpdateParamsFieldUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-type ContactUpdateParamsFieldAddress struct {
-	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
-	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
-	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
-	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
-	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
-	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
-	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
+// Field values to update — only provided fields are modified; omitted fields are
+// left unchanged. Tasks only support the documented system fields, all prefixed
+// with `$` (e.g. `$title`, `$status`). Call the
+// <u>[definitions endpoint](/api/resources/task/methods/definitions)</u> for
+// available fields. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// value type details.
+type TaskUpdateParamsFields struct {
+	// Description of the task in markdown format.
+	Description param.Opt[string] `json:"$description,omitzero"`
+	// Due date as an ISO 8601 datetime string.
+	DueAt param.Opt[string] `json:"$dueAt,omitzero"`
+	// Task status. One of: `TODO`, `IN_PROGRESS`, `COMPLETE`, `CANCELLED`.
+	Status param.Opt[string] `json:"$status,omitzero"`
+	// Title of the task.
+	Title param.Opt[string] `json:"$title,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsFieldAddress
+func (r TaskUpdateParamsFields) MarshalJSON() (data []byte, err error) {
+	type shadow TaskUpdateParamsFields
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsFieldAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateParamsFieldFullName struct {
-	// The contact's first name.
-	FirstName param.Opt[string] `json:"firstName,omitzero"`
-	// The contact's last name.
-	LastName param.Opt[string] `json:"lastName,omitzero"`
-	paramObj
-}
-
-func (r ContactUpdateParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsFieldFullName
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error {
+func (r *TaskUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
-type ContactUpdateParamsRelationship struct {
+type TaskUpdateParamsRelationship struct {
 	// Entity ID(s) to add to the relationship.
-	Add ContactUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	Add TaskUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
-	Remove ContactUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
+	Remove TaskUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
 	// Entity ID(s) to set as the entire relationship, replacing all existing
 	// associations.
-	Replace ContactUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
+	Replace TaskUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsRelationship
+func (r TaskUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
+	type shadow TaskUpdateParamsRelationship
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
+func (r *TaskUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipAddUnion struct {
+type TaskUpdateParamsRelationshipAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
+func (u TaskUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
+func (u *TaskUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipRemoveUnion struct {
+type TaskUpdateParamsRelationshipRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u TaskUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *TaskUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipReplaceUnion struct {
+type TaskUpdateParamsRelationshipReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u TaskUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *TaskUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type ContactListParams struct {
+type TaskListParams struct {
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
@@ -1527,8 +1439,8 @@ type ContactListParams struct {
 	paramObj
 }
 
-// URLQuery serializes [ContactListParams]'s query parameters as `url.Values`.
-func (r ContactListParams) URLQuery() (v url.Values, err error) {
+// URLQuery serializes [TaskListParams]'s query parameters as `url.Values`.
+func (r TaskListParams) URLQuery() (v url.Values, err error) {
 	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,

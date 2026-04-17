@@ -19,128 +19,109 @@ import (
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
-// Contacts represent individual people in Lightfield. Contacts can be associated
-// with one or more accounts.
+// Notes represent free-form text records in Lightfield. Each note can be
+// associated with zero or more accounts and opportunities.
 //
-// ContactService contains methods and other services that help with interacting
-// with the Lightfield API.
+// NoteService contains methods and other services that help with interacting with
+// the Lightfield API.
 //
 // Note, unlike clients, this service does not read variables from the environment
 // automatically. You should not instantiate this service directly, and instead use
-// the [NewContactService] method instead.
-type ContactService struct {
+// the [NewNoteService] method instead.
+type NoteService struct {
 	Options []option.RequestOption
 }
 
-// NewContactService generates a new service that applies the given options to each
+// NewNoteService generates a new service that applies the given options to each
 // request. These options are applied after the parent client's options (if there
 // is one), and before any request-specific options.
-func NewContactService(opts ...option.RequestOption) (r ContactService) {
-	r = ContactService{}
+func NewNoteService(opts ...option.RequestOption) (r NoteService) {
+	r = NoteService{}
 	r.Options = opts
 	return
 }
 
-// Creates a new contact record.
+// Creates a new note record.
 //
-// After creation, Lightfield automatically enriches the contact in the background.
+// The note author is automatically set to the API key owner.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
-// To avoid duplicates, we recommend a find-or-create pattern — use
-// <u>[list filtering](/using-the-api/list-endpoints/#filtering)</u> to check if a
-// record exists before creating.
-//
-// **[Required scope](/using-the-api/scopes/):** `contacts:create`
+// **[Required scope](/using-the-api/scopes/):** `notes:create`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *ContactService) New(ctx context.Context, body ContactNewParams, opts ...option.RequestOption) (res *ContactCreateResponse, err error) {
+func (r *NoteService) New(ctx context.Context, body NoteNewParams, opts ...option.RequestOption) (res *NoteCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts"
+	path := "v1/notes"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
-// Retrieves a single contact by its ID.
+// Retrieves a single note by its ID.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+// **[Required scope](/using-the-api/scopes/):** `notes:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *ContactService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactRetrieveResponse, err error) {
+func (r *NoteService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *NoteRetrieveResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
+	path := fmt.Sprintf("v1/notes/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-// Updates an existing contact by ID. Only included fields and relationships are
+// Updates an existing note by ID. Only included fields and relationships are
 // modified.
+//
+// Both `$account` and `$opportunity` relationships can be modified via `add` or
+// `remove` operations.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:update`
+// **[Required scope](/using-the-api/scopes/):** `notes:update`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *ContactService) Update(ctx context.Context, id string, body ContactUpdateParams, opts ...option.RequestOption) (res *ContactUpdateResponse, err error) {
+func (r *NoteService) Update(ctx context.Context, id string, body NoteUpdateParams, opts ...option.RequestOption) (res *NoteUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/contacts/%s", url.PathEscape(id))
+	path := fmt.Sprintf("v1/notes/%s", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
-// Returns a paginated list of contacts. Use `offset` and `limit` to paginate
-// through results, and `$field` query parameters to filter. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
-// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// Returns a paginated list of notes. Use `offset` and `limit` to paginate through
+// results. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about pagination.
 //
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+// **[Required scope](/using-the-api/scopes/):** `notes:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Search
-func (r *ContactService) List(ctx context.Context, query ContactListParams, opts ...option.RequestOption) (res *ContactListResponse, err error) {
+func (r *NoteService) List(ctx context.Context, query NoteListParams, opts ...option.RequestOption) (res *NoteListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts"
+	path := "v1/notes"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
-// Returns the schema for all field and relationship definitions available on
-// contacts, including both system-defined and custom fields. Useful for
-// understanding the shape of contact data before creating or updating records. See
-// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-// more details.
-//
-// **[Required scope](/using-the-api/scopes/):** `contacts:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *ContactService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *ContactDefinitionsResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	path := "v1/contacts/definitions"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
-}
-
-type ContactCreateResponse struct {
+type NoteCreateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactCreateResponseField `json:"fields" api:"required"`
+	Fields map[string]NoteCreateResponseField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactCreateResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]NoteCreateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -160,14 +141,14 @@ type ContactCreateResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponse) UnmarshalJSON(data []byte) error {
+func (r NoteCreateResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseField struct {
+type NoteCreateResponseField struct {
 	// The field value, or null if unset.
-	Value ContactCreateResponseFieldValueUnion `json:"value" api:"required"`
+	Value NoteCreateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -184,21 +165,20 @@ type ContactCreateResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseField) UnmarshalJSON(data []byte) error {
+func (r NoteCreateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *NoteCreateResponseField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// ContactCreateResponseFieldValueUnion contains all possible properties and values
+// NoteCreateResponseFieldValueUnion contains all possible properties and values
 // from [string], [float64], [bool], [[]string],
-// [ContactCreateResponseFieldValueAddress],
-// [ContactCreateResponseFieldValueFullName].
+// [NoteCreateResponseFieldValueAddress], [NoteCreateResponseFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactCreateResponseFieldValueUnion struct {
+type NoteCreateResponseFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -207,25 +187,25 @@ type ContactCreateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [ContactCreateResponseFieldValueAddress].
+	// This field is from variant [NoteCreateResponseFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [ContactCreateResponseFieldValueFullName].
+	// This field is from variant [NoteCreateResponseFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [ContactCreateResponseFieldValueFullName].
+	// This field is from variant [NoteCreateResponseFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -246,44 +226,44 @@ type ContactCreateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsString() (v string) {
+func (u NoteCreateResponseFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u NoteCreateResponseFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsBool() (v bool) {
+func (u NoteCreateResponseFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u NoteCreateResponseFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsAddress() (v ContactCreateResponseFieldValueAddress) {
+func (u NoteCreateResponseFieldValueUnion) AsAddress() (v NoteCreateResponseFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactCreateResponseFieldValueUnion) AsFullName() (v ContactCreateResponseFieldValueFullName) {
+func (u NoteCreateResponseFieldValueUnion) AsFullName() (v NoteCreateResponseFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u ContactCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u NoteCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *ContactCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *NoteCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseFieldValueAddress struct {
+type NoteCreateResponseFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -316,12 +296,12 @@ type ContactCreateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r NoteCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *NoteCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseFieldValueFullName struct {
+type NoteCreateResponseFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -336,12 +316,12 @@ type ContactCreateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r NoteCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *NoteCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactCreateResponseRelationship struct {
+type NoteCreateResponseRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -359,164 +339,14 @@ type ContactCreateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactCreateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r NoteCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *NoteCreateResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactDefinitionsResponse struct {
-	// Map of field keys to their definitions, including both system and custom fields.
-	FieldDefinitions map[string]ContactDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
-	// The object type these definitions belong to (e.g. `account`).
-	ObjectType string `json:"objectType" api:"required"`
-	// Map of relationship keys to their definitions.
-	RelationshipDefinitions map[string]ContactDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		FieldDefinitions        respjson.Field
-		ObjectType              respjson.Field
-		RelationshipDefinitions respjson.Field
-		ExtraFields             map[string]respjson.Field
-		raw                     string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactDefinitionsResponseFieldDefinition struct {
-	// Description of the field, or null.
-	Description string `json:"description" api:"required"`
-	// Human-readable display name of the field.
-	Label string `json:"label" api:"required"`
-	// Type-specific configuration (e.g. select options, currency code).
-	TypeConfiguration ContactDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
-	// Data type of the field.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// Unique identifier of the field definition.
-	ID string `json:"id"`
-	// `true` for fields that are not writable via the API (e.g. AI-generated
-	// summaries). `false` or absent for writable fields.
-	ReadOnly bool `json:"readOnly"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Description       respjson.Field
-		Label             respjson.Field
-		TypeConfiguration respjson.Field
-		ValueType         respjson.Field
-		ID                respjson.Field
-		ReadOnly          respjson.Field
-		ExtraFields       map[string]respjson.Field
-		raw               string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Type-specific configuration (e.g. select options, currency code).
-type ContactDefinitionsResponseFieldDefinitionTypeConfiguration struct {
-	// ISO 4217 3-letter currency code.
-	Currency string `json:"currency"`
-	// Social platform associated with this handle field.
-	//
-	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
-	HandleService string `json:"handleService"`
-	// Whether this field accepts multiple values.
-	MultipleValues bool `json:"multipleValues"`
-	// Available options for select fields.
-	Options []ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
-	// Whether values for this field must be unique.
-	Unique bool `json:"unique"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Currency       respjson.Field
-		HandleService  respjson.Field
-		MultipleValues respjson.Field
-		Options        respjson.Field
-		Unique         respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
-	return r.JSON.raw
-}
-func (r *ContactDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
-	// Unique identifier of the select option.
-	ID string `json:"id" api:"required"`
-	// Human-readable display name of the option.
-	Label string `json:"label" api:"required"`
-	// Description of the option, or null.
-	Description string `json:"description" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID          respjson.Field
-		Label       respjson.Field
-		Description respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
-	return r.JSON.raw
-}
-func (r *ContactDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactDefinitionsResponseRelationshipDefinition struct {
-	// Whether this is a `has_one` or `has_many` relationship.
-	//
-	// Any of "HAS_ONE", "HAS_MANY".
-	Cardinality string `json:"cardinality" api:"required"`
-	// Description of the relationship, or null.
-	Description string `json:"description" api:"required"`
-	// Human-readable display name of the relationship.
-	Label string `json:"label" api:"required"`
-	// The type of the related object (e.g. `account`, `contact`).
-	ObjectType string `json:"objectType" api:"required"`
-	// Unique identifier of the relationship definition.
-	ID string `json:"id"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Cardinality respjson.Field
-		Description respjson.Field
-		Label       respjson.Field
-		ObjectType  respjson.Field
-		ID          respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
-func (r *ContactDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponse struct {
+type NoteListResponse struct {
 	// Array of entity objects for the current page.
-	Data []ContactListResponseData `json:"data" api:"required"`
+	Data []NoteListResponseData `json:"data" api:"required"`
 	// The object type, always `"list"`.
 	Object string `json:"object" api:"required"`
 	// Total number of entities matching the query.
@@ -532,24 +362,24 @@ type ContactListResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponse) UnmarshalJSON(data []byte) error {
+func (r NoteListResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactListResponseData struct {
+type NoteListResponseData struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactListResponseDataField `json:"fields" api:"required"`
+	Fields map[string]NoteListResponseDataField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactListResponseDataRelationship `json:"relationships" api:"required"`
+	Relationships map[string]NoteListResponseDataRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -569,14 +399,14 @@ type ContactListResponseData struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponseData) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseData) UnmarshalJSON(data []byte) error {
+func (r NoteListResponseData) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponseData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactListResponseDataField struct {
+type NoteListResponseDataField struct {
 	// The field value, or null if unset.
-	Value ContactListResponseDataFieldValueUnion `json:"value" api:"required"`
+	Value NoteListResponseDataFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -593,493 +423,21 @@ type ContactListResponseDataField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactListResponseDataField) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataField) UnmarshalJSON(data []byte) error {
+func (r NoteListResponseDataField) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponseDataField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// ContactListResponseDataFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [ContactListResponseDataFieldValueAddress],
-// [ContactListResponseDataFieldValueFullName].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactListResponseDataFieldValueUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]string] instead of an object.
-	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	City string `json:"city"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Country string `json:"country"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	State string `json:"state"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Street string `json:"street"`
-	// This field is from variant [ContactListResponseDataFieldValueAddress].
-	Street2 string `json:"street2"`
-	// This field is from variant [ContactListResponseDataFieldValueFullName].
-	FirstName string `json:"firstName"`
-	// This field is from variant [ContactListResponseDataFieldValueFullName].
-	LastName string `json:"lastName"`
-	JSON     struct {
-		OfString      respjson.Field
-		OfFloat       respjson.Field
-		OfBool        respjson.Field
-		OfStringArray respjson.Field
-		City          respjson.Field
-		Country       respjson.Field
-		Latitude      respjson.Field
-		Longitude     respjson.Field
-		PostalCode    respjson.Field
-		State         respjson.Field
-		Street        respjson.Field
-		Street2       respjson.Field
-		FirstName     respjson.Field
-		LastName      respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsStringArray() (v []string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsAddress() (v ContactListResponseDataFieldValueAddress) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactListResponseDataFieldValueUnion) AsFullName() (v ContactListResponseDataFieldValueFullName) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u ContactListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *ContactListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataFieldValueAddress struct {
-	// City name.
-	City string `json:"city" api:"nullable"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country string `json:"country" api:"nullable"`
-	// Latitude coordinate.
-	Latitude float64 `json:"latitude" api:"nullable"`
-	// Longitude coordinate.
-	Longitude float64 `json:"longitude" api:"nullable"`
-	// Postal or ZIP code.
-	PostalCode string `json:"postalCode" api:"nullable"`
-	// State or province.
-	State string `json:"state" api:"nullable"`
-	// Street address line 1.
-	Street string `json:"street" api:"nullable"`
-	// Street address line 2.
-	Street2 string `json:"street2" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		City        respjson.Field
-		Country     respjson.Field
-		Latitude    respjson.Field
-		Longitude   respjson.Field
-		PostalCode  respjson.Field
-		State       respjson.Field
-		Street      respjson.Field
-		Street2     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataFieldValueFullName struct {
-	// The contact's first name.
-	FirstName string `json:"firstName" api:"nullable"`
-	// The contact's last name.
-	LastName string `json:"lastName" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		FirstName   respjson.Field
-		LastName    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactListResponseDataRelationship struct {
-	// Whether the relationship is `has_one` or `has_many`.
-	Cardinality string `json:"cardinality" api:"required"`
-	// The type of the related object (e.g. `account`, `contact`).
-	ObjectType string `json:"objectType" api:"required"`
-	// IDs of the related entities.
-	Values []string `json:"values" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Cardinality respjson.Field
-		ObjectType  respjson.Field
-		Values      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactListResponseDataRelationship) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponse struct {
-	// Unique identifier for the entity.
-	ID string `json:"id" api:"required"`
-	// ISO 8601 timestamp of when the entity was created.
-	CreatedAt string `json:"createdAt" api:"required"`
-	// Map of field names to their typed values. System fields are prefixed with `$`
-	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactRetrieveResponseField `json:"fields" api:"required"`
-	// URL to view the entity in the Lightfield web app, or null.
-	HTTPLink string `json:"httpLink" api:"required"`
-	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactRetrieveResponseRelationship `json:"relationships" api:"required"`
-	// ISO 8601 timestamp of when the entity was last updated, or null.
-	UpdatedAt string `json:"updatedAt" api:"required"`
-	// External identifier for the entity, or null if unset.
-	ExternalID string `json:"externalId" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID            respjson.Field
-		CreatedAt     respjson.Field
-		Fields        respjson.Field
-		HTTPLink      respjson.Field
-		Relationships respjson.Field
-		UpdatedAt     respjson.Field
-		ExternalID    respjson.Field
-		ExtraFields   map[string]respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseField struct {
-	// The field value, or null if unset.
-	Value ContactRetrieveResponseFieldValueUnion `json:"value" api:"required"`
-	// The data type of the field.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Value       respjson.Field
-		ValueType   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseField) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ContactRetrieveResponseFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [ContactRetrieveResponseFieldValueAddress],
-// [ContactRetrieveResponseFieldValueFullName].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-//
-// If the underlying value is not a json object, one of the following properties
-// will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactRetrieveResponseFieldValueUnion struct {
-	// This field will be present if the value is a [string] instead of an object.
-	OfString string `json:",inline"`
-	// This field will be present if the value is a [float64] instead of an object.
-	OfFloat float64 `json:",inline"`
-	// This field will be present if the value is a [bool] instead of an object.
-	OfBool bool `json:",inline"`
-	// This field will be present if the value is a [[]string] instead of an object.
-	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	City string `json:"city"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Country string `json:"country"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	State string `json:"state"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Street string `json:"street"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
-	Street2 string `json:"street2"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
-	FirstName string `json:"firstName"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
-	LastName string `json:"lastName"`
-	JSON     struct {
-		OfString      respjson.Field
-		OfFloat       respjson.Field
-		OfBool        respjson.Field
-		OfStringArray respjson.Field
-		City          respjson.Field
-		Country       respjson.Field
-		Latitude      respjson.Field
-		Longitude     respjson.Field
-		PostalCode    respjson.Field
-		State         respjson.Field
-		Street        respjson.Field
-		Street2       respjson.Field
-		FirstName     respjson.Field
-		LastName      respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsString() (v string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsBool() (v bool) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsAddress() (v ContactRetrieveResponseFieldValueAddress) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u ContactRetrieveResponseFieldValueUnion) AsFullName() (v ContactRetrieveResponseFieldValueFullName) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u ContactRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *ContactRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseFieldValueAddress struct {
-	// City name.
-	City string `json:"city" api:"nullable"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country string `json:"country" api:"nullable"`
-	// Latitude coordinate.
-	Latitude float64 `json:"latitude" api:"nullable"`
-	// Longitude coordinate.
-	Longitude float64 `json:"longitude" api:"nullable"`
-	// Postal or ZIP code.
-	PostalCode string `json:"postalCode" api:"nullable"`
-	// State or province.
-	State string `json:"state" api:"nullable"`
-	// Street address line 1.
-	Street string `json:"street" api:"nullable"`
-	// Street address line 2.
-	Street2 string `json:"street2" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		City        respjson.Field
-		Country     respjson.Field
-		Latitude    respjson.Field
-		Longitude   respjson.Field
-		PostalCode  respjson.Field
-		State       respjson.Field
-		Street      respjson.Field
-		Street2     respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseFieldValueFullName struct {
-	// The contact's first name.
-	FirstName string `json:"firstName" api:"nullable"`
-	// The contact's last name.
-	LastName string `json:"lastName" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		FirstName   respjson.Field
-		LastName    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactRetrieveResponseRelationship struct {
-	// Whether the relationship is `has_one` or `has_many`.
-	Cardinality string `json:"cardinality" api:"required"`
-	// The type of the related object (e.g. `account`, `contact`).
-	ObjectType string `json:"objectType" api:"required"`
-	// IDs of the related entities.
-	Values []string `json:"values" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Cardinality respjson.Field
-		ObjectType  respjson.Field
-		Values      respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateResponse struct {
-	// Unique identifier for the entity.
-	ID string `json:"id" api:"required"`
-	// ISO 8601 timestamp of when the entity was created.
-	CreatedAt string `json:"createdAt" api:"required"`
-	// Map of field names to their typed values. System fields are prefixed with `$`
-	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactUpdateResponseField `json:"fields" api:"required"`
-	// URL to view the entity in the Lightfield web app, or null.
-	HTTPLink string `json:"httpLink" api:"required"`
-	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]ContactUpdateResponseRelationship `json:"relationships" api:"required"`
-	// ISO 8601 timestamp of when the entity was last updated, or null.
-	UpdatedAt string `json:"updatedAt" api:"required"`
-	// External identifier for the entity, or null if unset.
-	ExternalID string `json:"externalId" api:"nullable"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID            respjson.Field
-		CreatedAt     respjson.Field
-		Fields        respjson.Field
-		HTTPLink      respjson.Field
-		Relationships respjson.Field
-		UpdatedAt     respjson.Field
-		ExternalID    respjson.Field
-		ExtraFields   map[string]respjson.Field
-		raw           string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactUpdateResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateResponseField struct {
-	// The field value, or null if unset.
-	Value ContactUpdateResponseFieldValueUnion `json:"value" api:"required"`
-	// The data type of the field.
-	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
-	ValueType string `json:"valueType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Value       respjson.Field
-		ValueType   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseField) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// ContactUpdateResponseFieldValueUnion contains all possible properties and values
+// NoteListResponseDataFieldValueUnion contains all possible properties and values
 // from [string], [float64], [bool], [[]string],
-// [ContactUpdateResponseFieldValueAddress],
-// [ContactUpdateResponseFieldValueFullName].
+// [NoteListResponseDataFieldValueAddress],
+// [NoteListResponseDataFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactUpdateResponseFieldValueUnion struct {
+type NoteListResponseDataFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -1088,25 +446,25 @@ type ContactUpdateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [ContactUpdateResponseFieldValueAddress].
+	// This field is from variant [NoteListResponseDataFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [ContactUpdateResponseFieldValueFullName].
+	// This field is from variant [NoteListResponseDataFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [ContactUpdateResponseFieldValueFullName].
+	// This field is from variant [NoteListResponseDataFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -1127,44 +485,44 @@ type ContactUpdateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsString() (v string) {
+func (u NoteListResponseDataFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u NoteListResponseDataFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsBool() (v bool) {
+func (u NoteListResponseDataFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u NoteListResponseDataFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsAddress() (v ContactUpdateResponseFieldValueAddress) {
+func (u NoteListResponseDataFieldValueUnion) AsAddress() (v NoteListResponseDataFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactUpdateResponseFieldValueUnion) AsFullName() (v ContactUpdateResponseFieldValueFullName) {
+func (u NoteListResponseDataFieldValueUnion) AsFullName() (v NoteListResponseDataFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u ContactUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u NoteListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *ContactUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *NoteListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseFieldValueAddress struct {
+type NoteListResponseDataFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -1197,12 +555,12 @@ type ContactUpdateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r NoteListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseFieldValueFullName struct {
+type NoteListResponseDataFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -1217,12 +575,12 @@ type ContactUpdateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r NoteListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactUpdateResponseRelationship struct {
+type NoteListResponseDataRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -1240,286 +598,791 @@ type ContactUpdateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r NoteListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
+func (r *NoteListResponseDataRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactNewParams struct {
-	// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
-	// `$name`); custom attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
-	// discover available fields and their types. See
-	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-	// value type details.
-	Fields map[string]ContactNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
-	// Relationships to set on the new contact. System relationships use a `$` prefix
-	// (e.g. `$account`); custom relationships use their bare slug. Each value is a
-	// single entity ID or an array of IDs. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
-	// list available relationship keys.
-	Relationships map[string]ContactNewParamsRelationshipUnion `json:"relationships,omitzero"`
-	paramObj
+type NoteRetrieveResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]NoteRetrieveResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]NoteRetrieveResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
 }
 
-func (r ContactNewParams) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParams
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactNewParams) UnmarshalJSON(data []byte) error {
+// Returns the unmodified JSON received from the API
+func (r NoteRetrieveResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteRetrieveResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Only one field can be non-zero.
+type NoteRetrieveResponseField struct {
+	// The field value, or null if unset.
+	Value NoteRetrieveResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteRetrieveResponseField) RawJSON() string { return r.JSON.raw }
+func (r *NoteRetrieveResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// NoteRetrieveResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [NoteRetrieveResponseFieldValueAddress],
+// [NoteRetrieveResponseFieldValueFullName].
 //
-// Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsFieldUnion struct {
-	OfString      param.Opt[string]              `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]             `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                `json:",omitzero,inline"`
-	OfStringArray []string                       `json:",omitzero,inline"`
-	OfAddress     *ContactNewParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *ContactNewParamsFieldFullName `json:",omitzero,inline"`
-	paramUnion
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type NoteRetrieveResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [NoteRetrieveResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [NoteRetrieveResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [NoteRetrieveResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
 }
 
-func (u ContactNewParamsFieldUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString,
-		u.OfFloat,
-		u.OfBool,
-		u.OfStringArray,
-		u.OfAddress,
-		u.OfFullName)
-}
-func (u *ContactNewParamsFieldUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
+func (u NoteRetrieveResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
 }
 
-type ContactNewParamsFieldAddress struct {
+func (u NoteRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteRetrieveResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteRetrieveResponseFieldValueUnion) AsAddress() (v NoteRetrieveResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteRetrieveResponseFieldValueUnion) AsFullName() (v NoteRetrieveResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u NoteRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *NoteRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteRetrieveResponseFieldValueAddress struct {
 	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
+	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
+	Country string `json:"country" api:"nullable"`
 	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
+	Latitude float64 `json:"latitude" api:"nullable"`
 	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
+	Longitude float64 `json:"longitude" api:"nullable"`
 	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
+	PostalCode string `json:"postalCode" api:"nullable"`
 	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
+	State string `json:"state" api:"nullable"`
 	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
+	Street string `json:"street" api:"nullable"`
 	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
-	paramObj
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
 }
 
-func (r ContactNewParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParamsFieldAddress
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactNewParamsFieldAddress) UnmarshalJSON(data []byte) error {
+// Returns the unmodified JSON received from the API
+func (r NoteRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *NoteRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactNewParamsFieldFullName struct {
+type NoteRetrieveResponseFieldValueFullName struct {
 	// The contact's first name.
-	FirstName param.Opt[string] `json:"firstName,omitzero"`
+	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
-	LastName param.Opt[string] `json:"lastName,omitzero"`
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *NoteRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteRetrieveResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *NoteRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteUpdateResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]NoteUpdateResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]NoteUpdateResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteUpdateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteUpdateResponseField struct {
+	// The field value, or null if unset.
+	Value NoteUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteUpdateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *NoteUpdateResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// NoteUpdateResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [NoteUpdateResponseFieldValueAddress], [NoteUpdateResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type NoteUpdateResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [NoteUpdateResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [NoteUpdateResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [NoteUpdateResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsAddress() (v NoteUpdateResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteUpdateResponseFieldValueUnion) AsFullName() (v NoteUpdateResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u NoteUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *NoteUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteUpdateResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *NoteUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteUpdateResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *NoteUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteUpdateResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *NoteUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteNewParams struct {
+	// Field values for the new note. `$title` is required; `$content` is optional. See
+	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+	// value type details.
+	Fields NoteNewParamsFields `json:"fields,omitzero" api:"required"`
+	// Relationships to set on the new note. System relationships use a `$` prefix
+	// (e.g. `$account`, `$opportunity`). Each value is a single entity ID or an array
+	// of IDs. The note author is automatically set to the API key owner.
+	Relationships NoteNewParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
 
-func (r ContactNewParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactNewParamsFieldFullName
+func (r NoteNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow NoteNewParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactNewParamsFieldFullName) UnmarshalJSON(data []byte) error {
+func (r *NoteNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Field values for the new note. `$title` is required; `$content` is optional. See
+// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// value type details.
+//
+// The property Title is required.
+type NoteNewParamsFields struct {
+	// Title of the note.
+	Title string `json:"$title" api:"required"`
+	// Content of the note as markdown formatted text.
+	Content param.Opt[string] `json:"$content,omitzero"`
+	paramObj
+}
+
+func (r NoteNewParamsFields) MarshalJSON() (data []byte, err error) {
+	type shadow NoteNewParamsFields
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteNewParamsFields) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Relationships to set on the new note. System relationships use a `$` prefix
+// (e.g. `$account`, `$opportunity`). Each value is a single entity ID or an array
+// of IDs. The note author is automatically set to the API key owner.
+type NoteNewParamsRelationships struct {
+	// ID(s) of accounts to associate with this note.
+	Account NoteNewParamsRelationshipsAccountUnion `json:"$account,omitzero"`
+	// ID(s) of opportunities to associate with this note.
+	Opportunity NoteNewParamsRelationshipsOpportunityUnion `json:"$opportunity,omitzero"`
+	paramObj
+}
+
+func (r NoteNewParamsRelationships) MarshalJSON() (data []byte, err error) {
+	type shadow NoteNewParamsRelationships
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteNewParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactNewParamsRelationshipUnion struct {
+type NoteNewParamsRelationshipsAccountUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
+func (u NoteNewParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteNewParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type ContactUpdateParams struct {
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type NoteNewParamsRelationshipsOpportunityUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u NoteNewParamsRelationshipsOpportunityUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *NoteNewParamsRelationshipsOpportunityUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+type NoteUpdateParams struct {
 	// Field values to update — only provided fields are modified; omitted fields are
-	// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
-	// attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> for
-	// available fields and types. See
-	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+	// left unchanged. See
+	// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
 	// value type details.
-	Fields map[string]ContactUpdateParamsFieldUnion `json:"fields,omitzero"`
+	Fields NoteUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$account`). Each value is an operation object with `add`, `remove`, or
-	// `replace`.
-	Relationships map[string]ContactUpdateParamsRelationship `json:"relationships,omitzero"`
+	// `$account`, `$opportunity`). Each value is an operation object with `add` or
+	// `remove`.
+	Relationships NoteUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
 
-func (r ContactUpdateParams) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParams
+func (r NoteUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParams) UnmarshalJSON(data []byte) error {
+func (r *NoteUpdateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Field values to update — only provided fields are modified; omitted fields are
+// left unchanged. See
+// **[Fields and relationships](/using-the-api/fields-and-relationships/)** for
+// value type details.
+type NoteUpdateParamsFields struct {
+	// Content of the note as markdown formatted text.
+	Content param.Opt[string] `json:"$content,omitzero"`
+	// Title of the note.
+	Title param.Opt[string] `json:"$title,omitzero"`
+	paramObj
+}
+
+func (r NoteUpdateParamsFields) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsFields
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteUpdateParamsFields) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Relationship operations to apply. System relationships use a `$` prefix (e.g.
+// `$account`, `$opportunity`). Each value is an operation object with `add` or
+// `remove`.
+type NoteUpdateParamsRelationships struct {
+	// Operation to modify associated accounts.
+	Account NoteUpdateParamsRelationshipsAccountUnion `json:"$account,omitzero"`
+	// Operation to modify associated opportunities.
+	Opportunity NoteUpdateParamsRelationshipsOpportunityUnion `json:"$opportunity,omitzero"`
+	paramObj
+}
+
+func (r NoteUpdateParamsRelationships) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationships
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsFieldUnion struct {
-	OfString      param.Opt[string]                 `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]                `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                   `json:",omitzero,inline"`
-	OfStringArray []string                          `json:",omitzero,inline"`
-	OfAddress     *ContactUpdateParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *ContactUpdateParamsFieldFullName `json:",omitzero,inline"`
+type NoteUpdateParamsRelationshipsAccountUnion struct {
+	OfNoteUpdatesRelationshipsAccountAdd    *NoteUpdateParamsRelationshipsAccountAdd    `json:",omitzero,inline"`
+	OfNoteUpdatesRelationshipsAccountRemove *NoteUpdateParamsRelationshipsAccountRemove `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsFieldUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString,
-		u.OfFloat,
-		u.OfBool,
-		u.OfStringArray,
-		u.OfAddress,
-		u.OfFullName)
+func (u NoteUpdateParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfNoteUpdatesRelationshipsAccountAdd, u.OfNoteUpdatesRelationshipsAccountRemove)
 }
-func (u *ContactUpdateParamsFieldUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type ContactUpdateParamsFieldAddress struct {
-	// City name.
-	City param.Opt[string] `json:"city,omitzero"`
-	// 2-letter ISO 3166-1 alpha-2 country code.
-	Country param.Opt[string] `json:"country,omitzero"`
-	// Latitude coordinate.
-	Latitude param.Opt[float64] `json:"latitude,omitzero"`
-	// Longitude coordinate.
-	Longitude param.Opt[float64] `json:"longitude,omitzero"`
-	// Postal or ZIP code.
-	PostalCode param.Opt[string] `json:"postalCode,omitzero"`
-	// State or province.
-	State param.Opt[string] `json:"state,omitzero"`
-	// Street address line 1.
-	Street param.Opt[string] `json:"street,omitzero"`
-	// Street address line 2.
-	Street2 param.Opt[string] `json:"street2,omitzero"`
-	paramObj
-}
-
-func (r ContactUpdateParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsFieldAddress
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactUpdateParamsFieldAddress) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type ContactUpdateParamsFieldFullName struct {
-	// The contact's first name.
-	FirstName param.Opt[string] `json:"firstName,omitzero"`
-	// The contact's last name.
-	LastName param.Opt[string] `json:"lastName,omitzero"`
-	paramObj
-}
-
-func (r ContactUpdateParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsFieldFullName
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ContactUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// An operation to modify a relationship. Provide one of `add`, `remove`, or
-// `replace`.
-type ContactUpdateParamsRelationship struct {
+// The property Add is required.
+type NoteUpdateParamsRelationshipsAccountAdd struct {
 	// Entity ID(s) to add to the relationship.
-	Add ContactUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the relationship.
-	Remove ContactUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace ContactUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
+	Add NoteUpdateParamsRelationshipsAccountAddAddUnion `json:"add,omitzero" api:"required"`
 	paramObj
 }
 
-func (r ContactUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
-	type shadow ContactUpdateParamsRelationship
+func (r NoteUpdateParamsRelationshipsAccountAdd) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationshipsAccountAdd
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ContactUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
+func (r *NoteUpdateParamsRelationshipsAccountAdd) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipAddUnion struct {
+type NoteUpdateParamsRelationshipsAccountAddAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipsAccountAddAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipsAccountAddAddUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// The property Remove is required.
+type NoteUpdateParamsRelationshipsAccountRemove struct {
+	// Entity ID(s) to remove from the relationship.
+	Remove NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion `json:"remove,omitzero" api:"required"`
+	paramObj
+}
+
+func (r NoteUpdateParamsRelationshipsAccountRemove) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationshipsAccountRemove
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteUpdateParamsRelationshipsAccountRemove) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipRemoveUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
+type NoteUpdateParamsRelationshipsOpportunityUnion struct {
+	OfNoteUpdatesRelationshipsOpportunityAdd    *NoteUpdateParamsRelationshipsOpportunityAdd    `json:",omitzero,inline"`
+	OfNoteUpdatesRelationshipsOpportunityRemove *NoteUpdateParamsRelationshipsOpportunityRemove `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+func (u NoteUpdateParamsRelationshipsOpportunityUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfNoteUpdatesRelationshipsOpportunityAdd, u.OfNoteUpdatesRelationshipsOpportunityRemove)
 }
-func (u *ContactUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipsOpportunityUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
+}
+
+// The property Add is required.
+type NoteUpdateParamsRelationshipsOpportunityAdd struct {
+	// Entity ID(s) to add to the relationship.
+	Add NoteUpdateParamsRelationshipsOpportunityAddAddUnion `json:"add,omitzero" api:"required"`
+	paramObj
+}
+
+func (r NoteUpdateParamsRelationshipsOpportunityAdd) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationshipsOpportunityAdd
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteUpdateParamsRelationshipsOpportunityAdd) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ContactUpdateParamsRelationshipReplaceUnion struct {
+type NoteUpdateParamsRelationshipsOpportunityAddAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ContactUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipsOpportunityAddAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ContactUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipsOpportunityAddAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type ContactListParams struct {
+// The property Remove is required.
+type NoteUpdateParamsRelationshipsOpportunityRemove struct {
+	// Entity ID(s) to remove from the relationship.
+	Remove NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion `json:"remove,omitzero" api:"required"`
+	paramObj
+}
+
+func (r NoteUpdateParamsRelationshipsOpportunityRemove) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationshipsOpportunityRemove
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteUpdateParamsRelationshipsOpportunityRemove) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+type NoteListParams struct {
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
@@ -1527,8 +1390,8 @@ type ContactListParams struct {
 	paramObj
 }
 
-// URLQuery serializes [ContactListParams]'s query parameters as `url.Values`.
-func (r ContactListParams) URLQuery() (v url.Values, err error) {
+// URLQuery serializes [NoteListParams]'s query parameters as `url.Values`.
+func (r NoteListParams) URLQuery() (v url.Values, err error) {
 	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
