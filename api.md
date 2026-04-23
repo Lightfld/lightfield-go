@@ -1,3 +1,13 @@
+# Auth
+
+Response Types:
+
+- <a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#AuthValidateResponse">AuthValidateResponse</a>
+
+Methods:
+
+- <code title="get /v1/auth/validate">client.Auth.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#AuthService.Validate">Validate</a>(ctx <a href="https://pkg.go.dev/context">context</a>.<a href="https://pkg.go.dev/context#Context">Context</a>) (\*<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go">githubcomlightfldlightfieldgo</a>.<a href="https://pkg.go.dev/github.com/Lightfld/lightfield-go#AuthValidateResponse">AuthValidateResponse</a>, <a href="https://pkg.go.dev/builtin#error">error</a>)</code>
+
 # Account
 
 Response Types:

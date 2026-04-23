@@ -17,6 +17,9 @@ import (
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
 	Options []option.RequestOption
+	// Auth helper to validate the current token and describe the access it grants.
+	// This endpoint is currently only available for API keys.
+	Auth AuthService
 	// Accounts represent companies or organizations in Lightfield. Each account can
 	// have contacts, opportunities, tasks, and notes associated with it.
 	Account AccountService
@@ -74,6 +77,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 
 	r = Client{Options: opts}
 
+	r.Auth = NewAuthService(opts...)
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
 	r.List = NewListService(opts...)
