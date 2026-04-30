@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
@@ -17,6 +18,9 @@ import (
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
 	Options []option.RequestOption
+	// Auth helper to validate the current token and describe the access it grants.
+	// This endpoint is currently only available for API keys.
+	Auth AuthService
 	// Accounts represent companies or organizations in Lightfield. Each account can
 	// have contacts, opportunities, tasks, and notes associated with it.
 	Account AccountService
@@ -58,9 +62,17 @@ type Client struct {
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
 // should be used to initialize new clients.
 func DefaultClientOptions() []option.RequestOption {
-	defaults := []option.RequestOption{option.WithEnvironmentProduction()}
+	defaults := []option.RequestOption{option.WithHTTPClient(defaultHTTPClient()), option.WithEnvironmentProduction()}
 	if o, ok := os.LookupEnv("LIGHTFIELD_BASE_URL"); ok {
 		defaults = append(defaults, option.WithBaseURL(o))
+	}
+	if o, ok := os.LookupEnv("LIGHTFIELD_CUSTOM_HEADERS"); ok {
+		for _, line := range strings.Split(o, "\n") {
+			colon := strings.Index(line, ":")
+			if colon >= 0 {
+				defaults = append(defaults, option.WithHeader(strings.TrimSpace(line[:colon]), strings.TrimSpace(line[colon+1:])))
+			}
+		}
 	}
 	return defaults
 }
@@ -74,6 +86,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 
 	r = Client{Options: opts}
 
+	r.Auth = NewAuthService(opts...)
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
 	r.List = NewListService(opts...)
