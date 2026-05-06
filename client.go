@@ -57,6 +57,10 @@ type Client struct {
 	// supported purposes. For meeting transcript attachments, see
 	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
 	File FileService
+	// Custom objects and relationships are available on Pro and Growth plans. Records
+	// can be fetched and manipulated via these endpoints, and definitions can be
+	// fetched to discover the available custom object types in the system.
+	Object ObjectService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -97,6 +101,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Member = NewMemberService(opts...)
 	r.WorkflowRun = NewWorkflowRunService(opts...)
 	r.File = NewFileService(opts...)
+	r.Object = NewObjectService(opts...)
 
 	return
 }

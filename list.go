@@ -1788,9 +1788,7 @@ type ListNewParamsFields struct {
 	Name string `json:"$name" api:"required"`
 	// The type of entities this list contains. One of `account`, `contact`, or
 	// `opportunity`.
-	//
-	// Any of "account", "contact", "opportunity".
-	ObjectType string `json:"$objectType,omitzero" api:"required"`
+	ObjectType string `json:"$objectType" api:"required"`
 	paramObj
 }
 
@@ -1800,12 +1798,6 @@ func (r ListNewParamsFields) MarshalJSON() (data []byte, err error) {
 }
 func (r *ListNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[ListNewParamsFields](
-		"$objectType", "account", "contact", "opportunity",
-	)
 }
 
 // Only one field can be non-zero.
