@@ -13,7 +13,7 @@ import (
 	"github.com/Lightfld/lightfield-go/option"
 )
 
-func TestListNewWithOptionalParams(t *testing.T) {
+func TestObjectNewWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -25,19 +25,22 @@ func TestListNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.List.New(context.TODO(), githubcomlightfldlightfieldgo.ListNewParams{
-		Fields: githubcomlightfldlightfieldgo.ListNewParamsFields{
-			Name:       "$name",
-			ObjectType: "$objectType",
-		},
-		Relationships: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsUnion{
-			OfListNewsRelationshipsAccounts: &githubcomlightfldlightfieldgo.ListNewParamsRelationshipsAccounts{
-				Accounts: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsAccountsAccountsUnion{
+	_, err := client.Object.New(
+		context.TODO(),
+		"entitySlug",
+		githubcomlightfldlightfieldgo.ObjectNewParams{
+			Fields: map[string]githubcomlightfldlightfieldgo.ObjectNewParamsFieldUnion{
+				"foo": {
+					OfString: githubcomlightfldlightfieldgo.String("string"),
+				},
+			},
+			Relationships: map[string]githubcomlightfldlightfieldgo.ObjectNewParamsRelationshipUnion{
+				"foo": {
 					OfString: githubcomlightfldlightfieldgo.String("string"),
 				},
 			},
 		},
-	})
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
@@ -47,7 +50,7 @@ func TestListNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestListGet(t *testing.T) {
+func TestObjectGet(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -59,44 +62,54 @@ func TestListGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.List.Get(context.TODO(), "id")
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestListUpdateWithOptionalParams(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.List.Update(
+	_, err := client.Object.Get(
 		context.TODO(),
 		"id",
-		githubcomlightfldlightfieldgo.ListUpdateParams{
-			Fields: githubcomlightfldlightfieldgo.ListUpdateParamsFields{
-				Name: githubcomlightfldlightfieldgo.String("$name"),
+		githubcomlightfldlightfieldgo.ObjectGetParams{
+			EntitySlug: "entitySlug",
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestObjectUpdateWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Object.Update(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.ObjectUpdateParams{
+			EntitySlug: "entitySlug",
+			Fields: map[string]githubcomlightfldlightfieldgo.ObjectUpdateParamsFieldUnion{
+				"foo": {
+					OfString: githubcomlightfldlightfieldgo.String("string"),
+				},
 			},
-			Relationships: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsUnion{
-				OfListUpdatesRelationshipsAccounts: &githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccounts{
-					Accounts: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccounts{
-						Add: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccountsAddUnion{
-							OfString: githubcomlightfldlightfieldgo.String("string"),
-						},
-						Remove: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion{
-							OfString: githubcomlightfldlightfieldgo.String("string"),
-						},
+			Relationships: map[string]githubcomlightfldlightfieldgo.ObjectUpdateParamsRelationship{
+				"foo": {
+					Add: githubcomlightfldlightfieldgo.ObjectUpdateParamsRelationshipAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.ObjectUpdateParamsRelationshipRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Replace: githubcomlightfldlightfieldgo.ObjectUpdateParamsRelationshipReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
 			},
@@ -111,7 +124,7 @@ func TestListUpdateWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestListListWithOptionalParams(t *testing.T) {
+func TestObjectListWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -123,35 +136,10 @@ func TestListListWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.List.List(context.TODO(), githubcomlightfldlightfieldgo.ListListParams{
-		Limit:  githubcomlightfldlightfieldgo.Int(1),
-		Offset: githubcomlightfldlightfieldgo.Int(0),
-	})
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestListListAccountsWithOptionalParams(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.List.ListAccounts(
+	_, err := client.Object.List(
 		context.TODO(),
-		"listId",
-		githubcomlightfldlightfieldgo.ListListAccountsParams{
+		"entitySlug",
+		githubcomlightfldlightfieldgo.ObjectListParams{
 			Limit:  githubcomlightfldlightfieldgo.Int(1),
 			Offset: githubcomlightfldlightfieldgo.Int(0),
 		},
@@ -165,7 +153,7 @@ func TestListListAccountsWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestListListContactsWithOptionalParams(t *testing.T) {
+func TestObjectDefinitions(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -177,14 +165,7 @@ func TestListListContactsWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.List.ListContacts(
-		context.TODO(),
-		"listId",
-		githubcomlightfldlightfieldgo.ListListContactsParams{
-			Limit:  githubcomlightfldlightfieldgo.Int(1),
-			Offset: githubcomlightfldlightfieldgo.Int(0),
-		},
-	)
+	_, err := client.Object.Definitions(context.TODO(), "entitySlug")
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
@@ -194,7 +175,7 @@ func TestListListContactsWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestListListOpportunitiesWithOptionalParams(t *testing.T) {
+func TestObjectListDefinitions(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -206,14 +187,7 @@ func TestListListOpportunitiesWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.List.ListOpportunities(
-		context.TODO(),
-		"listId",
-		githubcomlightfldlightfieldgo.ListListOpportunitiesParams{
-			Limit:  githubcomlightfldlightfieldgo.Int(1),
-			Offset: githubcomlightfldlightfieldgo.Int(0),
-		},
-	)
+	_, err := client.Object.ListDefinitions(context.TODO())
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
