@@ -45,10 +45,11 @@ func NewAccountService(opts ...option.RequestOption) (r AccountService) {
 //
 // If a `$website` is provided, Lightfield automatically enriches the account in
 // the background. The `$howTheyMakeMoney` and `$accountStatus` fields are
-// read-only and cannot be set via the API. The `$opportunity`, `$task`, and
-// `$note` relationships are also read-only — manage them via the `$account`
-// relationship on the opportunity or task, or the `$account`/`$opportunity` note
-// relationships instead.
+// read-only and cannot be set via the API. The `$opportunity`, `$task`, `$note`,
+// and `$meeting` relationships are also read-only — manage them via the `$account`
+// relationship on the opportunity or task, the `$account`/`$opportunity` note
+// relationships, or via the meeting's `$contact` attendees that belong to this
+// account.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -86,9 +87,10 @@ func (r *AccountService) Get(ctx context.Context, id string, opts ...option.Requ
 // modified.
 //
 // The `$howTheyMakeMoney` and `$accountStatus` fields are read-only and cannot be
-// updated. The `$opportunity`, `$task`, and `$note` relationships are also
-// read-only — manage them via the `$account` relationship on the opportunity or
-// task, or the `$account`/`$opportunity` note relationships instead.
+// updated. The `$opportunity`, `$task`, `$note`, and `$meeting` relationships are
+// also read-only — manage them via the `$account` relationship on the opportunity
+// or task, the `$account`/`$opportunity` note relationships, or via the meeting's
+// `$contact` attendees that belong to this account.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -182,7 +184,7 @@ type AccountCreateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -408,7 +410,7 @@ type AccountDefinitionsResponseFieldDefinition struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
@@ -591,7 +593,7 @@ type AccountListResponseDataField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -827,7 +829,7 @@ type AccountRetrieveResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1063,7 +1065,7 @@ type AccountUpdateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1465,13 +1467,12 @@ func (r *AccountUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error {
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
 type AccountUpdateParamsRelationship struct {
+	// A single entity ID or an array of entity IDs.
+	Replace AccountUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
 	Add AccountUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
 	Remove AccountUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace AccountUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 

@@ -171,7 +171,7 @@ type TaskCreateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -396,7 +396,7 @@ type TaskDefinitionsResponseFieldDefinition struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
@@ -577,7 +577,7 @@ type TaskListResponseDataField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -813,7 +813,7 @@ type TaskRetrieveResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1049,7 +1049,7 @@ type TaskUpdateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1365,13 +1365,12 @@ func (r *TaskUpdateParamsFields) UnmarshalJSON(data []byte) error {
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
 type TaskUpdateParamsRelationship struct {
+	// A single entity ID or an array of entity IDs.
+	Replace TaskUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
 	Add TaskUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
 	Remove TaskUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace TaskUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 

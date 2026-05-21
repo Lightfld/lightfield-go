@@ -46,9 +46,10 @@ func NewOpportunityService(opts ...option.RequestOption) (r OpportunityService) 
 //
 // After creation, Lightfield automatically generates an opportunity summary in the
 // background. The `$opportunityStatus` field is read-only and cannot be set via
-// the API. The `$task` and `$note` relationships are also read-only — manage them
-// via the `$opportunity` relationship on the task, or the
-// `$account`/`$opportunity` note relationships instead.
+// the API. The `$task`, `$note`, and `$meeting` relationships are also read-only —
+// manage them via the `$opportunity` relationship on the task, the
+// `$account`/`$opportunity` note relationships, or via the meeting's `$contact`
+// attendees that belong to this opportunity's account.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -85,10 +86,11 @@ func (r *OpportunityService) Get(ctx context.Context, id string, opts ...option.
 // Updates an existing opportunity by ID. Only included fields and relationships
 // are modified.
 //
-// The `$opportunityStatus` field is read-only and cannot be updated. The `$task`
-// and `$note` relationships are also read-only — manage them via the
-// `$opportunity` relationship on the task, or the `$account`/`$opportunity` note
-// relationships instead.
+// The `$opportunityStatus` field is read-only and cannot be updated. The `$task`,
+// `$note`, and `$meeting` relationships are also read-only — manage them via the
+// `$opportunity` relationship on the task, the `$account`/`$opportunity` note
+// relationships, or via the meeting's `$contact` attendees that belong to this
+// opportunity's account.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -182,7 +184,7 @@ type OpportunityCreateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -408,7 +410,7 @@ type OpportunityDefinitionsResponseFieldDefinition struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
@@ -591,7 +593,7 @@ type OpportunityListResponseDataField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -827,7 +829,7 @@ type OpportunityRetrieveResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1063,7 +1065,7 @@ type OpportunityUpdateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1466,13 +1468,12 @@ func (r *OpportunityUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error 
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
 type OpportunityUpdateParamsRelationship struct {
+	// A single entity ID or an array of entity IDs.
+	Replace OpportunityUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
 	Add OpportunityUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
 	Remove OpportunityUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
-	// Entity ID(s) to set as the entire relationship, replacing all existing
-	// associations.
-	Replace OpportunityUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	paramObj
 }
 
