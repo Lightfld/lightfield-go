@@ -35,39 +35,6 @@ func TestEmailGet(t *testing.T) {
 	}
 }
 
-func TestEmailDraftWithOptionalParams(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Email.Draft(context.TODO(), githubcomlightfldlightfieldgo.EmailDraftParams{
-		From:        `"S?oC"g*W"5"@m-0-9.V9.w4-o2-l7--.TJdq6.1k.H8n-SjA-.1.U3k7.-F86WnfNI.-R6O-N68g-4-.AmqyytAVIw`,
-		Attachments: []string{"string"},
-		Bcc:         []string{`"S?oC"g*W"5"@m-0-9.V9.w4-o2-l7--.TJdq6.1k.H8n-SjA-.1.U3k7.-F86WnfNI.-R6O-N68g-4-.AmqyytAVIw`},
-		Body: githubcomlightfldlightfieldgo.EmailDraftParamsBody{
-			Content:     "content",
-			ContentType: "HTML",
-		},
-		Cc:      []string{`"S?oC"g*W"5"@m-0-9.V9.w4-o2-l7--.TJdq6.1k.H8n-SjA-.1.U3k7.-F86WnfNI.-R6O-N68g-4-.AmqyytAVIw`},
-		Subject: githubcomlightfldlightfieldgo.String("subject"),
-		To:      []string{`"S?oC"g*W"5"@m-0-9.V9.w4-o2-l7--.TJdq6.1k.H8n-SjA-.1.U3k7.-F86WnfNI.-R6O-N68g-4-.AmqyytAVIw`},
-	})
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
 func TestEmailSendWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {

@@ -58,23 +58,6 @@ func (r *EmailService) Get(ctx context.Context, id string, opts ...option.Reques
 	return res, err
 }
 
-// Creates a draft in the connected email account that owns the `from` address.
-// Mirrors native email-client behavior: only `from` is required — `to`, `cc`,
-// `bcc`, `subject`, `body`, and `attachments` are all optional. At least one of
-// those optional fields must be populated; sending only `from` returns a 400.
-//
-// Supports idempotency via the `Idempotency-Key` header.
-//
-// **[Required scope](/using-the-api/scopes/):** `emails:create`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *EmailService) Draft(ctx context.Context, body EmailDraftParams, opts ...option.RequestOption) (res *EmailDraftResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	path := "v1/emails/draft"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return res, err
-}
-
 // Sends an email via the connected email account that owns the `from` address.
 // Currently supports new sends only; replies and forwards are not yet supported.
 //
@@ -88,23 +71,6 @@ func (r *EmailService) Send(ctx context.Context, body EmailSendParams, opts ...o
 	path := "v1/emails/send"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
-}
-
-type EmailDraftResponse struct {
-	// ISO 8601 timestamp of when the draft was created.
-	DraftedAt string `json:"draftedAt" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		DraftedAt   respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r EmailDraftResponse) RawJSON() string { return r.JSON.raw }
-func (r *EmailDraftResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
 }
 
 type EmailRetrieveResponse struct {
@@ -383,60 +349,6 @@ type EmailSendResponse struct {
 func (r EmailSendResponse) RawJSON() string { return r.JSON.raw }
 func (r *EmailSendResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
-}
-
-type EmailDraftParams struct {
-	// Bare email address (no display name). Must match a connected email account owned
-	// by the API key user. Compared case-insensitively. Mailbox where the draft is
-	// created.
-	From string `json:"from" api:"required"`
-	// Email subject.
-	Subject param.Opt[string] `json:"subject,omitzero"`
-	// Optional list of file IDs (uploaded via the Files API) to attach to the draft.
-	// Maximum 5 attachments per draft. Each attachment must be ≤ 3MB and the total
-	// across all attachments must be ≤ 25MB.
-	Attachments []string `json:"attachments,omitzero"`
-	// Bcc recipients (same shape as `to`).
-	Bcc  []string             `json:"bcc,omitzero"`
-	Body EmailDraftParamsBody `json:"body,omitzero"`
-	// Cc recipients (same shape as `to`).
-	Cc []string `json:"cc,omitzero"`
-	// Recipient email addresses (bare, no display names). Up to 500.
-	To []string `json:"to,omitzero"`
-	paramObj
-}
-
-func (r EmailDraftParams) MarshalJSON() (data []byte, err error) {
-	type shadow EmailDraftParams
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *EmailDraftParams) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// The property Content is required.
-type EmailDraftParamsBody struct {
-	// Email body content.
-	Content string `json:"content" api:"required"`
-	// Defaults to `HTML`.
-	//
-	// Any of "HTML", "TEXT".
-	ContentType string `json:"contentType,omitzero"`
-	paramObj
-}
-
-func (r EmailDraftParamsBody) MarshalJSON() (data []byte, err error) {
-	type shadow EmailDraftParamsBody
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *EmailDraftParamsBody) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-func init() {
-	apijson.RegisterFieldValidator[EmailDraftParamsBody](
-		"contentType", "HTML", "TEXT",
-	)
 }
 
 type EmailSendParams struct {
