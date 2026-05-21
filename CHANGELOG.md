@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.8.0 (2026-05-21)
+
+Full Changelog: [v0.7.0-alpha...v0.8.0](https://github.com/Lightfld/lightfield-go/compare/v0.7.0-alpha...v0.8.0)
+
+### Features
+
+* **api:** allow email get + send API ([3329130](https://github.com/Lightfld/lightfield-go/commit/332913017fbcf983a3f6f11f985c1e875cd9b6a1))
+
 ## 0.7.0-alpha (2026-05-21)
 
 Full Changelog: [v0.6.0-alpha...v0.7.0-alpha](https://github.com/Lightfld/lightfield-go/compare/v0.6.0-alpha...v0.7.0-alpha)
