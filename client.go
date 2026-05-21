@@ -61,6 +61,9 @@ type Client struct {
 	// can be fetched and manipulated via these endpoints, and definitions can be
 	// fetched to discover the available custom object types in the system.
 	Object ObjectService
+	// Emails represent messages synced from connected email accounts in Lightfield.
+	// Read responses are privacy-aware and may be redacted based on the caller.
+	Email EmailService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -102,6 +105,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.WorkflowRun = NewWorkflowRunService(opts...)
 	r.File = NewFileService(opts...)
 	r.Object = NewObjectService(opts...)
+	r.Email = NewEmailService(opts...)
 
 	return
 }

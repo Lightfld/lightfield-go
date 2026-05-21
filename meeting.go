@@ -46,8 +46,10 @@ func NewMeetingService(opts ...option.RequestOption) (r MeetingService) {
 // Creates a new meeting record. This endpoint only supports creation of meetings
 // in the past. The `$title`, `$startDate`, and `$endDate` fields are required.
 // Only the `$transcript` relationship is writable on create; all other meeting
-// relationships are system-managed. The response is privacy-aware and includes a
-// read-only `accessLevel`. See
+// relationships are system-managed. The `$account` and `$opportunity`
+// relationships are read-only and are derived from the meeting's `$contact`
+// attendees and the accounts/opportunities those contacts belong to. The response
+// is privacy-aware and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -86,8 +88,10 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 //
 // Only `fields.$privacySetting` and `relationships.$transcript.replace` are
 // writable. Use `$transcript.replace` to set the meeting transcript. Clearing or
-// removing `$transcript` is not supported. The response is privacy-aware and
-// includes a read-only `accessLevel`. See
+// removing `$transcript` is not supported. The `$account` and `$opportunity`
+// relationships are read-only and are derived from the meeting's `$contact`
+// attendees and the accounts/opportunities those contacts belong to. The response
+// is privacy-aware and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -186,7 +190,7 @@ type MeetingCreateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -462,7 +466,7 @@ type MeetingListResponseDataField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -716,7 +720,7 @@ type MeetingRetrieveResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -977,7 +981,7 @@ type MeetingUpdateResponseField struct {
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
 	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL".
+	// "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
