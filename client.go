@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"slices"
+	"strings"
 
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
@@ -17,6 +18,9 @@ import (
 // directly, and instead use the [NewClient] method instead.
 type Client struct {
 	Options []option.RequestOption
+	// Auth helper to validate the current token and describe the access it grants.
+	// This endpoint is currently only available for API keys.
+	Auth AuthService
 	// Accounts represent companies or organizations in Lightfield. Each account can
 	// have contacts, opportunities, tasks, and notes associated with it.
 	Account AccountService
@@ -53,14 +57,29 @@ type Client struct {
 	// supported purposes. For meeting transcript attachments, see
 	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
 	File FileService
+	// Custom objects and relationships are available on Pro and Growth plans. Records
+	// can be fetched and manipulated via these endpoints, and definitions can be
+	// fetched to discover the available custom object types in the system.
+	Object ObjectService
+	// Emails represent messages synced from connected email accounts in Lightfield.
+	// Read responses are privacy-aware and may be redacted based on the caller.
+	Email EmailService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
 // should be used to initialize new clients.
 func DefaultClientOptions() []option.RequestOption {
-	defaults := []option.RequestOption{option.WithEnvironmentProduction()}
+	defaults := []option.RequestOption{option.WithHTTPClient(defaultHTTPClient()), option.WithEnvironmentProduction()}
 	if o, ok := os.LookupEnv("LIGHTFIELD_BASE_URL"); ok {
 		defaults = append(defaults, option.WithBaseURL(o))
+	}
+	if o, ok := os.LookupEnv("LIGHTFIELD_CUSTOM_HEADERS"); ok {
+		for _, line := range strings.Split(o, "\n") {
+			colon := strings.Index(line, ":")
+			if colon >= 0 {
+				defaults = append(defaults, option.WithHeader(strings.TrimSpace(line[:colon]), strings.TrimSpace(line[colon+1:])))
+			}
+		}
 	}
 	return defaults
 }
@@ -74,6 +93,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 
 	r = Client{Options: opts}
 
+	r.Auth = NewAuthService(opts...)
 	r.Account = NewAccountService(opts...)
 	r.Contact = NewContactService(opts...)
 	r.List = NewListService(opts...)
@@ -84,6 +104,8 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Member = NewMemberService(opts...)
 	r.WorkflowRun = NewWorkflowRunService(opts...)
 	r.File = NewFileService(opts...)
+	r.Object = NewObjectService(opts...)
+	r.Email = NewEmailService(opts...)
 
 	return
 }

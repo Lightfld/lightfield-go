@@ -19,140 +19,123 @@ import (
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
-// Opportunities represent potential deals or sales in Lightfield. Each opportunity
-// belongs to an account and can have tasks and notes associated with it.
+// Custom objects and relationships are available on Pro and Growth plans. Records
+// can be fetched and manipulated via these endpoints, and definitions can be
+// fetched to discover the available custom object types in the system.
 //
-// OpportunityService contains methods and other services that help with
-// interacting with the Lightfield API.
+// ObjectService contains methods and other services that help with interacting
+// with the Lightfield API.
 //
 // Note, unlike clients, this service does not read variables from the environment
 // automatically. You should not instantiate this service directly, and instead use
-// the [NewOpportunityService] method instead.
-type OpportunityService struct {
+// the [NewObjectService] method instead.
+type ObjectService struct {
 	Options []option.RequestOption
 }
 
-// NewOpportunityService generates a new service that applies the given options to
-// each request. These options are applied after the parent client's options (if
-// there is one), and before any request-specific options.
-func NewOpportunityService(opts ...option.RequestOption) (r OpportunityService) {
-	r = OpportunityService{}
+// NewObjectService generates a new service that applies the given options to each
+// request. These options are applied after the parent client's options (if there
+// is one), and before any request-specific options.
+func NewObjectService(opts ...option.RequestOption) (r ObjectService) {
+	r = ObjectService{}
 	r.Options = opts
 	return
 }
 
-// Creates a new opportunity record. The `$name` and `$stage` fields and the
-// `$account` relationship are required.
-//
-// After creation, Lightfield automatically generates an opportunity summary in the
-// background. The `$opportunityStatus` field is read-only and cannot be set via
-// the API. The `$task`, `$note`, and `$meeting` relationships are also read-only —
-// manage them via the `$opportunity` relationship on the task, the
-// `$account`/`$opportunity` note relationships, or via the meeting's `$contact`
-// attendees that belong to this opportunity's account.
-//
-// Supports idempotency via the `Idempotency-Key` header.
-//
-// To avoid duplicates, we recommend a find-or-create pattern — use
-// <u>[list filtering](/using-the-api/list-endpoints/#filtering)</u> to check if a
-// record exists before creating.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:create`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *OpportunityService) New(ctx context.Context, body OpportunityNewParams, opts ...option.RequestOption) (res *OpportunityCreateResponse, err error) {
+// Creates a new record for the specified custom object type.
+func (r *ObjectService) New(ctx context.Context, entitySlug string, body ObjectNewParams, opts ...option.RequestOption) (res *ObjectCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/opportunities"
+	if entitySlug == "" {
+		err = errors.New("missing required entitySlug parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/objects/%s/values", url.PathEscape(entitySlug))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
-// Retrieves a single opportunity by its ID.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *OpportunityService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *OpportunityRetrieveResponse, err error) {
+// Retrieves a single record by ID for the specified custom object type.
+func (r *ObjectService) Get(ctx context.Context, id string, query ObjectGetParams, opts ...option.RequestOption) (res *ObjectRetrieveResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
+	if query.EntitySlug == "" {
+		err = errors.New("missing required entitySlug parameter")
+		return nil, err
+	}
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/opportunities/%s", url.PathEscape(id))
+	path := fmt.Sprintf("v1/objects/%s/values/%s", url.PathEscape(query.EntitySlug), url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-// Updates an existing opportunity by ID. Only included fields and relationships
-// are modified.
-//
-// The `$opportunityStatus` field is read-only and cannot be updated. The `$task`,
-// `$note`, and `$meeting` relationships are also read-only — manage them via the
-// `$opportunity` relationship on the task, the `$account`/`$opportunity` note
-// relationships, or via the meeting's `$contact` attendees that belong to this
-// opportunity's account.
-//
-// Supports idempotency via the `Idempotency-Key` header.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:update`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Write
-func (r *OpportunityService) Update(ctx context.Context, id string, body OpportunityUpdateParams, opts ...option.RequestOption) (res *OpportunityUpdateResponse, err error) {
+// Updates an existing record by ID for the specified custom object type. Only
+// included fields and relationships are modified.
+func (r *ObjectService) Update(ctx context.Context, id string, params ObjectUpdateParams, opts ...option.RequestOption) (res *ObjectUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
+	if params.EntitySlug == "" {
+		err = errors.New("missing required entitySlug parameter")
+		return nil, err
+	}
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/opportunities/%s", url.PathEscape(id))
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	path := fmt.Sprintf("v1/objects/%s/values/%s", url.PathEscape(params.EntitySlug), url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
 	return res, err
 }
 
-// Returns a paginated list of opportunities. Use `offset` and `limit` to paginate
-// through results, and `$field` query parameters to filter. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
-// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Search
-func (r *OpportunityService) List(ctx context.Context, query OpportunityListParams, opts ...option.RequestOption) (res *OpportunityListResponse, err error) {
+// Returns a paginated list of records for the specified custom object type. Use
+// `offset` and `limit` to paginate through results, and `$field` query parameters
+// to filter. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u>
+// and <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+func (r *ObjectService) List(ctx context.Context, entitySlug string, query ObjectListParams, opts ...option.RequestOption) (res *ObjectListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/opportunities"
+	if entitySlug == "" {
+		err = errors.New("missing required entitySlug parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/objects/%s", url.PathEscape(entitySlug))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
-// Returns the schema for all field and relationship definitions available on
-// opportunities, including both system-defined and custom fields. Useful for
-// understanding the shape of opportunity data before creating or updating records.
-// See <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u>
-// for more details.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *OpportunityService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *OpportunityDefinitionsResponse, err error) {
+// Returns field and relationship definitions for the specified custom object type.
+func (r *ObjectService) Definitions(ctx context.Context, entitySlug string, opts ...option.RequestOption) (res *ObjectDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
-	path := "v1/opportunities/definitions"
+	if entitySlug == "" {
+		err = errors.New("missing required entitySlug parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/objects/%s/definitions", url.PathEscape(entitySlug))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
-type OpportunityCreateResponse struct {
+// Returns all custom object types available to the caller.
+func (r *ObjectService) ListDefinitions(ctx context.Context, opts ...option.RequestOption) (res *ObjectListDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/objects"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+type ObjectCreateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]OpportunityCreateResponseField `json:"fields" api:"required"`
+	Fields map[string]ObjectCreateResponseField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]OpportunityCreateResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]ObjectCreateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -172,14 +155,14 @@ type OpportunityCreateResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityCreateResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityCreateResponse) UnmarshalJSON(data []byte) error {
+func (r ObjectCreateResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityCreateResponseField struct {
+type ObjectCreateResponseField struct {
 	// The field value, or null if unset.
-	Value OpportunityCreateResponseFieldValueUnion `json:"value" api:"required"`
+	Value ObjectCreateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -196,21 +179,21 @@ type OpportunityCreateResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityCreateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityCreateResponseField) UnmarshalJSON(data []byte) error {
+func (r ObjectCreateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *ObjectCreateResponseField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// OpportunityCreateResponseFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [OpportunityCreateResponseFieldValueAddress],
-// [OpportunityCreateResponseFieldValueFullName].
+// ObjectCreateResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [ObjectCreateResponseFieldValueAddress],
+// [ObjectCreateResponseFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type OpportunityCreateResponseFieldValueUnion struct {
+type ObjectCreateResponseFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -219,25 +202,25 @@ type OpportunityCreateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [OpportunityCreateResponseFieldValueAddress].
+	// This field is from variant [ObjectCreateResponseFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [OpportunityCreateResponseFieldValueFullName].
+	// This field is from variant [ObjectCreateResponseFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [OpportunityCreateResponseFieldValueFullName].
+	// This field is from variant [ObjectCreateResponseFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -258,44 +241,44 @@ type OpportunityCreateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsString() (v string) {
+func (u ObjectCreateResponseFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u ObjectCreateResponseFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsBool() (v bool) {
+func (u ObjectCreateResponseFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u ObjectCreateResponseFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsAddress() (v OpportunityCreateResponseFieldValueAddress) {
+func (u ObjectCreateResponseFieldValueUnion) AsAddress() (v ObjectCreateResponseFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityCreateResponseFieldValueUnion) AsFullName() (v OpportunityCreateResponseFieldValueFullName) {
+func (u ObjectCreateResponseFieldValueUnion) AsFullName() (v ObjectCreateResponseFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u OpportunityCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u ObjectCreateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *OpportunityCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *ObjectCreateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityCreateResponseFieldValueAddress struct {
+type ObjectCreateResponseFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -328,12 +311,12 @@ type OpportunityCreateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r ObjectCreateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *ObjectCreateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityCreateResponseFieldValueFullName struct {
+type ObjectCreateResponseFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -348,12 +331,12 @@ type OpportunityCreateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r ObjectCreateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *ObjectCreateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityCreateResponseRelationship struct {
+type ObjectCreateResponseRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -371,18 +354,18 @@ type OpportunityCreateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityCreateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r ObjectCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *ObjectCreateResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityDefinitionsResponse struct {
+type ObjectDefinitionsResponse struct {
 	// Map of field keys to their definitions, including both system and custom fields.
-	FieldDefinitions map[string]OpportunityDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	FieldDefinitions map[string]ObjectDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
 	// The object type these definitions belong to (e.g. `account`).
 	ObjectType string `json:"objectType" api:"required"`
 	// Map of relationship keys to their definitions.
-	RelationshipDefinitions map[string]OpportunityDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	RelationshipDefinitions map[string]ObjectDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		FieldDefinitions        respjson.Field
@@ -394,18 +377,18 @@ type OpportunityDefinitionsResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityDefinitionsResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityDefinitionsResponse) UnmarshalJSON(data []byte) error {
+func (r ObjectDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectDefinitionsResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityDefinitionsResponseFieldDefinition struct {
+type ObjectDefinitionsResponseFieldDefinition struct {
 	// Description of the field, or null.
 	Description string `json:"description" api:"required"`
 	// Human-readable display name of the field.
 	Label string `json:"label" api:"required"`
 	// Type-specific configuration (e.g. select options, currency code).
-	TypeConfiguration OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	TypeConfiguration ObjectDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
 	// Data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -431,13 +414,13 @@ type OpportunityDefinitionsResponseFieldDefinition struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+func (r ObjectDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ObjectDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Type-specific configuration (e.g. select options, currency code).
-type OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+type ObjectDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 	// ISO 4217 3-letter currency code.
 	Currency string `json:"currency"`
 	// Social platform associated with this handle field.
@@ -447,7 +430,7 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 	// Whether this field accepts multiple values.
 	MultipleValues bool `json:"multipleValues"`
 	// Available options for select fields.
-	Options []OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	Options []ObjectDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
 	// Whether values for this field must be unique.
 	Unique bool `json:"unique"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -463,14 +446,14 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
+func (r ObjectDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
 	return r.JSON.raw
 }
-func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+func (r *ObjectDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+type ObjectDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	// Unique identifier of the select option.
 	ID string `json:"id" api:"required"`
 	// Human-readable display name of the option.
@@ -488,14 +471,14 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption struct
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+func (r ObjectDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
 	return r.JSON.raw
 }
-func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+func (r *ObjectDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityDefinitionsResponseRelationshipDefinition struct {
+type ObjectDefinitionsResponseRelationshipDefinition struct {
 	// Whether this is a `has_one` or `has_many` relationship.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -521,14 +504,51 @@ type OpportunityDefinitionsResponseRelationshipDefinition struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+func (r ObjectDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ObjectDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponse struct {
+type ObjectListDefinitionsResponse struct {
+	// All object types available to the caller.
+	Data []ObjectListDefinitionsResponseData `json:"data" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ObjectListDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ObjectListDefinitionsResponseData struct {
+	// Human-readable display name.
+	Label string `json:"label" api:"required"`
+	// The slug used to reference this object type in the API.
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ObjectListDefinitionsResponseData) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListDefinitionsResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ObjectListResponse struct {
 	// Array of entity objects for the current page.
-	Data []OpportunityListResponseData `json:"data" api:"required"`
+	Data []ObjectListResponseData `json:"data" api:"required"`
 	// The object type, always `"list"`.
 	Object string `json:"object" api:"required"`
 	// Total number of entities matching the query.
@@ -544,24 +564,24 @@ type OpportunityListResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponse) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponseData struct {
+type ObjectListResponseData struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]OpportunityListResponseDataField `json:"fields" api:"required"`
+	Fields map[string]ObjectListResponseDataField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]OpportunityListResponseDataRelationship `json:"relationships" api:"required"`
+	Relationships map[string]ObjectListResponseDataRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -581,14 +601,14 @@ type OpportunityListResponseData struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponseData) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponseData) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponseData) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponseData) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponseDataField struct {
+type ObjectListResponseDataField struct {
 	// The field value, or null if unset.
-	Value OpportunityListResponseDataFieldValueUnion `json:"value" api:"required"`
+	Value ObjectListResponseDataFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -605,21 +625,21 @@ type OpportunityListResponseDataField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponseDataField) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponseDataField) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponseDataField) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponseDataField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// OpportunityListResponseDataFieldValueUnion contains all possible properties and
+// ObjectListResponseDataFieldValueUnion contains all possible properties and
 // values from [string], [float64], [bool], [[]string],
-// [OpportunityListResponseDataFieldValueAddress],
-// [OpportunityListResponseDataFieldValueFullName].
+// [ObjectListResponseDataFieldValueAddress],
+// [ObjectListResponseDataFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type OpportunityListResponseDataFieldValueUnion struct {
+type ObjectListResponseDataFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -628,25 +648,25 @@ type OpportunityListResponseDataFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [OpportunityListResponseDataFieldValueAddress].
+	// This field is from variant [ObjectListResponseDataFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [OpportunityListResponseDataFieldValueFullName].
+	// This field is from variant [ObjectListResponseDataFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [OpportunityListResponseDataFieldValueFullName].
+	// This field is from variant [ObjectListResponseDataFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -667,44 +687,44 @@ type OpportunityListResponseDataFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsString() (v string) {
+func (u ObjectListResponseDataFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsFloat() (v float64) {
+func (u ObjectListResponseDataFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsBool() (v bool) {
+func (u ObjectListResponseDataFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsStringArray() (v []string) {
+func (u ObjectListResponseDataFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsAddress() (v OpportunityListResponseDataFieldValueAddress) {
+func (u ObjectListResponseDataFieldValueUnion) AsAddress() (v ObjectListResponseDataFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityListResponseDataFieldValueUnion) AsFullName() (v OpportunityListResponseDataFieldValueFullName) {
+func (u ObjectListResponseDataFieldValueUnion) AsFullName() (v ObjectListResponseDataFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u OpportunityListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u ObjectListResponseDataFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *OpportunityListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *ObjectListResponseDataFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponseDataFieldValueAddress struct {
+type ObjectListResponseDataFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -737,12 +757,12 @@ type OpportunityListResponseDataFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponseDataFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponseDataFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponseDataFieldValueFullName struct {
+type ObjectListResponseDataFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -757,12 +777,12 @@ type OpportunityListResponseDataFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponseDataFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponseDataFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListResponseDataRelationship struct {
+type ObjectListResponseDataRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -780,24 +800,24 @@ type OpportunityListResponseDataRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListResponseDataRelationship) UnmarshalJSON(data []byte) error {
+func (r ObjectListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
+func (r *ObjectListResponseDataRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrieveResponse struct {
+type ObjectRetrieveResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]OpportunityRetrieveResponseField `json:"fields" api:"required"`
+	Fields map[string]ObjectRetrieveResponseField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]OpportunityRetrieveResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]ObjectRetrieveResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -817,14 +837,14 @@ type OpportunityRetrieveResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityRetrieveResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrieveResponse) UnmarshalJSON(data []byte) error {
+func (r ObjectRetrieveResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectRetrieveResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrieveResponseField struct {
+type ObjectRetrieveResponseField struct {
 	// The field value, or null if unset.
-	Value OpportunityRetrieveResponseFieldValueUnion `json:"value" api:"required"`
+	Value ObjectRetrieveResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -841,21 +861,21 @@ type OpportunityRetrieveResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityRetrieveResponseField) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrieveResponseField) UnmarshalJSON(data []byte) error {
+func (r ObjectRetrieveResponseField) RawJSON() string { return r.JSON.raw }
+func (r *ObjectRetrieveResponseField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// OpportunityRetrieveResponseFieldValueUnion contains all possible properties and
+// ObjectRetrieveResponseFieldValueUnion contains all possible properties and
 // values from [string], [float64], [bool], [[]string],
-// [OpportunityRetrieveResponseFieldValueAddress],
-// [OpportunityRetrieveResponseFieldValueFullName].
+// [ObjectRetrieveResponseFieldValueAddress],
+// [ObjectRetrieveResponseFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type OpportunityRetrieveResponseFieldValueUnion struct {
+type ObjectRetrieveResponseFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -864,25 +884,25 @@ type OpportunityRetrieveResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueAddress].
+	// This field is from variant [ObjectRetrieveResponseFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueFullName].
+	// This field is from variant [ObjectRetrieveResponseFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [OpportunityRetrieveResponseFieldValueFullName].
+	// This field is from variant [ObjectRetrieveResponseFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -903,44 +923,44 @@ type OpportunityRetrieveResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsString() (v string) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsBool() (v bool) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsAddress() (v OpportunityRetrieveResponseFieldValueAddress) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsAddress() (v ObjectRetrieveResponseFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityRetrieveResponseFieldValueUnion) AsFullName() (v OpportunityRetrieveResponseFieldValueFullName) {
+func (u ObjectRetrieveResponseFieldValueUnion) AsFullName() (v ObjectRetrieveResponseFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u OpportunityRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u ObjectRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *OpportunityRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *ObjectRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrieveResponseFieldValueAddress struct {
+type ObjectRetrieveResponseFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -973,12 +993,12 @@ type OpportunityRetrieveResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r ObjectRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *ObjectRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrieveResponseFieldValueFullName struct {
+type ObjectRetrieveResponseFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -993,12 +1013,12 @@ type OpportunityRetrieveResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r ObjectRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *ObjectRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrieveResponseRelationship struct {
+type ObjectRetrieveResponseRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -1016,24 +1036,24 @@ type OpportunityRetrieveResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r ObjectRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *ObjectRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateResponse struct {
+type ObjectUpdateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]OpportunityUpdateResponseField `json:"fields" api:"required"`
+	Fields map[string]ObjectUpdateResponseField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
 	// prefixed with `$` (e.g. `$owner`, `$contact`).
-	Relationships map[string]OpportunityUpdateResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]ObjectUpdateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -1053,14 +1073,14 @@ type OpportunityUpdateResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityUpdateResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityUpdateResponse) UnmarshalJSON(data []byte) error {
+func (r ObjectUpdateResponse) RawJSON() string { return r.JSON.raw }
+func (r *ObjectUpdateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateResponseField struct {
+type ObjectUpdateResponseField struct {
 	// The field value, or null if unset.
-	Value OpportunityUpdateResponseFieldValueUnion `json:"value" api:"required"`
+	Value ObjectUpdateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -1077,21 +1097,21 @@ type OpportunityUpdateResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityUpdateResponseField) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityUpdateResponseField) UnmarshalJSON(data []byte) error {
+func (r ObjectUpdateResponseField) RawJSON() string { return r.JSON.raw }
+func (r *ObjectUpdateResponseField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// OpportunityUpdateResponseFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [OpportunityUpdateResponseFieldValueAddress],
-// [OpportunityUpdateResponseFieldValueFullName].
+// ObjectUpdateResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [ObjectUpdateResponseFieldValueAddress],
+// [ObjectUpdateResponseFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type OpportunityUpdateResponseFieldValueUnion struct {
+type ObjectUpdateResponseFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -1100,25 +1120,25 @@ type OpportunityUpdateResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueAddress].
+	// This field is from variant [ObjectUpdateResponseFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueFullName].
+	// This field is from variant [ObjectUpdateResponseFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [OpportunityUpdateResponseFieldValueFullName].
+	// This field is from variant [ObjectUpdateResponseFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -1139,44 +1159,44 @@ type OpportunityUpdateResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsString() (v string) {
+func (u ObjectUpdateResponseFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsFloat() (v float64) {
+func (u ObjectUpdateResponseFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsBool() (v bool) {
+func (u ObjectUpdateResponseFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u ObjectUpdateResponseFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsAddress() (v OpportunityUpdateResponseFieldValueAddress) {
+func (u ObjectUpdateResponseFieldValueUnion) AsAddress() (v ObjectUpdateResponseFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u OpportunityUpdateResponseFieldValueUnion) AsFullName() (v OpportunityUpdateResponseFieldValueFullName) {
+func (u ObjectUpdateResponseFieldValueUnion) AsFullName() (v ObjectUpdateResponseFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u OpportunityUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u ObjectUpdateResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *OpportunityUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *ObjectUpdateResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateResponseFieldValueAddress struct {
+type ObjectUpdateResponseFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -1209,12 +1229,12 @@ type OpportunityUpdateResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r ObjectUpdateResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *ObjectUpdateResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateResponseFieldValueFullName struct {
+type ObjectUpdateResponseFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -1229,12 +1249,12 @@ type OpportunityUpdateResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r ObjectUpdateResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *ObjectUpdateResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateResponseRelationship struct {
+type ObjectUpdateResponseRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -1252,54 +1272,41 @@ type OpportunityUpdateResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r OpportunityUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r ObjectUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *ObjectUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityNewParams struct {
-	// Field values for the new opportunity. System fields use a `$` prefix (e.g.
-	// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
-	// (string) and `$stage` (option ID or label). Fields of type `SINGLE_SELECT` or
-	// `MULTI_SELECT` accept either an option ID or label from the field's
-	// `typeConfiguration.options` — call the
-	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
-	// discover available fields and options. See
-	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-	// value type details.
-	Fields map[string]OpportunityNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
-	// Relationships to set on the new opportunity. System relationships use a `$`
-	// prefix (e.g. `$account`, `$owner`); custom relationships use their bare slug.
-	// `$account` is required. Each value is a single entity ID or an array of IDs.
-	// Call the
-	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
-	// list available relationship keys.
-	Relationships map[string]OpportunityNewParamsRelationshipUnion `json:"relationships,omitzero" api:"required"`
+type ObjectNewParams struct {
+	// Field names to values for the new record.
+	Fields map[string]ObjectNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
+	// Relationship names to entity ID(s) to associate.
+	Relationships map[string]ObjectNewParamsRelationshipUnion `json:"relationships,omitzero"`
 	paramObj
 }
 
-func (r OpportunityNewParams) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityNewParams
+func (r ObjectNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectNewParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityNewParams) UnmarshalJSON(data []byte) error {
+func (r *ObjectNewParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsFieldUnion struct {
-	OfString      param.Opt[string]                  `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]                 `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                    `json:",omitzero,inline"`
-	OfStringArray []string                           `json:",omitzero,inline"`
-	OfAddress     *OpportunityNewParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *OpportunityNewParamsFieldFullName `json:",omitzero,inline"`
+type ObjectNewParamsFieldUnion struct {
+	OfString      param.Opt[string]             `json:",omitzero,inline"`
+	OfFloat       param.Opt[float64]            `json:",omitzero,inline"`
+	OfBool        param.Opt[bool]               `json:",omitzero,inline"`
+	OfStringArray []string                      `json:",omitzero,inline"`
+	OfAddress     *ObjectNewParamsFieldAddress  `json:",omitzero,inline"`
+	OfFullName    *ObjectNewParamsFieldFullName `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsFieldUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectNewParamsFieldUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString,
 		u.OfFloat,
 		u.OfBool,
@@ -1307,11 +1314,11 @@ func (u OpportunityNewParamsFieldUnion) MarshalJSON() ([]byte, error) {
 		u.OfAddress,
 		u.OfFullName)
 }
-func (u *OpportunityNewParamsFieldUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectNewParamsFieldUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityNewParamsFieldAddress struct {
+type ObjectNewParamsFieldAddress struct {
 	// City name.
 	City param.Opt[string] `json:"city,omitzero"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -1331,15 +1338,15 @@ type OpportunityNewParamsFieldAddress struct {
 	paramObj
 }
 
-func (r OpportunityNewParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityNewParamsFieldAddress
+func (r ObjectNewParamsFieldAddress) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectNewParamsFieldAddress
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityNewParamsFieldAddress) UnmarshalJSON(data []byte) error {
+func (r *ObjectNewParamsFieldAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityNewParamsFieldFullName struct {
+type ObjectNewParamsFieldFullName struct {
 	// The contact's first name.
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
 	// The contact's last name.
@@ -1347,69 +1354,68 @@ type OpportunityNewParamsFieldFullName struct {
 	paramObj
 }
 
-func (r OpportunityNewParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityNewParamsFieldFullName
+func (r ObjectNewParamsFieldFullName) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectNewParamsFieldFullName
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityNewParamsFieldFullName) UnmarshalJSON(data []byte) error {
+func (r *ObjectNewParamsFieldFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityNewParamsRelationshipUnion struct {
+type ObjectNewParamsRelationshipUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityUpdateParams struct {
-	// Field values to update — only provided fields are modified; omitted fields are
-	// left unchanged. System fields use a `$` prefix (e.g. `$name`, `$stage`); custom
-	// attributes use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept
-	// an option ID or label — call the
-	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u>
-	// for available options. See
-	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
-	// value type details.
-	Fields map[string]OpportunityUpdateParamsFieldUnion `json:"fields,omitzero"`
-	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$owner`, `$champion`). Each value is an operation object with `add`, `remove`,
-	// or `replace`.
-	Relationships map[string]OpportunityUpdateParamsRelationship `json:"relationships,omitzero"`
+type ObjectGetParams struct {
+	// The slug of the custom object type.
+	EntitySlug string `path:"entitySlug" api:"required" json:"-"`
 	paramObj
 }
 
-func (r OpportunityUpdateParams) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParams
+type ObjectUpdateParams struct {
+	// The slug of the custom object type.
+	EntitySlug string `path:"entitySlug" api:"required" json:"-"`
+	// Field names to values. Only provided fields are modified.
+	Fields map[string]ObjectUpdateParamsFieldUnion `json:"fields,omitzero"`
+	// Relationship names to operations (`add`, `remove`, or `replace`).
+	Relationships map[string]ObjectUpdateParamsRelationship `json:"relationships,omitzero"`
+	paramObj
+}
+
+func (r ObjectUpdateParams) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectUpdateParams
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParams) UnmarshalJSON(data []byte) error {
+func (r *ObjectUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsFieldUnion struct {
-	OfString      param.Opt[string]                     `json:",omitzero,inline"`
-	OfFloat       param.Opt[float64]                    `json:",omitzero,inline"`
-	OfBool        param.Opt[bool]                       `json:",omitzero,inline"`
-	OfStringArray []string                              `json:",omitzero,inline"`
-	OfAddress     *OpportunityUpdateParamsFieldAddress  `json:",omitzero,inline"`
-	OfFullName    *OpportunityUpdateParamsFieldFullName `json:",omitzero,inline"`
+type ObjectUpdateParamsFieldUnion struct {
+	OfString      param.Opt[string]                `json:",omitzero,inline"`
+	OfFloat       param.Opt[float64]               `json:",omitzero,inline"`
+	OfBool        param.Opt[bool]                  `json:",omitzero,inline"`
+	OfStringArray []string                         `json:",omitzero,inline"`
+	OfAddress     *ObjectUpdateParamsFieldAddress  `json:",omitzero,inline"`
+	OfFullName    *ObjectUpdateParamsFieldFullName `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsFieldUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectUpdateParamsFieldUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString,
 		u.OfFloat,
 		u.OfBool,
@@ -1417,11 +1423,11 @@ func (u OpportunityUpdateParamsFieldUnion) MarshalJSON() ([]byte, error) {
 		u.OfAddress,
 		u.OfFullName)
 }
-func (u *OpportunityUpdateParamsFieldUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectUpdateParamsFieldUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityUpdateParamsFieldAddress struct {
+type ObjectUpdateParamsFieldAddress struct {
 	// City name.
 	City param.Opt[string] `json:"city,omitzero"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -1441,15 +1447,15 @@ type OpportunityUpdateParamsFieldAddress struct {
 	paramObj
 }
 
-func (r OpportunityUpdateParamsFieldAddress) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsFieldAddress
+func (r ObjectUpdateParamsFieldAddress) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectUpdateParamsFieldAddress
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsFieldAddress) UnmarshalJSON(data []byte) error {
+func (r *ObjectUpdateParamsFieldAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityUpdateParamsFieldFullName struct {
+type ObjectUpdateParamsFieldFullName struct {
 	// The contact's first name.
 	FirstName param.Opt[string] `json:"firstName,omitzero"`
 	// The contact's last name.
@@ -1457,83 +1463,83 @@ type OpportunityUpdateParamsFieldFullName struct {
 	paramObj
 }
 
-func (r OpportunityUpdateParamsFieldFullName) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsFieldFullName
+func (r ObjectUpdateParamsFieldFullName) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectUpdateParamsFieldFullName
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error {
+func (r *ObjectUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
-type OpportunityUpdateParamsRelationship struct {
+type ObjectUpdateParamsRelationship struct {
 	// A single entity ID or an array of entity IDs.
-	Replace OpportunityUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
+	Replace ObjectUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
-	Add OpportunityUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	Add ObjectUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
-	Remove OpportunityUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
+	Remove ObjectUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
-func (r OpportunityUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
-	type shadow OpportunityUpdateParamsRelationship
+func (r ObjectUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
+	type shadow ObjectUpdateParamsRelationship
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *OpportunityUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
+func (r *ObjectUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipAddUnion struct {
+type ObjectUpdateParamsRelationshipAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipRemoveUnion struct {
+type ObjectUpdateParamsRelationshipRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipReplaceUnion struct {
+type ObjectUpdateParamsRelationshipReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u OpportunityUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
+func (u ObjectUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *OpportunityUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
+func (u *ObjectUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-type OpportunityListParams struct {
+type ObjectListParams struct {
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
@@ -1541,8 +1547,8 @@ type OpportunityListParams struct {
 	paramObj
 }
 
-// URLQuery serializes [OpportunityListParams]'s query parameters as `url.Values`.
-func (r OpportunityListParams) URLQuery() (v url.Values, err error) {
+// URLQuery serializes [ObjectListParams]'s query parameters as `url.Values`.
+func (r ObjectListParams) URLQuery() (v url.Values, err error) {
 	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,

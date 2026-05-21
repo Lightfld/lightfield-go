@@ -452,7 +452,8 @@ type FileNewParams struct {
 	// Knowledge, making it available to the AI assistant. Not persisted or returned in
 	// responses.
 	//
-	// Any of "meeting_transcript", "knowledge_user", "knowledge_workspace".
+	// Any of "meeting_transcript", "knowledge_user", "knowledge_workspace",
+	// "email_attachment".
 	Purpose FileNewParamsPurpose `json:"purpose,omitzero"`
 	paramObj
 }
@@ -477,6 +478,7 @@ const (
 	FileNewParamsPurposeMeetingTranscript  FileNewParamsPurpose = "meeting_transcript"
 	FileNewParamsPurposeKnowledgeUser      FileNewParamsPurpose = "knowledge_user"
 	FileNewParamsPurposeKnowledgeWorkspace FileNewParamsPurpose = "knowledge_workspace"
+	FileNewParamsPurposeEmailAttachment    FileNewParamsPurpose = "email_attachment"
 )
 
 type FileListParams struct {
