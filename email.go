@@ -78,8 +78,9 @@ func (r *EmailService) List(ctx context.Context, query EmailListParams, opts ...
 
 // Creates a draft in the connected email account that owns the `from` address.
 // Mirrors native email-client behavior: only `from` is required — `to`, `cc`,
-// `bcc`, `subject`, `body`, and `attachments` are all optional. At least one of
-// those optional fields must be populated; sending only `from` returns a 400.
+// `bcc`, `subject`, `messageBody`, and `attachments` are all optional. At least
+// one of those optional fields must be populated; sending only `from` returns
+// a 400.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -699,10 +700,11 @@ type EmailDraftParams struct {
 	// Maximum 5 attachments per draft, each ≤ 3MB.
 	Attachments []string `json:"attachments,omitzero"`
 	// Bcc recipients (same shape as `to`).
-	Bcc  []string             `json:"bcc,omitzero"`
-	Body EmailDraftParamsBody `json:"body,omitzero"`
+	Bcc []string `json:"bcc,omitzero"`
 	// Cc recipients (same shape as `to`).
 	Cc []string `json:"cc,omitzero"`
+	// Email message body (HTML or plain text).
+	MessageBody EmailDraftParamsMessageBody `json:"messageBody,omitzero"`
 	// Recipient email addresses (bare, no display names). Up to 500.
 	To []string `json:"to,omitzero"`
 	paramObj
@@ -716,8 +718,10 @@ func (r *EmailDraftParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Email message body (HTML or plain text).
+//
 // The property Content is required.
-type EmailDraftParamsBody struct {
+type EmailDraftParamsMessageBody struct {
 	// Email body content.
 	Content string `json:"content" api:"required"`
 	// Defaults to `HTML`.
@@ -727,26 +731,27 @@ type EmailDraftParamsBody struct {
 	paramObj
 }
 
-func (r EmailDraftParamsBody) MarshalJSON() (data []byte, err error) {
-	type shadow EmailDraftParamsBody
+func (r EmailDraftParamsMessageBody) MarshalJSON() (data []byte, err error) {
+	type shadow EmailDraftParamsMessageBody
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *EmailDraftParamsBody) UnmarshalJSON(data []byte) error {
+func (r *EmailDraftParamsMessageBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 func init() {
-	apijson.RegisterFieldValidator[EmailDraftParamsBody](
+	apijson.RegisterFieldValidator[EmailDraftParamsMessageBody](
 		"contentType", "HTML", "TEXT",
 	)
 }
 
 type EmailSendParams struct {
-	Body EmailSendParamsBody `json:"body,omitzero" api:"required"`
 	// Bare email address (no display name). Must match a connected email account owned
 	// by the API key user. Compared case-insensitively. Used as the From header when
 	// sending.
 	From string `json:"from" api:"required"`
+	// Email message body (HTML or plain text).
+	MessageBody EmailSendParamsMessageBody `json:"messageBody,omitzero" api:"required"`
 	// Email subject. Cannot be empty.
 	Subject string `json:"subject" api:"required"`
 	// Recipient email addresses (bare, no display names). At least 1, at most 500.
@@ -769,8 +774,10 @@ func (r *EmailSendParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Email message body (HTML or plain text).
+//
 // The property Content is required.
-type EmailSendParamsBody struct {
+type EmailSendParamsMessageBody struct {
 	// Email body content.
 	Content string `json:"content" api:"required"`
 	// Defaults to `HTML`.
@@ -780,16 +787,16 @@ type EmailSendParamsBody struct {
 	paramObj
 }
 
-func (r EmailSendParamsBody) MarshalJSON() (data []byte, err error) {
-	type shadow EmailSendParamsBody
+func (r EmailSendParamsMessageBody) MarshalJSON() (data []byte, err error) {
+	type shadow EmailSendParamsMessageBody
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *EmailSendParamsBody) UnmarshalJSON(data []byte) error {
+func (r *EmailSendParamsMessageBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 func init() {
-	apijson.RegisterFieldValidator[EmailSendParamsBody](
+	apijson.RegisterFieldValidator[EmailSendParamsMessageBody](
 		"contentType", "HTML", "TEXT",
 	)
 }

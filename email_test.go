@@ -76,11 +76,11 @@ func TestEmailDraftWithOptionalParams(t *testing.T) {
 		From:        "sales@acme.com",
 		Attachments: []string{"file_01abc2def3ghi4jkl5mno6pqr"},
 		Bcc:         []string{"lead@example.com"},
-		Body: githubcomlightfldlightfieldgo.EmailDraftParamsBody{
+		Cc:          []string{"lead@example.com"},
+		MessageBody: githubcomlightfldlightfieldgo.EmailDraftParamsMessageBody{
 			Content:     "<p>Hi there,</p><p>Following up on our chat earlier this week.</p>",
 			ContentType: "HTML",
 		},
-		Cc:      []string{"lead@example.com"},
 		Subject: githubcomlightfldlightfieldgo.String("subject"),
 		To:      []string{"lead@example.com"},
 	})
@@ -106,11 +106,11 @@ func TestEmailSendWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Email.Send(context.TODO(), githubcomlightfldlightfieldgo.EmailSendParams{
-		Body: githubcomlightfldlightfieldgo.EmailSendParamsBody{
+		From: "sales@acme.com",
+		MessageBody: githubcomlightfldlightfieldgo.EmailSendParamsMessageBody{
 			Content:     "<p>Hi there,</p><p>Following up on our chat earlier this week.</p>",
 			ContentType: "HTML",
 		},
-		From:        "sales@acme.com",
 		Subject:     "Following up on our chat",
 		To:          []string{"lead@example.com"},
 		Attachments: []string{"file_01abc2def3ghi4jkl5mno6pqr"},
