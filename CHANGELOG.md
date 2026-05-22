@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.9.0 (2026-05-22)
+
+Full Changelog: [v0.8.0...v0.9.0](https://github.com/Lightfld/lightfield-go/compare/v0.8.0...v0.9.0)
+
+### Features
+
+* **api:** Email API release ([3d34334](https://github.com/Lightfld/lightfield-go/commit/3d343343cf8adc90859bae794f0c2ea8e88b08e8))
+* **api:** fix email request body to messageBody ([d612194](https://github.com/Lightfld/lightfield-go/commit/d612194a87052e85ed8c87933c3b3446c5fc02bf))
+
 ## 0.8.0 (2026-05-21)
 
 Full Changelog: [v0.7.0-alpha...v0.8.0](https://github.com/Lightfld/lightfield-go/compare/v0.7.0-alpha...v0.8.0)
