@@ -20,7 +20,7 @@ import (
 )
 
 // Notes represent free-form text records in Lightfield. Each note can be
-// associated with zero or more accounts and opportunities.
+// associated with zero or more accounts, opportunities, and contacts.
 //
 // NoteService contains methods and other services that help with interacting with
 // the Lightfield API.

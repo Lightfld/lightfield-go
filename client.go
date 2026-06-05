@@ -36,7 +36,7 @@ type Client struct {
 	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
 	Meeting MeetingService
 	// Notes represent free-form text records in Lightfield. Each note can be
-	// associated with zero or more accounts and opportunities.
+	// associated with zero or more accounts, opportunities, and contacts.
 	Note NoteService
 	// Opportunities represent potential deals or sales in Lightfield. Each opportunity
 	// belongs to an account and can have tasks and notes associated with it.
