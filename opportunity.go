@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	shimjson "github.com/Lightfld/lightfield-go/internal/encoding/json"
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
 	"github.com/Lightfld/lightfield-go/packages/param"
@@ -121,6 +122,27 @@ func (r *OpportunityService) List(ctx context.Context, query OpportunityListPara
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/opportunities"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Moves an opportunity to the trash. The opportunity is soft-deleted and may be
+// restored from the Lightfield UI. Associated tasks, notes, and meetings are not
+// deleted.
+//
+// Calling delete on an already-trashed opportunity is a no-op and returns the
+// existing record.
+//
+// **[Required scope](/using-the-api/scopes/):** `opportunities:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *OpportunityService) Delete(ctx context.Context, id string, body OpportunityDeleteParams, opts ...option.RequestOption) (res *OpportunityDeleteResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/opportunities/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, &res, opts...)
 	return res, err
 }
 
@@ -523,6 +545,242 @@ type OpportunityDefinitionsResponseRelationshipDefinition struct {
 // Returns the unmodified JSON received from the API
 func (r OpportunityDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
 func (r *OpportunityDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]OpportunityDeleteResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]OpportunityDeleteResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDeleteResponse) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDeleteResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteResponseField struct {
+	// The field value, or null if unset.
+	Value OpportunityDeleteResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDeleteResponseField) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDeleteResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// OpportunityDeleteResponseFieldValueUnion contains all possible properties and
+// values from [string], [float64], [bool], [[]string],
+// [OpportunityDeleteResponseFieldValueAddress],
+// [OpportunityDeleteResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type OpportunityDeleteResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [OpportunityDeleteResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsAddress() (v OpportunityDeleteResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u OpportunityDeleteResponseFieldValueUnion) AsFullName() (v OpportunityDeleteResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u OpportunityDeleteResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *OpportunityDeleteResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDeleteResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDeleteResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDeleteResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDeleteResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r OpportunityDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *OpportunityDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1547,4 +1805,28 @@ func (r OpportunityListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type OpportunityDeleteParams struct {
+	Body OpportunityDeleteParamsBody
+	paramObj
+}
+
+func (r OpportunityDeleteParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *OpportunityDeleteParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDeleteParamsBody struct {
+	paramObj
+}
+
+func (r OpportunityDeleteParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow OpportunityDeleteParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *OpportunityDeleteParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
