@@ -104,8 +104,8 @@ type MemberListResponseData struct {
 	Fields MemberListResponseDataFields `json:"fields" api:"required"`
 	// URL to view the member in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
-	// Members do not expose writable or readable relationships in this API.
-	Relationships any `json:"relationships" api:"required"`
+	// Map of relationship names to their associated entities.
+	Relationships MemberListResponseDataRelationships `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the member was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -265,6 +265,52 @@ func (r *MemberListResponseDataFieldsRole) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Map of relationship names to their associated entities.
+type MemberListResponseDataRelationships struct {
+	// The underlying user record for this workspace member.
+	User MemberListResponseDataRelationshipsUser `json:"$user" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		User        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberListResponseDataRelationships) RawJSON() string { return r.JSON.raw }
+func (r *MemberListResponseDataRelationships) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The underlying user record for this workspace member.
+type MemberListResponseDataRelationshipsUser struct {
+	// Whether the relationship is has_one or has_many.
+	//
+	// Any of "HAS_ONE".
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object.
+	//
+	// Any of "user".
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related users.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberListResponseDataRelationshipsUser) RawJSON() string { return r.JSON.raw }
+func (r *MemberListResponseDataRelationshipsUser) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type MemberRetrieveResponse struct {
 	// Unique identifier for the member.
 	ID string `json:"id" api:"required"`
@@ -274,8 +320,8 @@ type MemberRetrieveResponse struct {
 	Fields MemberRetrieveResponseFields `json:"fields" api:"required"`
 	// URL to view the member in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
-	// Members do not expose writable or readable relationships in this API.
-	Relationships any `json:"relationships" api:"required"`
+	// Map of relationship names to their associated entities.
+	Relationships MemberRetrieveResponseRelationships `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the member was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -432,6 +478,52 @@ type MemberRetrieveResponseFieldsRole struct {
 // Returns the unmodified JSON received from the API
 func (r MemberRetrieveResponseFieldsRole) RawJSON() string { return r.JSON.raw }
 func (r *MemberRetrieveResponseFieldsRole) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Map of relationship names to their associated entities.
+type MemberRetrieveResponseRelationships struct {
+	// The underlying user record for this workspace member.
+	User MemberRetrieveResponseRelationshipsUser `json:"$user" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		User        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberRetrieveResponseRelationships) RawJSON() string { return r.JSON.raw }
+func (r *MemberRetrieveResponseRelationships) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The underlying user record for this workspace member.
+type MemberRetrieveResponseRelationshipsUser struct {
+	// Whether the relationship is has_one or has_many.
+	//
+	// Any of "HAS_ONE".
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object.
+	//
+	// Any of "user".
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related users.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MemberRetrieveResponseRelationshipsUser) RawJSON() string { return r.JSON.raw }
+func (r *MemberRetrieveResponseRelationshipsUser) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

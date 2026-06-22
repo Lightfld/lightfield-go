@@ -64,6 +64,8 @@ type Client struct {
 	// Emails represent messages synced from connected email accounts in Lightfield.
 	// Read responses are privacy-aware and may be redacted based on the caller.
 	Email EmailService
+	// Merge operations combine two records into one.
+	Merge MergeService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -106,6 +108,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.File = NewFileService(opts...)
 	r.Object = NewObjectService(opts...)
 	r.Email = NewEmailService(opts...)
+	r.Merge = NewMergeService(opts...)
 
 	return
 }
