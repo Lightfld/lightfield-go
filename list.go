@@ -1992,7 +1992,7 @@ type ListNewParams struct {
 	// Field values for the new list. Required: `$name` (string) and `$objectType`.
 	Fields ListNewParamsFields `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new list.
-	Relationships ListNewParamsRelationshipsUnion `json:"relationships,omitzero"`
+	Relationships ListNewParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -2015,6 +2015,14 @@ type ListNewParamsFields struct {
 	// prefix (e.g. `account`) are accepted for backward compatibility but are
 	// deprecated.
 	ObjectType string `json:"$objectType" api:"required"`
+	// Optional description of what this list is for.
+	Description param.Opt[string] `json:"$description,omitzero"`
+	// Product-level list purpose. Normally omit to create a regular list; reserve
+	// `target` for the single account-prioritization (APG) demand list per org, and
+	// only for account/contact lists.
+	//
+	// Any of "target".
+	Kind string `json:"$kind,omitzero"`
 	paramObj
 }
 
@@ -2026,114 +2034,77 @@ func (r *ListNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ListNewParamsRelationshipsUnion struct {
-	OfListNewsRelationshipsAccounts      *ListNewParamsRelationshipsAccounts      `json:",omitzero,inline"`
-	OfListNewsRelationshipsContacts      *ListNewParamsRelationshipsContacts      `json:",omitzero,inline"`
-	OfListNewsRelationshipsOpportunities *ListNewParamsRelationshipsOpportunities `json:",omitzero,inline"`
-	paramUnion
+func init() {
+	apijson.RegisterFieldValidator[ListNewParamsFields](
+		"$kind", "target",
+	)
 }
 
-func (u ListNewParamsRelationshipsUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfListNewsRelationshipsAccounts, u.OfListNewsRelationshipsContacts, u.OfListNewsRelationshipsOpportunities)
-}
-func (u *ListNewParamsRelationshipsUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Accounts is required.
-type ListNewParamsRelationshipsAccounts struct {
+// Relationships to set on the new list.
+type ListNewParamsRelationships struct {
 	// Account ID(s) to add as initial members. List `$objectType` must be `account`.
-	Accounts ListNewParamsRelationshipsAccountsAccountsUnion `json:"$accounts,omitzero" api:"required"`
-	paramObj
-}
-
-func (r ListNewParamsRelationshipsAccounts) MarshalJSON() (data []byte, err error) {
-	type shadow ListNewParamsRelationshipsAccounts
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ListNewParamsRelationshipsAccounts) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ListNewParamsRelationshipsAccountsAccountsUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u ListNewParamsRelationshipsAccountsAccountsUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *ListNewParamsRelationshipsAccountsAccountsUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Contacts is required.
-type ListNewParamsRelationshipsContacts struct {
+	Accounts ListNewParamsRelationshipsAccountsUnion `json:"$accounts,omitzero"`
 	// Contact ID(s) to add as initial members. List `$objectType` must be `contact`.
-	Contacts ListNewParamsRelationshipsContactsContactsUnion `json:"$contacts,omitzero" api:"required"`
-	paramObj
-}
-
-func (r ListNewParamsRelationshipsContacts) MarshalJSON() (data []byte, err error) {
-	type shadow ListNewParamsRelationshipsContacts
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ListNewParamsRelationshipsContacts) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ListNewParamsRelationshipsContactsContactsUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u ListNewParamsRelationshipsContactsContactsUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *ListNewParamsRelationshipsContactsContactsUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Opportunities is required.
-type ListNewParamsRelationshipsOpportunities struct {
+	Contacts ListNewParamsRelationshipsContactsUnion `json:"$contacts,omitzero"`
 	// Opportunity ID(s) to add as initial members. List `$objectType` must be
 	// `opportunity`.
-	Opportunities ListNewParamsRelationshipsOpportunitiesOpportunitiesUnion `json:"$opportunities,omitzero" api:"required"`
+	Opportunities ListNewParamsRelationshipsOpportunitiesUnion `json:"$opportunities,omitzero"`
 	paramObj
 }
 
-func (r ListNewParamsRelationshipsOpportunities) MarshalJSON() (data []byte, err error) {
-	type shadow ListNewParamsRelationshipsOpportunities
+func (r ListNewParamsRelationships) MarshalJSON() (data []byte, err error) {
+	type shadow ListNewParamsRelationships
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *ListNewParamsRelationshipsOpportunities) UnmarshalJSON(data []byte) error {
+func (r *ListNewParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListNewParamsRelationshipsOpportunitiesOpportunitiesUnion struct {
+type ListNewParamsRelationshipsAccountsUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListNewParamsRelationshipsOpportunitiesOpportunitiesUnion) MarshalJSON() ([]byte, error) {
+func (u ListNewParamsRelationshipsAccountsUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListNewParamsRelationshipsOpportunitiesOpportunitiesUnion) UnmarshalJSON(data []byte) error {
+func (u *ListNewParamsRelationshipsAccountsUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type ListNewParamsRelationshipsContactsUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u ListNewParamsRelationshipsContactsUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *ListNewParamsRelationshipsContactsUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type ListNewParamsRelationshipsOpportunitiesUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u ListNewParamsRelationshipsOpportunitiesUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *ListNewParamsRelationshipsOpportunitiesUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -2143,7 +2114,7 @@ type ListUpdateParams struct {
 	Fields ListUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations. Use the key matching the list's `$objectType` (e.g.
 	// `$accounts` for an account list).
-	Relationships ListUpdateParamsRelationshipsUnion `json:"relationships,omitzero"`
+	Relationships ListUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -2158,8 +2129,16 @@ func (r *ListUpdateParams) UnmarshalJSON(data []byte) error {
 // Field values to update — only provided fields are modified; omitted fields are
 // left unchanged.
 type ListUpdateParamsFields struct {
+	// Optional description of what this list is for. Pass null to clear.
+	Description param.Opt[string] `json:"$description,omitzero"`
 	// Display name of the list.
 	Name param.Opt[string] `json:"$name,omitzero"`
+	// Product-level list purpose. Normally leave unset; reserve `target` for the
+	// single account-prioritization (APG) demand list per org (account/contact lists
+	// only). Pass null to clear.
+	//
+	// Any of "target".
+	Kind string `json:"$kind,omitzero"`
 	paramObj
 }
 
@@ -2171,27 +2150,38 @@ func (r *ListUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsUnion struct {
-	OfListUpdatesRelationshipsAccounts      *ListUpdateParamsRelationshipsAccounts      `json:",omitzero,inline"`
-	OfListUpdatesRelationshipsContacts      *ListUpdateParamsRelationshipsContacts      `json:",omitzero,inline"`
-	OfListUpdatesRelationshipsOpportunities *ListUpdateParamsRelationshipsOpportunities `json:",omitzero,inline"`
-	paramUnion
+func init() {
+	apijson.RegisterFieldValidator[ListUpdateParamsFields](
+		"$kind", "target",
+	)
 }
 
-func (u ListUpdateParamsRelationshipsUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfListUpdatesRelationshipsAccounts, u.OfListUpdatesRelationshipsContacts, u.OfListUpdatesRelationshipsOpportunities)
-}
-func (u *ListUpdateParamsRelationshipsUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Accounts is required.
-type ListUpdateParamsRelationshipsAccounts struct {
+// Relationship operations. Use the key matching the list's `$objectType` (e.g.
+// `$accounts` for an account list).
+type ListUpdateParamsRelationships struct {
 	// Add/remove accounts. List `$objectType` must be `account`.
-	Accounts ListUpdateParamsRelationshipsAccountsAccounts `json:"$accounts,omitzero" api:"required"`
+	Accounts ListUpdateParamsRelationshipsAccounts `json:"$accounts,omitzero"`
+	// Add/remove contacts. List `$objectType` must be `contact`.
+	Contacts ListUpdateParamsRelationshipsContacts `json:"$contacts,omitzero"`
+	// Add/remove opportunities. List `$objectType` must be `opportunity`.
+	Opportunities ListUpdateParamsRelationshipsOpportunities `json:"$opportunities,omitzero"`
+	paramObj
+}
+
+func (r ListUpdateParamsRelationships) MarshalJSON() (data []byte, err error) {
+	type shadow ListUpdateParamsRelationships
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ListUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Add/remove accounts. List `$objectType` must be `account`.
+type ListUpdateParamsRelationshipsAccounts struct {
+	// Entity ID(s) to add to the list.
+	Add ListUpdateParamsRelationshipsAccountsAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the list.
+	Remove ListUpdateParamsRelationshipsAccountsRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
@@ -2203,59 +2193,44 @@ func (r *ListUpdateParamsRelationshipsAccounts) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Add/remove accounts. List `$objectType` must be `account`.
-type ListUpdateParamsRelationshipsAccountsAccounts struct {
-	// Entity ID(s) to add to the list.
-	Add ListUpdateParamsRelationshipsAccountsAccountsAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the list.
-	Remove ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion `json:"remove,omitzero"`
-	paramObj
-}
-
-func (r ListUpdateParamsRelationshipsAccountsAccounts) MarshalJSON() (data []byte, err error) {
-	type shadow ListUpdateParamsRelationshipsAccountsAccounts
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ListUpdateParamsRelationshipsAccountsAccounts) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsAccountsAccountsAddUnion struct {
+type ListUpdateParamsRelationshipsAccountsAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsAccountsAccountsAddUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsAccountsAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsAccountsAccountsAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsAccountsAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion struct {
+type ListUpdateParamsRelationshipsAccountsRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsAccountsRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsAccountsRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// The property Contacts is required.
+// Add/remove contacts. List `$objectType` must be `contact`.
 type ListUpdateParamsRelationshipsContacts struct {
-	// Add/remove contacts. List `$objectType` must be `contact`.
-	Contacts ListUpdateParamsRelationshipsContactsContacts `json:"$contacts,omitzero" api:"required"`
+	// Entity ID(s) to add to the list.
+	Add ListUpdateParamsRelationshipsContactsAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the list.
+	Remove ListUpdateParamsRelationshipsContactsRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
@@ -2267,59 +2242,44 @@ func (r *ListUpdateParamsRelationshipsContacts) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Add/remove contacts. List `$objectType` must be `contact`.
-type ListUpdateParamsRelationshipsContactsContacts struct {
-	// Entity ID(s) to add to the list.
-	Add ListUpdateParamsRelationshipsContactsContactsAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the list.
-	Remove ListUpdateParamsRelationshipsContactsContactsRemoveUnion `json:"remove,omitzero"`
-	paramObj
-}
-
-func (r ListUpdateParamsRelationshipsContactsContacts) MarshalJSON() (data []byte, err error) {
-	type shadow ListUpdateParamsRelationshipsContactsContacts
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ListUpdateParamsRelationshipsContactsContacts) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsContactsContactsAddUnion struct {
+type ListUpdateParamsRelationshipsContactsAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsContactsContactsAddUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsContactsAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsContactsContactsAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsContactsAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsContactsContactsRemoveUnion struct {
+type ListUpdateParamsRelationshipsContactsRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsContactsContactsRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsContactsRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsContactsContactsRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsContactsRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// The property Opportunities is required.
+// Add/remove opportunities. List `$objectType` must be `opportunity`.
 type ListUpdateParamsRelationshipsOpportunities struct {
-	// Add/remove opportunities. List `$objectType` must be `opportunity`.
-	Opportunities ListUpdateParamsRelationshipsOpportunitiesOpportunities `json:"$opportunities,omitzero" api:"required"`
+	// Entity ID(s) to add to the list.
+	Add ListUpdateParamsRelationshipsOpportunitiesAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the list.
+	Remove ListUpdateParamsRelationshipsOpportunitiesRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
@@ -2331,52 +2291,35 @@ func (r *ListUpdateParamsRelationshipsOpportunities) UnmarshalJSON(data []byte) 
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Add/remove opportunities. List `$objectType` must be `opportunity`.
-type ListUpdateParamsRelationshipsOpportunitiesOpportunities struct {
-	// Entity ID(s) to add to the list.
-	Add ListUpdateParamsRelationshipsOpportunitiesOpportunitiesAddUnion `json:"add,omitzero"`
-	// Entity ID(s) to remove from the list.
-	Remove ListUpdateParamsRelationshipsOpportunitiesOpportunitiesRemoveUnion `json:"remove,omitzero"`
-	paramObj
-}
-
-func (r ListUpdateParamsRelationshipsOpportunitiesOpportunities) MarshalJSON() (data []byte, err error) {
-	type shadow ListUpdateParamsRelationshipsOpportunitiesOpportunities
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *ListUpdateParamsRelationshipsOpportunitiesOpportunities) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsOpportunitiesOpportunitiesAddUnion struct {
+type ListUpdateParamsRelationshipsOpportunitiesAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsOpportunitiesOpportunitiesAddUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsOpportunitiesAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsOpportunitiesOpportunitiesAddUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsOpportunitiesAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type ListUpdateParamsRelationshipsOpportunitiesOpportunitiesRemoveUnion struct {
+type ListUpdateParamsRelationshipsOpportunitiesRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u ListUpdateParamsRelationshipsOpportunitiesOpportunitiesRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u ListUpdateParamsRelationshipsOpportunitiesRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *ListUpdateParamsRelationshipsOpportunitiesOpportunitiesRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *ListUpdateParamsRelationshipsOpportunitiesRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

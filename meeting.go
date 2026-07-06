@@ -148,6 +148,22 @@ func (r *MeetingService) Delete(ctx context.Context, id string, body MeetingDele
 	return res, err
 }
 
+// Returns the schema for the field and relationship definitions available on
+// meetings. Useful for understanding the shape of meeting data before creating or
+// updating records. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// more details.
+//
+// **[Required scope](/using-the-api/scopes/):** `meetings:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *MeetingService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *MeetingDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/meetings/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 type MeetingCreateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
@@ -406,6 +422,156 @@ type MeetingCreateResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r MeetingCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *MeetingCreateResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingDefinitionsResponse struct {
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]MeetingDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions.
+	RelationshipDefinitions map[string]MeetingDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions        respjson.Field
+		ObjectType              respjson.Field
+		RelationshipDefinitions respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *MeetingDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingDefinitionsResponseFieldDefinition struct {
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code).
+	TypeConfiguration MeetingDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		ReadOnly          respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *MeetingDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Type-specific configuration (e.g. select options, currency code).
+type MeetingDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+	// ISO 4217 3-letter currency code.
+	Currency string `json:"currency"`
+	// Social platform associated with this handle field.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService"`
+	// Whether this field accepts multiple values.
+	MultipleValues bool `json:"multipleValues"`
+	// Available options for select fields.
+	Options []MeetingDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	// Whether values for this field must be unique.
+	Unique bool `json:"unique"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Currency       respjson.Field
+		HandleService  respjson.Field
+		MultipleValues respjson.Field
+		Options        respjson.Field
+		Unique         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MeetingDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Label       respjson.Field
+		Description respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MeetingDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingDefinitionsResponseRelationshipDefinition struct {
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the relationship.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *MeetingDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1533,12 +1699,10 @@ func init() {
 
 // Relationships to set on the new meeting. Only `$transcript` is writable on
 // create; all other meeting relationships are system-managed.
-//
-// The property Transcript is required.
 type MeetingNewParamsRelationships struct {
 	// The ID of the file to attach as the meeting transcript when creating the
 	// meeting. Only one transcript can be attached to a meeting.
-	Transcript MeetingNewParamsRelationshipsTranscriptUnion `json:"$transcript,omitzero" api:"required"`
+	Transcript MeetingNewParamsRelationshipsTranscriptUnion `json:"$transcript,omitzero"`
 	paramObj
 }
 
@@ -1586,13 +1750,11 @@ func (r *MeetingUpdateParams) UnmarshalJSON(data []byte) error {
 
 // Field values to update. Only `$privacySetting` is writable, and omitted fields
 // are left unchanged.
-//
-// The property PrivacySetting is required.
 type MeetingUpdateParamsFields struct {
 	// The privacy setting for the meeting.
 	//
 	// Any of "FULL", "METADATA".
-	PrivacySetting string `json:"$privacySetting,omitzero" api:"required"`
+	PrivacySetting string `json:"$privacySetting,omitzero"`
 	paramObj
 }
 
@@ -1612,10 +1774,8 @@ func init() {
 
 // Relationship operations to apply. Only `$transcript.replace` is supported;
 // removing or clearing `$transcript` is not supported.
-//
-// The property Transcript is required.
 type MeetingUpdateParamsRelationships struct {
-	Transcript MeetingUpdateParamsRelationshipsTranscript `json:"$transcript,omitzero" api:"required"`
+	Transcript MeetingUpdateParamsRelationshipsTranscript `json:"$transcript,omitzero"`
 	paramObj
 }
 
