@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.10.0 (2026-07-28)
+
+Full Changelog: [v0.9.0...v0.10.0](https://github.com/Lightfld/lightfield-go/compare/v0.9.0...v0.10.0)
+
+### Features
+
+* **api:** add delete endpoint ([166e105](https://github.com/Lightfld/lightfield-go/commit/166e105f8af05fc24e5dcbd8c0c8a4436c034afd))
+* **api:** Channel & Message API ([f61254e](https://github.com/Lightfld/lightfield-go/commit/f61254eda36adfd7bf415be8ce8239c37a18954f))
+* **api:** manual updates ([de2785c](https://github.com/Lightfld/lightfield-go/commit/de2785c02c91d5ef82b04e192305b238f4caf409))
+* **api:** manual updates ([1cab0ee](https://github.com/Lightfld/lightfield-go/commit/1cab0ee8286becb85c9c1ea09a4a2fe8b5bbb8b0))
+* **api:** Merge and delete records via the API and Python SDK ([9c83b44](https://github.com/Lightfld/lightfield-go/commit/9c83b448c5679a51bd3455218821813e7e16db43))
+* **stlc:** configurable CI runner and private-production-repo support in workflow templates ([4d96b59](https://github.com/Lightfld/lightfield-go/commit/4d96b5997e20bcf9662ad8ba52a1f5c56edd24aa))
+
 ## 0.9.0 (2026-05-22)
 
 Full Changelog: [v0.8.0...v0.9.0](https://github.com/Lightfld/lightfield-go/compare/v0.8.0...v0.9.0)
