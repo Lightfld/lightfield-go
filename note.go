@@ -78,7 +78,7 @@ func (r *NoteService) Get(ctx context.Context, id string, opts ...option.Request
 // modified.
 //
 // `$account`, `$opportunity`, and `$contact` relationships can be modified via
-// `add` or `remove` operations.
+// `add` and/or `remove` operations (combined in one call or separately).
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -1560,8 +1560,9 @@ type NoteUpdateParams struct {
 	Fields NoteUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
 	// `$account`, `$opportunity`, `$contact`); custom relationships use their bare
-	// slug. Each value is an operation object with `add` or `remove`.
-	Relationships map[string]NoteUpdateParamsRelationshipUnion `json:"relationships,omitzero"`
+	// slug. Each value is an operation object with `add` and/or `remove`. `replace` is
+	// not supported since note relationships are HAS_MANY.
+	Relationships map[string]NoteUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -1593,81 +1594,71 @@ func (r *NoteUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipUnion struct {
-	OfNoteUpdatesRelationshipAdd    *NoteUpdateParamsRelationshipAdd    `json:",omitzero,inline"`
-	OfNoteUpdatesRelationshipRemove *NoteUpdateParamsRelationshipRemove `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u NoteUpdateParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfNoteUpdatesRelationshipAdd, u.OfNoteUpdatesRelationshipRemove)
-}
-func (u *NoteUpdateParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Add is required.
-type NoteUpdateParamsRelationshipAdd struct {
+// An operation to modify a relationship. Provide one of `add`, `remove`, or
+// `replace`.
+type NoteUpdateParamsRelationship struct {
+	// A single entity ID or an array of entity IDs.
+	Replace NoteUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
-	Add NoteUpdateParamsRelationshipAddAddUnion `json:"add,omitzero" api:"required"`
+	Add NoteUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
+	// Entity ID(s) to remove from the relationship.
+	Remove NoteUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
-func (r NoteUpdateParamsRelationshipAdd) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipAdd
+func (r NoteUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationship
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *NoteUpdateParamsRelationshipAdd) UnmarshalJSON(data []byte) error {
+func (r *NoteUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipAddAddUnion struct {
+type NoteUpdateParamsRelationshipAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteUpdateParamsRelationshipAddAddUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteUpdateParamsRelationshipAddAddUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
-// The property Remove is required.
-type NoteUpdateParamsRelationshipRemove struct {
-	// Entity ID(s) to remove from the relationship.
-	Remove NoteUpdateParamsRelationshipRemoveRemoveUnion `json:"remove,omitzero" api:"required"`
-	paramObj
-}
-
-func (r NoteUpdateParamsRelationshipRemove) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipRemove
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteUpdateParamsRelationshipRemove) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipRemoveRemoveUnion struct {
+type NoteUpdateParamsRelationshipRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteUpdateParamsRelationshipRemoveRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteUpdateParamsRelationshipRemoveRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type NoteUpdateParamsRelationshipReplaceUnion struct {
+	OfString      param.Opt[string] `json:",omitzero,inline"`
+	OfStringArray []string          `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u NoteUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
+}
+func (u *NoteUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
