@@ -87,12 +87,16 @@ func TestNoteUpdateWithOptionalParams(t *testing.T) {
 				Content: githubcomlightfldlightfieldgo.String("$content"),
 				Title:   githubcomlightfldlightfieldgo.String("$title"),
 			},
-			Relationships: map[string]githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipUnion{
+			Relationships: map[string]githubcomlightfldlightfieldgo.NoteUpdateParamsRelationship{
 				"foo": {
-					OfNoteUpdatesRelationshipAdd: &githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipAdd{
-						Add: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipAddAddUnion{
-							OfString: githubcomlightfldlightfieldgo.String("string"),
-						},
+					Add: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Replace: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipReplaceUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
 			},
