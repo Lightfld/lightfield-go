@@ -27,14 +27,20 @@ func TestListNewWithOptionalParams(t *testing.T) {
 	)
 	_, err := client.List.New(context.TODO(), githubcomlightfldlightfieldgo.ListNewParams{
 		Fields: githubcomlightfldlightfieldgo.ListNewParamsFields{
-			Name:       "$name",
-			ObjectType: "$objectType",
+			Name:        "$name",
+			ObjectType:  "$objectType",
+			Description: githubcomlightfldlightfieldgo.String("$description"),
+			Kind:        "target",
 		},
-		Relationships: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsUnion{
-			OfListNewsRelationshipsAccounts: &githubcomlightfldlightfieldgo.ListNewParamsRelationshipsAccounts{
-				Accounts: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsAccountsAccountsUnion{
-					OfString: githubcomlightfldlightfieldgo.String("string"),
-				},
+		Relationships: githubcomlightfldlightfieldgo.ListNewParamsRelationships{
+			Accounts: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsAccountsUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
+			},
+			Contacts: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsContactsUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
+			},
+			Opportunities: githubcomlightfldlightfieldgo.ListNewParamsRelationshipsOpportunitiesUnion{
+				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
 	})
@@ -86,17 +92,33 @@ func TestListUpdateWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.ListUpdateParams{
 			Fields: githubcomlightfldlightfieldgo.ListUpdateParamsFields{
-				Name: githubcomlightfldlightfieldgo.String("$name"),
+				Description: githubcomlightfldlightfieldgo.String("$description"),
+				Kind:        "target",
+				Name:        githubcomlightfldlightfieldgo.String("$name"),
 			},
-			Relationships: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsUnion{
-				OfListUpdatesRelationshipsAccounts: &githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccounts{
-					Accounts: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccounts{
-						Add: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccountsAddUnion{
-							OfString: githubcomlightfldlightfieldgo.String("string"),
-						},
-						Remove: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAccountsRemoveUnion{
-							OfString: githubcomlightfldlightfieldgo.String("string"),
-						},
+			Relationships: githubcomlightfldlightfieldgo.ListUpdateParamsRelationships{
+				Accounts: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccounts{
+					Add: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsAccountsRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+				},
+				Contacts: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsContacts{
+					Add: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsContactsAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsContactsRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+				},
+				Opportunities: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsOpportunities{
+					Add: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsOpportunitiesAddUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
+					},
+					Remove: githubcomlightfldlightfieldgo.ListUpdateParamsRelationshipsOpportunitiesRemoveUnion{
+						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
 				},
 			},
@@ -127,6 +149,34 @@ func TestListListWithOptionalParams(t *testing.T) {
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
 	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestListDeleteWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.List.Delete(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.ListDeleteParams{
+			Body: githubcomlightfldlightfieldgo.ListDeleteParamsBody{},
+		},
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

@@ -13,7 +13,7 @@ import (
 	"github.com/Lightfld/lightfield-go/option"
 )
 
-func TestAccountNewWithOptionalParams(t *testing.T) {
+func TestMergeGetMerge(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -25,16 +25,38 @@ func TestAccountNewWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Account.New(context.TODO(), githubcomlightfldlightfieldgo.AccountNewParams{
-		Fields: map[string]githubcomlightfldlightfieldgo.AccountNewParamsFieldUnion{
+	_, err := client.Merge.GetMerge(context.TODO(), "id")
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMergeMergeAccountsWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Merge.MergeAccounts(context.TODO(), githubcomlightfldlightfieldgo.MergeMergeAccountsParams{
+		DuplicateID: "duplicateId",
+		PrimaryID:   "primaryId",
+		FieldResolutions: map[string]githubcomlightfldlightfieldgo.MergeMergeAccountsParamsFieldResolutionUnion{
 			"foo": {
-				OfString: githubcomlightfldlightfieldgo.String("string"),
+				OfMergeMergeAccountssFieldResolutionString: githubcomlightfldlightfieldgo.String("primary"),
 			},
 		},
-		Relationships: map[string]githubcomlightfldlightfieldgo.AccountNewParamsRelationshipUnion{
-			"foo": {
-				OfString: githubcomlightfldlightfieldgo.String("string"),
-			},
+		Options: githubcomlightfldlightfieldgo.MergeMergeAccountsParamsOptions{
+			MultiSelectUnion: githubcomlightfldlightfieldgo.Bool(true),
 		},
 	})
 	if err != nil {
@@ -46,7 +68,7 @@ func TestAccountNewWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestAccountGet(t *testing.T) {
+func TestMergeMergeContactsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -58,76 +80,17 @@ func TestAccountGet(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Account.Get(context.TODO(), "id")
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestAccountUpdateWithOptionalParams(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Account.Update(
-		context.TODO(),
-		"id",
-		githubcomlightfldlightfieldgo.AccountUpdateParams{
-			Fields: map[string]githubcomlightfldlightfieldgo.AccountUpdateParamsFieldUnion{
-				"foo": {
-					OfString: githubcomlightfldlightfieldgo.String("string"),
-				},
-			},
-			Relationships: map[string]githubcomlightfldlightfieldgo.AccountUpdateParamsRelationship{
-				"foo": {
-					Add: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipAddUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Remove: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipRemoveUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-					Replace: githubcomlightfldlightfieldgo.AccountUpdateParamsRelationshipReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
-				},
+	_, err := client.Merge.MergeContacts(context.TODO(), githubcomlightfldlightfieldgo.MergeMergeContactsParams{
+		DuplicateID: "duplicateId",
+		PrimaryID:   "primaryId",
+		FieldResolutions: map[string]githubcomlightfldlightfieldgo.MergeMergeContactsParamsFieldResolutionUnion{
+			"foo": {
+				OfMergeMergeContactssFieldResolutionString: githubcomlightfldlightfieldgo.String("primary"),
 			},
 		},
-	)
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestAccountListWithOptionalParams(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Account.List(context.TODO(), githubcomlightfldlightfieldgo.AccountListParams{
-		Limit:  githubcomlightfldlightfieldgo.Int(1),
-		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Options: githubcomlightfldlightfieldgo.MergeMergeContactsParamsOptions{
+			MultiSelectUnion: githubcomlightfldlightfieldgo.Bool(true),
+		},
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
@@ -138,7 +101,7 @@ func TestAccountListWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestAccountDeleteWithOptionalParams(t *testing.T) {
+func TestMergeMergeObjectValuesWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -150,11 +113,20 @@ func TestAccountDeleteWithOptionalParams(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Account.Delete(
+	_, err := client.Merge.MergeObjectValues(
 		context.TODO(),
-		"id",
-		githubcomlightfldlightfieldgo.AccountDeleteParams{
-			Body: githubcomlightfldlightfieldgo.AccountDeleteParamsBody{},
+		"entitySlug",
+		githubcomlightfldlightfieldgo.MergeMergeObjectValuesParams{
+			DuplicateID: "duplicateId",
+			PrimaryID:   "primaryId",
+			FieldResolutions: map[string]githubcomlightfldlightfieldgo.MergeMergeObjectValuesParamsFieldResolutionUnion{
+				"foo": {
+					OfMergeMergeObjectValuessFieldResolutionString: githubcomlightfldlightfieldgo.String("primary"),
+				},
+			},
+			Options: githubcomlightfldlightfieldgo.MergeMergeObjectValuesParamsOptions{
+				MultiSelectUnion: githubcomlightfldlightfieldgo.Bool(true),
+			},
 		},
 	)
 	if err != nil {
@@ -166,7 +138,7 @@ func TestAccountDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestAccountDefinitions(t *testing.T) {
+func TestMergeMergeOpportunitiesWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -178,7 +150,18 @@ func TestAccountDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Account.Definitions(context.TODO())
+	_, err := client.Merge.MergeOpportunities(context.TODO(), githubcomlightfldlightfieldgo.MergeMergeOpportunitiesParams{
+		DuplicateID: "duplicateId",
+		PrimaryID:   "primaryId",
+		FieldResolutions: map[string]githubcomlightfldlightfieldgo.MergeMergeOpportunitiesParamsFieldResolutionUnion{
+			"foo": {
+				OfMergeMergeOpportunitiessFieldResolutionString: githubcomlightfldlightfieldgo.String("primary"),
+			},
+		},
+		Options: githubcomlightfldlightfieldgo.MergeMergeOpportunitiesParamsOptions{
+			MultiSelectUnion: githubcomlightfldlightfieldgo.Bool(true),
+		},
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

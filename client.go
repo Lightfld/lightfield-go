@@ -36,7 +36,7 @@ type Client struct {
 	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
 	Meeting MeetingService
 	// Notes represent free-form text records in Lightfield. Each note can be
-	// associated with zero or more accounts and opportunities.
+	// associated with zero or more accounts, opportunities, and contacts.
 	Note NoteService
 	// Opportunities represent potential deals or sales in Lightfield. Each opportunity
 	// belongs to an account and can have tasks and notes associated with it.
@@ -64,6 +64,15 @@ type Client struct {
 	// Emails represent messages synced from connected email accounts in Lightfield.
 	// Read responses are privacy-aware and may be redacted based on the caller.
 	Email EmailService
+	// Merge operations combine two records into one.
+	Merge MergeService
+	// Messages represent messages synced from connected chat providers in Lightfield.
+	// Read responses are visibility-aware and may be redacted based on the caller.
+	Message MessageService
+	// Channels represent chat channels synced from connected providers (Slack,
+	// LinkedIn) in Lightfield. Read responses are visibility-aware: callers only see
+	// channels they have access to.
+	Channel ChannelService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -106,6 +115,9 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.File = NewFileService(opts...)
 	r.Object = NewObjectService(opts...)
 	r.Email = NewEmailService(opts...)
+	r.Merge = NewMergeService(opts...)
+	r.Message = NewMessageService(opts...)
+	r.Channel = NewChannelService(opts...)
 
 	return
 }

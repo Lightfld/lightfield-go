@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	shimjson "github.com/Lightfld/lightfield-go/internal/encoding/json"
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
 	"github.com/Lightfld/lightfield-go/packages/param"
@@ -20,7 +21,7 @@ import (
 )
 
 // Notes represent free-form text records in Lightfield. Each note can be
-// associated with zero or more accounts and opportunities.
+// associated with zero or more accounts, opportunities, and contacts.
 //
 // NoteService contains methods and other services that help with interacting with
 // the Lightfield API.
@@ -76,8 +77,8 @@ func (r *NoteService) Get(ctx context.Context, id string, opts ...option.Request
 // Updates an existing note by ID. Only included fields and relationships are
 // modified.
 //
-// Both `$account` and `$opportunity` relationships can be modified via `add` or
-// `remove` operations.
+// `$account`, `$opportunity`, and `$contact` relationships can be modified via
+// `add` and/or `remove` operations (combined in one call or separately).
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -106,6 +107,42 @@ func (r *NoteService) List(ctx context.Context, query NoteListParams, opts ...op
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/notes"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Moves a note to the trash. The note is soft-deleted and may be restored from the
+// Lightfield UI.
+//
+// Calling delete on an already-trashed note is a no-op and returns the existing
+// record.
+//
+// **[Required scope](/using-the-api/scopes/):** `notes:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *NoteService) Delete(ctx context.Context, id string, body NoteDeleteParams, opts ...option.RequestOption) (res *NoteDeleteResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/notes/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, &res, opts...)
+	return res, err
+}
+
+// Returns the schema for the field and relationship definitions available on
+// notes. Useful for understanding the shape of note data before creating or
+// updating records. See
+// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
+// more details.
+//
+// **[Required scope](/using-the-api/scopes/):** `notes:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *NoteService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *NoteDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/notes/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
@@ -341,6 +378,389 @@ type NoteCreateResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r NoteCreateResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *NoteCreateResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDefinitionsResponse struct {
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]NoteDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions.
+	RelationshipDefinitions map[string]NoteDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions        respjson.Field
+		ObjectType              respjson.Field
+		RelationshipDefinitions respjson.Field
+		ExtraFields             map[string]respjson.Field
+		raw                     string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDefinitionsResponseFieldDefinition struct {
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code).
+	TypeConfiguration NoteDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		ReadOnly          respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *NoteDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Type-specific configuration (e.g. select options, currency code).
+type NoteDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+	// ISO 4217 3-letter currency code.
+	Currency string `json:"currency"`
+	// Social platform associated with this handle field.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService"`
+	// Whether this field accepts multiple values.
+	MultipleValues bool `json:"multipleValues"`
+	// Available options for select fields.
+	Options []NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	// Whether values for this field must be unique.
+	Unique bool `json:"unique"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Currency       respjson.Field
+		HandleService  respjson.Field
+		MultipleValues respjson.Field
+		Options        respjson.Field
+		Unique         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string { return r.JSON.raw }
+func (r *NoteDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Label       respjson.Field
+		Description respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDefinitionsResponseRelationshipDefinition struct {
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the relationship.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *NoteDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]NoteDeleteResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]NoteDeleteResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDeleteResponse) RawJSON() string { return r.JSON.raw }
+func (r *NoteDeleteResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteResponseField struct {
+	// The field value, or null if unset.
+	Value NoteDeleteResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDeleteResponseField) RawJSON() string { return r.JSON.raw }
+func (r *NoteDeleteResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// NoteDeleteResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [NoteDeleteResponseFieldValueAddress], [NoteDeleteResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type NoteDeleteResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [NoteDeleteResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [NoteDeleteResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [NoteDeleteResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsAddress() (v NoteDeleteResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u NoteDeleteResponseFieldValueUnion) AsFullName() (v NoteDeleteResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u NoteDeleteResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *NoteDeleteResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDeleteResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *NoteDeleteResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDeleteResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *NoteDeleteResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r NoteDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *NoteDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1080,9 +1500,10 @@ type NoteNewParams struct {
 	// value type details.
 	Fields NoteNewParamsFields `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new note. System relationships use a `$` prefix
-	// (e.g. `$account`, `$opportunity`). Each value is a single entity ID or an array
-	// of IDs. The note author is automatically set to the API key owner.
-	Relationships NoteNewParamsRelationships `json:"relationships,omitzero"`
+	// (e.g. `$account`, `$opportunity`, `$contact`); custom relationships use their
+	// bare slug. Each value is a single entity ID or an array of IDs. The note author
+	// is automatically set to the API key owner.
+	Relationships map[string]NoteNewParamsRelationshipUnion `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -1115,54 +1536,19 @@ func (r *NoteNewParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Relationships to set on the new note. System relationships use a `$` prefix
-// (e.g. `$account`, `$opportunity`). Each value is a single entity ID or an array
-// of IDs. The note author is automatically set to the API key owner.
-type NoteNewParamsRelationships struct {
-	// ID(s) of accounts to associate with this note.
-	Account NoteNewParamsRelationshipsAccountUnion `json:"$account,omitzero"`
-	// ID(s) of opportunities to associate with this note.
-	Opportunity NoteNewParamsRelationshipsOpportunityUnion `json:"$opportunity,omitzero"`
-	paramObj
-}
-
-func (r NoteNewParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow NoteNewParamsRelationships
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteNewParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteNewParamsRelationshipsAccountUnion struct {
+type NoteNewParamsRelationshipUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteNewParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
+func (u NoteNewParamsRelationshipUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteNewParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type NoteNewParamsRelationshipsOpportunityUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u NoteNewParamsRelationshipsOpportunityUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *NoteNewParamsRelationshipsOpportunityUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -1173,9 +1559,10 @@ type NoteUpdateParams struct {
 	// value type details.
 	Fields NoteUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$account`, `$opportunity`). Each value is an operation object with `add` or
-	// `remove`.
-	Relationships NoteUpdateParamsRelationships `json:"relationships,omitzero"`
+	// `$account`, `$opportunity`, `$contact`); custom relationships use their bare
+	// slug. Each value is an operation object with `add` and/or `remove`. `replace` is
+	// not supported since note relationships are HAS_MANY.
+	Relationships map[string]NoteUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }
 
@@ -1207,178 +1594,71 @@ func (r *NoteUpdateParamsFields) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-// `$account`, `$opportunity`). Each value is an operation object with `add` or
-// `remove`.
-type NoteUpdateParamsRelationships struct {
-	// Operation to modify associated accounts.
-	Account NoteUpdateParamsRelationshipsAccountUnion `json:"$account,omitzero"`
-	// Operation to modify associated opportunities.
-	Opportunity NoteUpdateParamsRelationshipsOpportunityUnion `json:"$opportunity,omitzero"`
-	paramObj
-}
-
-func (r NoteUpdateParamsRelationships) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationships
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsAccountUnion struct {
-	OfNoteUpdatesRelationshipsAccountAdd    *NoteUpdateParamsRelationshipsAccountAdd    `json:",omitzero,inline"`
-	OfNoteUpdatesRelationshipsAccountRemove *NoteUpdateParamsRelationshipsAccountRemove `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u NoteUpdateParamsRelationshipsAccountUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfNoteUpdatesRelationshipsAccountAdd, u.OfNoteUpdatesRelationshipsAccountRemove)
-}
-func (u *NoteUpdateParamsRelationshipsAccountUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Add is required.
-type NoteUpdateParamsRelationshipsAccountAdd struct {
+// An operation to modify a relationship. Provide one of `add`, `remove`, or
+// `replace`.
+type NoteUpdateParamsRelationship struct {
+	// A single entity ID or an array of entity IDs.
+	Replace NoteUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
-	Add NoteUpdateParamsRelationshipsAccountAddAddUnion `json:"add,omitzero" api:"required"`
-	paramObj
-}
-
-func (r NoteUpdateParamsRelationshipsAccountAdd) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipsAccountAdd
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteUpdateParamsRelationshipsAccountAdd) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsAccountAddAddUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u NoteUpdateParamsRelationshipsAccountAddAddUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *NoteUpdateParamsRelationshipsAccountAddAddUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Remove is required.
-type NoteUpdateParamsRelationshipsAccountRemove struct {
+	Add NoteUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
-	Remove NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion `json:"remove,omitzero" api:"required"`
+	Remove NoteUpdateParamsRelationshipRemoveUnion `json:"remove,omitzero"`
 	paramObj
 }
 
-func (r NoteUpdateParamsRelationshipsAccountRemove) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipsAccountRemove
+func (r NoteUpdateParamsRelationship) MarshalJSON() (data []byte, err error) {
+	type shadow NoteUpdateParamsRelationship
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *NoteUpdateParamsRelationshipsAccountRemove) UnmarshalJSON(data []byte) error {
+func (r *NoteUpdateParamsRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion struct {
+type NoteUpdateParamsRelationshipAddUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipAddUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteUpdateParamsRelationshipsAccountRemoveRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipAddUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsOpportunityUnion struct {
-	OfNoteUpdatesRelationshipsOpportunityAdd    *NoteUpdateParamsRelationshipsOpportunityAdd    `json:",omitzero,inline"`
-	OfNoteUpdatesRelationshipsOpportunityRemove *NoteUpdateParamsRelationshipsOpportunityRemove `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u NoteUpdateParamsRelationshipsOpportunityUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfNoteUpdatesRelationshipsOpportunityAdd, u.OfNoteUpdatesRelationshipsOpportunityRemove)
-}
-func (u *NoteUpdateParamsRelationshipsOpportunityUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Add is required.
-type NoteUpdateParamsRelationshipsOpportunityAdd struct {
-	// Entity ID(s) to add to the relationship.
-	Add NoteUpdateParamsRelationshipsOpportunityAddAddUnion `json:"add,omitzero" api:"required"`
-	paramObj
-}
-
-func (r NoteUpdateParamsRelationshipsOpportunityAdd) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipsOpportunityAdd
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteUpdateParamsRelationshipsOpportunityAdd) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsOpportunityAddAddUnion struct {
+type NoteUpdateParamsRelationshipRemoveUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteUpdateParamsRelationshipsOpportunityAddAddUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteUpdateParamsRelationshipsOpportunityAddAddUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
-}
-
-// The property Remove is required.
-type NoteUpdateParamsRelationshipsOpportunityRemove struct {
-	// Entity ID(s) to remove from the relationship.
-	Remove NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion `json:"remove,omitzero" api:"required"`
-	paramObj
-}
-
-func (r NoteUpdateParamsRelationshipsOpportunityRemove) MarshalJSON() (data []byte, err error) {
-	type shadow NoteUpdateParamsRelationshipsOpportunityRemove
-	return param.MarshalObject(r, (*shadow)(&r))
-}
-func (r *NoteUpdateParamsRelationshipsOpportunityRemove) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
 }
 
 // Only one field can be non-zero.
 //
 // Use [param.IsOmitted] to confirm if a field is set.
-type NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion struct {
+type NoteUpdateParamsRelationshipReplaceUnion struct {
 	OfString      param.Opt[string] `json:",omitzero,inline"`
 	OfStringArray []string          `json:",omitzero,inline"`
 	paramUnion
 }
 
-func (u NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion) MarshalJSON() ([]byte, error) {
+func (u NoteUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
-func (u *NoteUpdateParamsRelationshipsOpportunityRemoveRemoveUnion) UnmarshalJSON(data []byte) error {
+func (u *NoteUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 
@@ -1396,4 +1676,28 @@ func (r NoteListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type NoteDeleteParams struct {
+	Body NoteDeleteParamsBody
+	paramObj
+}
+
+func (r NoteDeleteParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *NoteDeleteParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type NoteDeleteParamsBody struct {
+	paramObj
+}
+
+func (r NoteDeleteParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow NoteDeleteParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *NoteDeleteParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	shimjson "github.com/Lightfld/lightfield-go/internal/encoding/json"
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
 	"github.com/Lightfld/lightfield-go/packages/param"
@@ -44,8 +45,9 @@ func NewTaskService(opts ...option.RequestOption) (r TaskService) {
 // Creates a new task record. The `$title` and `$status` fields and the
 // `$assignedTo` relationship are required.
 //
-// If `$createdBy` is omitted it defaults to the authenticated user. The `$note`
-// relationship is read-only — manage notes via their own relationships.
+// If `$createdBy` is omitted it defaults to the authenticated user, or to a
+// workspace admin for workspace-scoped auth. The `$note` relationship is read-only
+// — manage notes via their own relationships.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -108,6 +110,26 @@ func (r *TaskService) List(ctx context.Context, query TaskListParams, opts ...op
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/tasks"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Moves a task to the trash. The task is soft-deleted and may be restored from the
+// Lightfield UI.
+//
+// Calling delete on an already-trashed task is a no-op and returns the existing
+// record.
+//
+// **[Required scope](/using-the-api/scopes/):** `tasks:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *TaskService) Delete(ctx context.Context, id string, body TaskDeleteParams, opts ...option.RequestOption) (res *TaskDeleteResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/tasks/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, &res, opts...)
 	return res, err
 }
 
@@ -507,6 +529,241 @@ type TaskDefinitionsResponseRelationshipDefinition struct {
 // Returns the unmodified JSON received from the API
 func (r TaskDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
 func (r *TaskDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]TaskDeleteResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	Relationships map[string]TaskDeleteResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDeleteResponse) RawJSON() string { return r.JSON.raw }
+func (r *TaskDeleteResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteResponseField struct {
+	// The field value, or null if unset.
+	Value TaskDeleteResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDeleteResponseField) RawJSON() string { return r.JSON.raw }
+func (r *TaskDeleteResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// TaskDeleteResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [TaskDeleteResponseFieldValueAddress], [TaskDeleteResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type TaskDeleteResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [TaskDeleteResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [TaskDeleteResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [TaskDeleteResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsAddress() (v TaskDeleteResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u TaskDeleteResponseFieldValueUnion) AsFullName() (v TaskDeleteResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u TaskDeleteResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *TaskDeleteResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDeleteResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *TaskDeleteResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDeleteResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *TaskDeleteResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *TaskDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1444,4 +1701,28 @@ func (r TaskListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type TaskDeleteParams struct {
+	Body TaskDeleteParamsBody
+	paramObj
+}
+
+func (r TaskDeleteParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *TaskDeleteParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDeleteParamsBody struct {
+	paramObj
+}
+
+func (r TaskDeleteParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow TaskDeleteParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *TaskDeleteParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
