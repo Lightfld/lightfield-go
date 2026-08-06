@@ -20,8 +20,8 @@ import (
 )
 
 // Channels represent chat channels synced from connected providers (Slack,
-// LinkedIn) in Lightfield. Read responses are visibility-aware: callers only see
-// channels they have access to.
+// Microsoft Teams, LinkedIn) in Lightfield. Read responses are visibility-aware:
+// callers only see channels they have access to.
 //
 // ChannelService contains methods and other services that help with interacting
 // with the Lightfield API.

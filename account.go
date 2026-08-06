@@ -162,6 +162,30 @@ func (r *AccountService) Definitions(ctx context.Context, opts ...option.Request
 	return res, err
 }
 
+// Returns the value-change history for a single field on a record, newest first.
+// Consecutive identical values are collapsed. History is cursor-paginated: pass
+// `nextCursor` from the previous response as `after` to page through older values.
+// Only attribute-backed fields (custom attributes and attribute-backed system
+// fields) have history — column-backed system fields return an error.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *AccountService) FieldHistory(ctx context.Context, fieldKey string, params AccountFieldHistoryParams, opts ...option.RequestOption) (res *AccountFieldHistoryResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if params.ID == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	if fieldKey == "" {
+		err = errors.New("missing required fieldKey parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/accounts/%s/fields/%s/history", url.PathEscape(params.ID), url.PathEscape(fieldKey))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, params, &res, opts...)
+	return res, err
+}
+
 type AccountCreateResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
@@ -781,6 +805,218 @@ type AccountDeleteResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountFieldHistoryResponse struct {
+	// Recorded values for the field, newest first.
+	Data []AccountFieldHistoryResponseData `json:"data" api:"required"`
+	// Whether more history exists beyond this page.
+	HasMore bool `json:"hasMore" api:"required"`
+	// Cursor to pass as `after` to fetch the next page, or null when there are no more
+	// entries.
+	NextCursor string `json:"nextCursor" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		HasMore     respjson.Field
+		NextCursor  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountFieldHistoryResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountFieldHistoryResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// A single recorded version of a field value.
+type AccountFieldHistoryResponseData struct {
+	// Human-readable rendering of the value (e.g. a select option label), suitable for
+	// display.
+	DisplayValue string `json:"displayValue" api:"required"`
+	// True for the record’s original value. Only set when the full history fits in the
+	// response (never on a truncated/paginated page).
+	IsCreate bool `json:"isCreate" api:"required"`
+	// ISO 8601 timestamp of when this value was recorded.
+	RecordedAt string `json:"recordedAt" api:"required"`
+	// The field value, or null if unset.
+	Value AccountFieldHistoryResponseDataValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DisplayValue respjson.Field
+		IsCreate     respjson.Field
+		RecordedAt   respjson.Field
+		Value        respjson.Field
+		ValueType    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountFieldHistoryResponseData) RawJSON() string { return r.JSON.raw }
+func (r *AccountFieldHistoryResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// AccountFieldHistoryResponseDataValueUnion contains all possible properties and
+// values from [string], [float64], [bool], [[]string],
+// [AccountFieldHistoryResponseDataValueAddress],
+// [AccountFieldHistoryResponseDataValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type AccountFieldHistoryResponseDataValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	City string `json:"city"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	State string `json:"state"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [AccountFieldHistoryResponseDataValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsAddress() (v AccountFieldHistoryResponseDataValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountFieldHistoryResponseDataValueUnion) AsFullName() (v AccountFieldHistoryResponseDataValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u AccountFieldHistoryResponseDataValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *AccountFieldHistoryResponseDataValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountFieldHistoryResponseDataValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountFieldHistoryResponseDataValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *AccountFieldHistoryResponseDataValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountFieldHistoryResponseDataValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountFieldHistoryResponseDataValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *AccountFieldHistoryResponseDataValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1828,4 +2064,23 @@ func (r AccountDeleteParamsBody) MarshalJSON() (data []byte, err error) {
 }
 func (r *AccountDeleteParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountFieldHistoryParams struct {
+	// Unique identifier of the record.
+	ID string `path:"id" api:"required" json:"-"`
+	// Cursor from a previous response’s `nextCursor` to fetch the next page.
+	After param.Opt[string] `query:"after,omitzero" json:"-"`
+	// Maximum number of history entries to return. Defaults to 20, maximum 100.
+	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [AccountFieldHistoryParams]'s query parameters as
+// `url.Values`.
+func (r AccountFieldHistoryParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }

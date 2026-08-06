@@ -70,8 +70,8 @@ type Client struct {
 	// Read responses are visibility-aware and may be redacted based on the caller.
 	Message MessageService
 	// Channels represent chat channels synced from connected providers (Slack,
-	// LinkedIn) in Lightfield. Read responses are visibility-aware: callers only see
-	// channels they have access to.
+	// Microsoft Teams, LinkedIn) in Lightfield. Read responses are visibility-aware:
+	// callers only see channels they have access to.
 	Channel ChannelService
 }
 
