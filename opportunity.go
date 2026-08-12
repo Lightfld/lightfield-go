@@ -1962,8 +1962,9 @@ func (r *OpportunityUpdateParamsFieldFullName) UnmarshalJSON(data []byte) error 
 // An operation to modify a relationship. Provide one of `add`, `remove`, or
 // `replace`.
 type OpportunityUpdateParamsRelationship struct {
-	// A single entity ID or an array of entity IDs.
-	Replace OpportunityUpdateParamsRelationshipReplaceUnion `json:"replace,omitzero"`
+	// The entity ID to set as the relationship replacement, or null to clear supported
+	// relationships.
+	Replace param.Opt[string] `json:"replace,omitzero"`
 	// Entity ID(s) to add to the relationship.
 	Add OpportunityUpdateParamsRelationshipAddUnion `json:"add,omitzero"`
 	// Entity ID(s) to remove from the relationship.
@@ -2008,22 +2009,6 @@ func (u OpportunityUpdateParamsRelationshipRemoveUnion) MarshalJSON() ([]byte, e
 	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
 }
 func (u *OpportunityUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, u)
-}
-
-// Only one field can be non-zero.
-//
-// Use [param.IsOmitted] to confirm if a field is set.
-type OpportunityUpdateParamsRelationshipReplaceUnion struct {
-	OfString      param.Opt[string] `json:",omitzero,inline"`
-	OfStringArray []string          `json:",omitzero,inline"`
-	paramUnion
-}
-
-func (u OpportunityUpdateParamsRelationshipReplaceUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfString, u.OfStringArray)
-}
-func (u *OpportunityUpdateParamsRelationshipReplaceUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
 }
 

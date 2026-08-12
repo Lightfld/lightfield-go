@@ -95,9 +95,7 @@ func TestNoteUpdateWithOptionalParams(t *testing.T) {
 					Remove: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.NoteUpdateParamsRelationshipReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
+					Replace: githubcomlightfldlightfieldgo.String("replace"),
 				},
 			},
 		},

@@ -97,9 +97,7 @@ func TestContactUpdateWithOptionalParams(t *testing.T) {
 					Remove: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.ContactUpdateParamsRelationshipReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
+					Replace: githubcomlightfldlightfieldgo.String("replace"),
 				},
 			},
 		},

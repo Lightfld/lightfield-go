@@ -97,9 +97,7 @@ func TestOpportunityUpdateWithOptionalParams(t *testing.T) {
 					Remove: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipRemoveUnion{
 						OfString: githubcomlightfldlightfieldgo.String("string"),
 					},
-					Replace: githubcomlightfldlightfieldgo.OpportunityUpdateParamsRelationshipReplaceUnion{
-						OfString: githubcomlightfldlightfieldgo.String("string"),
-					},
+					Replace: githubcomlightfldlightfieldgo.String("replace"),
 				},
 			},
 		},

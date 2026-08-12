@@ -43,7 +43,9 @@ func NewMessageService(opts ...option.RequestOption) (r MessageService) {
 
 // Retrieves a single message by its ID. The message text is redacted based on the
 // caller-specific channel-visibility resolution, and the response includes a
-// read-only `accessLevel`.
+// read-only `accessLevel`. Attachment file IDs are exposed via
+// `relationships.$attachment` (same shape as email attachments); fetch their
+// contents with `GET /v1/files/{id}/url`.
 //
 // **[Required scope](/using-the-api/scopes/):** `messages:read`
 //
