@@ -110,8 +110,11 @@ func (r *OpportunityService) Update(ctx context.Context, id string, body Opportu
 }
 
 // Returns a paginated list of opportunities. Use `offset` and `limit` to paginate
-// through results, and `$field` query parameters to filter. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// through results, and `$field` query parameters to filter. To list the
+// opportunities on a given account, filter by the `$account` relationship — e.g.
+// `?$account=acc_123` (`?$account[-equal]=acc_123` excludes them instead).
+//
+// See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
 // <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
 //
