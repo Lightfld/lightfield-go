@@ -25,6 +25,10 @@ import (
 // <u>[File uploads](/using-the-api/file-uploads/)</u> for the full upload flow and
 // supported purposes. For meeting transcript attachments, see
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
+// Not every retrievable file is listable: files uploaded through the app and
+// synced chat attachments are fetchable by id (`GET /v1/files/{id}`,
+// `GET /v1/files/{id}/url`, or a CRM record's `$files` relationship) but never
+// appear in `GET /v1/files`.
 //
 // FileService contains methods and other services that help with interacting with
 // the Lightfield API.
@@ -68,6 +72,12 @@ func (r *FileService) New(ctx context.Context, body FileNewParams, opts ...optio
 
 // Retrieves a single file by its ID.
 //
+// This works for any file id you already hold, including ones returned in a CRM
+// record's `$files` relationship — not only files created through
+// `POST /v1/files`. See <u>[File uploads](/using-the-api/file-uploads/)</u> for
+// which document classes are retrievable by id versus enumerable through
+// `GET /v1/files`.
+//
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
@@ -86,6 +96,10 @@ func (r *FileService) Get(ctx context.Context, id string, opts ...option.Request
 // paginate through results. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
+//
+// Omits files uploaded through the app and synced chat attachments — both are
+// still retrievable by id. See <u>[File uploads](/using-the-api/file-uploads/)</u>
+// for which document classes are listable versus retrievable-only.
 //
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
@@ -133,7 +147,8 @@ func (r *FileService) Complete(ctx context.Context, id string, body FileComplete
 }
 
 // Returns a temporary download URL for the file. Only available for files in
-// `COMPLETED` status.
+// `COMPLETED` status. Works for any retrievable file id, including files uploaded
+// through the app.
 //
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //

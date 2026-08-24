@@ -56,6 +56,10 @@ type Client struct {
 	// <u>[File uploads](/using-the-api/file-uploads/)</u> for the full upload flow and
 	// supported purposes. For meeting transcript attachments, see
 	// <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>.
+	// Not every retrievable file is listable: files uploaded through the app and
+	// synced chat attachments are fetchable by id (`GET /v1/files/{id}`,
+	// `GET /v1/files/{id}/url`, or a CRM record's `$files` relationship) but never
+	// appear in `GET /v1/files`.
 	File FileService
 	// Custom objects and relationships are available on Pro and Growth plans. Records
 	// can be fetched and manipulated via these endpoints, and definitions can be
