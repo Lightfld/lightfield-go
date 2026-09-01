@@ -42,8 +42,8 @@ func NewOpportunityService(opts ...option.RequestOption) (r OpportunityService) 
 	return
 }
 
-// Creates a new opportunity record. The `$name` and `$stage` fields and the
-// `$account` relationship are required.
+// Creates a new opportunity record. The `$name` field and the `$account`
+// relationship are required.
 //
 // After creation, Lightfield automatically generates an opportunity summary in the
 // background. The `$opportunityStatus` field is read-only and cannot be set via
@@ -1757,9 +1757,9 @@ func (r *OpportunityUpdateResponseRelationship) UnmarshalJSON(data []byte) error
 type OpportunityNewParams struct {
 	// Field values for the new opportunity. System fields use a `$` prefix (e.g.
 	// `$name`, `$stage`); custom attributes use their bare slug. Required: `$name`
-	// (string) and `$stage` (option ID or label). Fields of type `SINGLE_SELECT` or
-	// `MULTI_SELECT` accept either an option ID or label from the field's
-	// `typeConfiguration.options` — call the
+	// (string). `$stage` accepts an option ID or label when provided. Fields of type
+	// `SINGLE_SELECT` or `MULTI_SELECT` accept either an option ID or label from the
+	// field's `typeConfiguration.options` — call the
 	// <u>[definitions endpoint](/api/resources/opportunity/methods/definitions)</u> to
 	// discover available fields and options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
