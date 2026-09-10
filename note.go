@@ -453,6 +453,9 @@ type NoteDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 	MultipleValues bool `json:"multipleValues"`
 	// Available options for select fields.
 	Options []NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	// For a dependent select, the field key whose selected option determines which of
+	// this field's options apply. Absent for ordinary selects.
+	ParentFieldKey string `json:"parentFieldKey"`
 	// Whether values for this field must be unique.
 	Unique bool `json:"unique"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -461,6 +464,7 @@ type NoteDefinitionsResponseFieldDefinitionTypeConfiguration struct {
 		HandleService  respjson.Field
 		MultipleValues respjson.Field
 		Options        respjson.Field
+		ParentFieldKey respjson.Field
 		Unique         respjson.Field
 		ExtraFields    map[string]respjson.Field
 		raw            string
@@ -480,11 +484,16 @@ type NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	Label string `json:"label" api:"required"`
 	// Description of the option, or null.
 	Description string `json:"description" api:"nullable"`
+	// For a dependent select, the ID of the option in the parent field named by
+	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
+	// selects.
+	ParentID string `json:"parentId"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
 		Label       respjson.Field
 		Description respjson.Field
+		ParentID    respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
