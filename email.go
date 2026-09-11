@@ -697,7 +697,10 @@ type EmailDraftParams struct {
 	// Email subject.
 	Subject param.Opt[string] `json:"subject,omitzero"`
 	// Optional list of file IDs (uploaded via the Files API) to attach to the draft.
-	// Maximum 5 attachments per draft, each ≤ 3MB.
+	// Maximum 5 attachments per draft. Gmail: up to 20 MiB combined raw attachment
+	// size. Outlook: up to 3 MiB per attachment. Uploads with purpose email_attachment
+	// accept up to 20 MiB per file; sender-specific limits apply when sending or
+	// creating a draft.
 	Attachments []string `json:"attachments,omitzero"`
 	// Bcc recipients (same shape as `to`).
 	Bcc []string `json:"bcc,omitzero"`
@@ -757,7 +760,10 @@ type EmailSendParams struct {
 	// Recipient email addresses (bare, no display names). At least 1, at most 500.
 	To []string `json:"to,omitzero" api:"required"`
 	// Optional list of file IDs (uploaded via the Files API) to attach to the email.
-	// Maximum 5 attachments per email, each ≤ 3MB.
+	// Maximum 5 attachments per email. Gmail: up to 20 MiB combined raw attachment
+	// size. Outlook: up to 3 MiB per attachment. Uploads with purpose email_attachment
+	// accept up to 20 MiB per file; sender-specific limits apply when sending or
+	// creating a draft.
 	Attachments []string `json:"attachments,omitzero"`
 	// Bcc recipients (same shape as `to`).
 	Bcc []string `json:"bcc,omitzero"`
