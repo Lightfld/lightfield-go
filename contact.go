@@ -1755,6 +1755,11 @@ type ContactNewParams struct {
 	// discover available fields and their types. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
+	//
+	// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
+	// organization and object type through definitions. See
+	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
+	// for write rules.
 	Fields map[string]ContactNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new contact. System relationships use a `$` prefix
 	// (e.g. `$account`); custom relationships use their bare slug. Each value is a
@@ -1867,6 +1872,11 @@ type ContactUpdateParams struct {
 	// available fields and types. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
+	//
+	// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
+	// organization and object type through definitions. See
+	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
+	// for write rules.
 	Fields map[string]ContactUpdateParamsFieldUnion `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
 	// `$account`). Each value is an operation object with `add`, `remove`, or

@@ -44,6 +44,11 @@ func NewObjectService(opts ...option.RequestOption) (r ObjectService) {
 }
 
 // Creates a new record for the specified custom object type.
+//
+// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
+// organization and object type through definitions. See
+// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
+// for write rules.
 func (r *ObjectService) New(ctx context.Context, entitySlug string, body ObjectNewParams, opts ...option.RequestOption) (res *ObjectCreateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if entitySlug == "" {
@@ -73,6 +78,11 @@ func (r *ObjectService) Get(ctx context.Context, id string, query ObjectGetParam
 
 // Updates an existing record by ID for the specified custom object type. Only
 // included fields and relationships are modified.
+//
+// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
+// organization and object type through definitions. See
+// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
+// for write rules.
 func (r *ObjectService) Update(ctx context.Context, id string, params ObjectUpdateParams, opts ...option.RequestOption) (res *ObjectUpdateResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if params.EntitySlug == "" {
