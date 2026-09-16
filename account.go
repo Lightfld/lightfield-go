@@ -44,8 +44,8 @@ func NewAccountService(opts ...option.RequestOption) (r AccountService) {
 
 // Creates a new account record. The `$name` field is required.
 //
-// If a `$website` is provided, Lightfield automatically enriches the account in
-// the background. The `$howTheyMakeMoney` and `$accountStatus` fields are
+// Lightfield automatically enriches the account in the background; a `$website`
+// improves the match. The `$howTheyMakeMoney` and `$accountStatus` fields are
 // read-only and cannot be set via the API. The `$opportunity`, `$task`, `$note`,
 // and `$meeting` relationships are also read-only — manage them via the `$account`
 // relationship on the opportunity or task, the `$account`/`$opportunity` note

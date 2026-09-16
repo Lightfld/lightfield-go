@@ -77,6 +77,9 @@ type Client struct {
 	// Microsoft Teams, LinkedIn) in Lightfield. Read responses are visibility-aware:
 	// callers only see channels they have access to.
 	Channel ChannelService
+	// Enrichment fills in missing information on a record from Lightfield's data
+	// providers.
+	EnrichmentRun EnrichmentRunService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -122,6 +125,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Merge = NewMergeService(opts...)
 	r.Message = NewMessageService(opts...)
 	r.Channel = NewChannelService(opts...)
+	r.EnrichmentRun = NewEnrichmentRunService(opts...)
 
 	return
 }
