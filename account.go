@@ -1771,8 +1771,8 @@ type AccountNewParams struct {
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	//
-	// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
-	// organization and object type through definitions. See
+	// Read definitions for the object type’s configured `$pipeline` and `$stage`
+	// fields and options. See
 	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
 	// for write rules.
 	Fields map[string]AccountNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
@@ -1888,8 +1888,8 @@ type AccountUpdateParams struct {
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	//
-	// `$pipeline` and non-Opportunity `$stage` are beta; discover availability per
-	// organization and object type through definitions. See
+	// Read definitions for the object type’s configured `$pipeline` and `$stage`
+	// fields and options. See
 	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
 	// for write rules.
 	Fields map[string]AccountUpdateParamsFieldUnion `json:"fields,omitzero"`
