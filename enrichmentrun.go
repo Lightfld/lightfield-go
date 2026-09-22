@@ -45,7 +45,8 @@ func NewEnrichmentRunService(opts ...option.RequestOption) (r EnrichmentRunServi
 // Enrichment runs in the background: this returns as soon as the run is created.
 // Poll `GET /v1/enrichmentRun/{runId}` for its status. A record can only have one
 // enrichment run at a time — if one is already in flight, this returns that run
-// rather than starting a second.
+// rather than starting a second. A `409` means another request claimed the record
+// at the same moment; retry after a short wait.
 //
 // Which fields are enriched, and whether a provider answer overwrites an existing
 // value or is raised as a suggestion, come from the workspace's enrichment
@@ -281,9 +282,10 @@ type EnrichmentRunEnrichParams struct {
 	// no suggestion form, so it stays rejected while it is turned off. A named field
 	// is not used to look the record up — the run derives it fresh from the record's
 	// other identifiers — so naming every identifier (a contact's name and email
-	// together) leaves nothing to search by and is skipped with `no_operations`.
-	// `phone` is filled only when another field's lookup happens to return it, so
-	// requesting it on its own is skipped the same way.
+	// together) leaves nothing to search by and is rejected with
+	// `400 enrichment_fields_not_enrichable`, creating no run; refresh them one at a
+	// time. `phone` is filled only when another field's lookup happens to return it,
+	// so requesting it on its own is rejected the same way.
 	Fields []string `json:"fields,omitzero"`
 	paramObj
 }
