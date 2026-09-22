@@ -124,6 +124,7 @@ func TestNoteListWithOptionalParams(t *testing.T) {
 	_, err := client.Note.List(context.TODO(), githubcomlightfldlightfieldgo.NoteListParams{
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Status: githubcomlightfldlightfieldgo.NoteListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
@@ -175,6 +176,34 @@ func TestNoteDefinitions(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Note.Definitions(context.TODO())
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestNoteRestoreWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Note.Restore(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.NoteRestoreParams{
+			Body: githubcomlightfldlightfieldgo.NoteRestoreParamsBody{},
+		},
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

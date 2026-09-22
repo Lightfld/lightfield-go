@@ -124,6 +124,7 @@ func TestMeetingListWithOptionalParams(t *testing.T) {
 	_, err := client.Meeting.List(context.TODO(), githubcomlightfldlightfieldgo.MeetingListParams{
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Status: githubcomlightfldlightfieldgo.MeetingListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
@@ -175,6 +176,34 @@ func TestMeetingDefinitions(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Meeting.Definitions(context.TODO())
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMeetingRestoreWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Meeting.Restore(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.MeetingRestoreParams{
+			Body: githubcomlightfldlightfieldgo.MeetingRestoreParamsBody{},
+		},
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

@@ -126,6 +126,7 @@ func TestOpportunityListWithOptionalParams(t *testing.T) {
 	_, err := client.Opportunity.List(context.TODO(), githubcomlightfldlightfieldgo.OpportunityListParams{
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Status: githubcomlightfldlightfieldgo.OpportunityListParamsStatusActive,
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
@@ -205,6 +206,34 @@ func TestOpportunityFieldHistoryWithOptionalParams(t *testing.T) {
 			ID:    "id",
 			After: githubcomlightfldlightfieldgo.String("after"),
 			Limit: githubcomlightfldlightfieldgo.Int(1),
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestOpportunityRestoreWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Opportunity.Restore(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.OpportunityRestoreParams{
+			Body: githubcomlightfldlightfieldgo.OpportunityRestoreParamsBody{},
 		},
 	)
 	if err != nil {
