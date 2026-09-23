@@ -98,7 +98,7 @@ func (r *NoteService) Update(ctx context.Context, id string, body NoteUpdatePara
 
 // Returns a paginated list of notes. Use `offset` and `limit` to paginate through
 // results. Pass `status=trashed` to list notes currently in the trash instead of
-// live records. Listing trashed records additionally requires the `trash:restore`
+// live records. Listing trashed records additionally requires the `notes:restore`
 // scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
 // information about pagination.
 //
@@ -154,7 +154,7 @@ func (r *NoteService) Definitions(ctx context.Context, opts ...option.RequestOpt
 // Calling restore on a note that is not trashed is a no-op and returns the
 // existing record.
 //
-// **[Required scope](/using-the-api/scopes/):** `trash:restore`
+// **[Required scope](/using-the-api/scopes/):** `notes:restore`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *NoteService) Restore(ctx context.Context, id string, body NoteRestoreParams, opts ...option.RequestOption) (res *NoteRestoreResponse, err error) {
@@ -1919,8 +1919,8 @@ type NoteListParams struct {
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
-	// list records currently in the trash; this additionally requires the
-	// `trash:restore` scope.
+	// list records currently in the trash; this additionally requires this resource's
+	// `restore` scope.
 	//
 	// Any of "active", "trashed".
 	Status NoteListParamsStatus `query:"status,omitzero" json:"-"`
@@ -1936,8 +1936,8 @@ func (r NoteListParams) URLQuery() (v url.Values, err error) {
 }
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
-// list records currently in the trash; this additionally requires the
-// `trash:restore` scope.
+// list records currently in the trash; this additionally requires this resource's
+// `restore` scope.
 type NoteListParamsStatus string
 
 const (

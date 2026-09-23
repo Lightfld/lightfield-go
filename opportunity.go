@@ -115,10 +115,11 @@ func (r *OpportunityService) Update(ctx context.Context, id string, body Opportu
 // `?$account=acc_123` (`?$account[-equal]=acc_123` excludes them instead).
 //
 // Pass `status=trashed` to list opportunities currently in the trash instead of
-// live records. Listing trashed records additionally requires the `trash:restore`
-// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
-// information about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u>
-// and <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// live records. Listing trashed records additionally requires the
+// `opportunities:restore` scope. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
+// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
 //
 // **[Required scope](/using-the-api/scopes/):** `opportunities:read`
 //
@@ -197,7 +198,7 @@ func (r *OpportunityService) FieldHistory(ctx context.Context, fieldKey string, 
 // Calling restore on an opportunity that is not trashed is a no-op and returns the
 // existing record.
 //
-// **[Required scope](/using-the-api/scopes/):** `trash:restore`
+// **[Required scope](/using-the-api/scopes/):** `opportunities:restore`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *OpportunityService) Restore(ctx context.Context, id string, body OpportunityRestoreParams, opts ...option.RequestOption) (res *OpportunityRestoreResponse, err error) {
@@ -2298,8 +2299,8 @@ type OpportunityListParams struct {
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
-	// list records currently in the trash; this additionally requires the
-	// `trash:restore` scope.
+	// list records currently in the trash; this additionally requires this resource's
+	// `restore` scope.
 	//
 	// Any of "active", "trashed".
 	Status OpportunityListParamsStatus `query:"status,omitzero" json:"-"`
@@ -2315,8 +2316,8 @@ func (r OpportunityListParams) URLQuery() (v url.Values, err error) {
 }
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
-// list records currently in the trash; this additionally requires the
-// `trash:restore` scope.
+// list records currently in the trash; this additionally requires this resource's
+// `restore` scope.
 type OpportunityListParamsStatus string
 
 const (

@@ -100,7 +100,7 @@ func (r *ContactService) Update(ctx context.Context, id string, body ContactUpda
 // Returns a paginated list of contacts. Use `offset` and `limit` to paginate
 // through results, and `$field` query parameters to filter. Pass `status=trashed`
 // to list contacts currently in the trash instead of live records. Listing trashed
-// records additionally requires the `trash:restore` scope. See
+// records additionally requires the `contacts:restore` scope. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
 // <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
@@ -181,7 +181,7 @@ func (r *ContactService) FieldHistory(ctx context.Context, fieldKey string, para
 // Calling restore on a contact that is not trashed is a no-op and returns the
 // existing record.
 //
-// **[Required scope](/using-the-api/scopes/):** `trash:restore`
+// **[Required scope](/using-the-api/scopes/):** `contacts:restore`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *ContactService) Restore(ctx context.Context, id string, body ContactRestoreParams, opts ...option.RequestOption) (res *ContactRestoreResponse, err error) {
@@ -2279,8 +2279,8 @@ type ContactListParams struct {
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
-	// list records currently in the trash; this additionally requires the
-	// `trash:restore` scope.
+	// list records currently in the trash; this additionally requires this resource's
+	// `restore` scope.
 	//
 	// Any of "active", "trashed".
 	Status ContactListParamsStatus `query:"status,omitzero" json:"-"`
@@ -2296,8 +2296,8 @@ func (r ContactListParams) URLQuery() (v url.Values, err error) {
 }
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
-// list records currently in the trash; this additionally requires the
-// `trash:restore` scope.
+// list records currently in the trash; this additionally requires this resource's
+// `restore` scope.
 type ContactListParamsStatus string
 
 const (

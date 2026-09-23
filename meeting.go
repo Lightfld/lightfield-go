@@ -117,7 +117,7 @@ func (r *MeetingService) Update(ctx context.Context, id string, body MeetingUpda
 // read-only `accessLevel`, and may redact transcript or content fields based on
 // the caller-specific privacy resolution. Pass `status=trashed` to list meetings
 // currently in the trash instead of live records. Listing trashed records
-// additionally requires the `trash:restore` scope. See
+// additionally requires the `meetings:restore` scope. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
@@ -172,7 +172,7 @@ func (r *MeetingService) Definitions(ctx context.Context, opts ...option.Request
 // Calling restore on a meeting that is not trashed is a no-op and returns the
 // existing record.
 //
-// **[Required scope](/using-the-api/scopes/):** `trash:restore`
+// **[Required scope](/using-the-api/scopes/):** `meetings:restore`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *MeetingService) Restore(ctx context.Context, id string, body MeetingRestoreParams, opts ...option.RequestOption) (res *MeetingRestoreResponse, err error) {
@@ -2100,8 +2100,8 @@ type MeetingListParams struct {
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
-	// list records currently in the trash; this additionally requires the
-	// `trash:restore` scope.
+	// list records currently in the trash; this additionally requires this resource's
+	// `restore` scope.
 	//
 	// Any of "active", "trashed".
 	Status MeetingListParamsStatus `query:"status,omitzero" json:"-"`
@@ -2117,8 +2117,8 @@ func (r MeetingListParams) URLQuery() (v url.Values, err error) {
 }
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
-// list records currently in the trash; this additionally requires the
-// `trash:restore` scope.
+// list records currently in the trash; this additionally requires this resource's
+// `restore` scope.
 type MeetingListParamsStatus string
 
 const (

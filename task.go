@@ -101,7 +101,7 @@ func (r *TaskService) Update(ctx context.Context, id string, body TaskUpdatePara
 
 // Returns a paginated list of tasks. Use `offset` and `limit` to paginate through
 // results. Pass `status=trashed` to list tasks currently in the trash instead of
-// live records. Listing trashed records additionally requires the `trash:restore`
+// live records. Listing trashed records additionally requires the `tasks:restore`
 // scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
 // information about pagination.
 //
@@ -157,7 +157,7 @@ func (r *TaskService) Definitions(ctx context.Context, opts ...option.RequestOpt
 // Calling restore on a task that is not trashed is a no-op and returns the
 // existing record.
 //
-// **[Required scope](/using-the-api/scopes/):** `trash:restore`
+// **[Required scope](/using-the-api/scopes/):** `tasks:restore`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *TaskService) Restore(ctx context.Context, id string, body TaskRestoreParams, opts ...option.RequestOption) (res *TaskRestoreResponse, err error) {
@@ -1944,8 +1944,8 @@ type TaskListParams struct {
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
-	// list records currently in the trash; this additionally requires the
-	// `trash:restore` scope.
+	// list records currently in the trash; this additionally requires this resource's
+	// `restore` scope.
 	//
 	// Any of "active", "trashed".
 	Status TaskListParamsStatus `query:"status,omitzero" json:"-"`
@@ -1961,8 +1961,8 @@ func (r TaskListParams) URLQuery() (v url.Values, err error) {
 }
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
-// list records currently in the trash; this additionally requires the
-// `trash:restore` scope.
+// list records currently in the trash; this additionally requires this resource's
+// `restore` scope.
 type TaskListParamsStatus string
 
 const (
