@@ -77,8 +77,9 @@ func (r *NoteService) Get(ctx context.Context, id string, opts ...option.Request
 // Updates an existing note by ID. Only included fields and relationships are
 // modified.
 //
-// `$account`, `$opportunity`, and `$contact` relationships can be modified via
-// `add` and/or `remove` operations (combined in one call or separately).
+// `$account`, `$opportunity`, `$contact`, and `$meeting` relationships can be
+// modified via `add` and/or `remove` operations (combined in one call or
+// separately).
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -1766,9 +1767,9 @@ type NoteNewParams struct {
 	// value type details.
 	Fields NoteNewParamsFields `json:"fields,omitzero" api:"required"`
 	// Relationships to set on the new note. System relationships use a `$` prefix
-	// (e.g. `$account`, `$opportunity`, `$contact`); custom relationships use their
-	// bare slug. Each value is a single entity ID or an array of IDs. The note author
-	// is automatically set to the API key owner.
+	// (e.g. `$account`, `$opportunity`, `$contact`, `$meeting`); custom relationships
+	// use their bare slug. Each value is a single entity ID or an array of IDs. The
+	// note author is automatically set to the API key owner.
 	Relationships map[string]NoteNewParamsRelationshipUnion `json:"relationships,omitzero"`
 	paramObj
 }
@@ -1825,9 +1826,9 @@ type NoteUpdateParams struct {
 	// value type details.
 	Fields NoteUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. System relationships use a `$` prefix (e.g.
-	// `$account`, `$opportunity`, `$contact`); custom relationships use their bare
-	// slug. Each value is an operation object with `add` and/or `remove`. `replace` is
-	// not supported since note relationships are HAS_MANY.
+	// `$account`, `$opportunity`, `$contact`, `$meeting`); custom relationships use
+	// their bare slug. Each value is an operation object with `add` and/or `remove`.
+	// `replace` is not supported since note relationships are HAS_MANY.
 	Relationships map[string]NoteUpdateParamsRelationship `json:"relationships,omitzero"`
 	paramObj
 }

@@ -66,9 +66,11 @@ func (r *MeetingService) New(ctx context.Context, body MeetingNewParams, opts ..
 	return res, err
 }
 
-// Retrieves a single meeting by its ID. Meeting fields and transcript visibility
-// are redacted based on the caller-specific privacy resolution, and the response
-// includes a read-only `accessLevel`.
+// Retrieves a single meeting by its ID. `$transcript` is the file ID of the
+// canonical transcript. `$transcripts` lists the file ID of every transcript on
+// the meeting. `$note` lists the note IDs attached to the meeting. Meeting fields
+// and transcript visibility are redacted based on the caller-specific privacy
+// resolution, and the response includes a read-only `accessLevel`.
 //
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //
@@ -88,11 +90,14 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // modified.
 //
 // Only `fields.$privacySetting` and `relationships.$transcript.replace` are
-// writable. Use `$transcript.replace` to set the meeting transcript. Clearing or
-// removing `$transcript` is not supported. The `$account` and `$opportunity`
-// relationships are read-only and are derived from the meeting's `$contact`
-// attendees and the accounts/opportunities those contacts belong to. The response
-// is privacy-aware and includes a read-only `accessLevel`. See
+// writable. `$transcript` is the file ID of the canonical transcript.
+// `$transcripts` lists the file ID of every transcript on the meeting. Use
+// `$transcript.replace` to make that file canonical. A file that is not already on
+// the meeting is attached first. Clearing or removing `$transcript` is not
+// supported. The `$account` and `$opportunity` relationships are read-only and are
+// derived from the meeting's `$contact` attendees and the accounts/opportunities
+// those contacts belong to. The response is privacy-aware and includes a read-only
+// `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -1992,8 +1997,7 @@ func init() {
 // Relationships to set on the new meeting. Only `$transcript` is writable on
 // create; all other meeting relationships are system-managed.
 type MeetingNewParamsRelationships struct {
-	// The ID of the file to attach as the meeting transcript when creating the
-	// meeting. Only one transcript can be attached to a meeting.
+	// The file ID to attach and set as the meeting canonical transcript.
 	Transcript MeetingNewParamsRelationshipsTranscriptUnion `json:"$transcript,omitzero"`
 	paramObj
 }
@@ -2081,7 +2085,8 @@ func (r *MeetingUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 
 // The property Replace is required.
 type MeetingUpdateParamsRelationshipsTranscript struct {
-	// The file ID to set as the meeting transcript.
+	// The file ID to make the canonical transcript. A file that is not already a
+	// transcript on the meeting is attached first.
 	Replace string `json:"replace" api:"required"`
 	paramObj
 }
