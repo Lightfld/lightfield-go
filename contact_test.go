@@ -36,6 +36,7 @@ func TestContactNewWithOptionalParams(t *testing.T) {
 				OfString: githubcomlightfldlightfieldgo.String("string"),
 			},
 		},
+		SkipEnrichment: githubcomlightfldlightfieldgo.Bool(true),
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error

@@ -44,7 +44,8 @@ func NewContactService(opts ...option.RequestOption) (r ContactService) {
 
 // Creates a new contact record.
 //
-// After creation, Lightfield automatically enriches the contact in the background.
+// After creation, Lightfield automatically enriches the contact in the background
+// unless `skipEnrichment` is true.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -2019,6 +2020,8 @@ type ContactNewParams struct {
 	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
 	// for write rules.
 	Fields map[string]ContactNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
+	// Skip background enrichment for this contact creation. Defaults to false.
+	SkipEnrichment param.Opt[bool] `json:"skipEnrichment,omitzero"`
 	// Relationships to set on the new contact. System relationships use a `$` prefix
 	// (e.g. `$account`); custom relationships use their bare slug. Each value is a
 	// single entity ID or an array of IDs. Call the

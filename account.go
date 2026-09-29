@@ -44,13 +44,13 @@ func NewAccountService(opts ...option.RequestOption) (r AccountService) {
 
 // Creates a new account record. The `$name` field is required.
 //
-// Lightfield automatically enriches the account in the background; a `$website`
-// improves the match. The `$howTheyMakeMoney` and `$accountStatus` fields are
-// read-only and cannot be set via the API. The `$opportunity`, `$task`, `$note`,
-// and `$meeting` relationships are also read-only — manage them via the `$account`
-// relationship on the opportunity or task, the `$account`/`$opportunity` note
-// relationships, or via the meeting's `$contact` attendees that belong to this
-// account.
+// Lightfield automatically enriches the account in the background unless
+// `skipEnrichment` is true; a `$website` improves the match. The
+// `$howTheyMakeMoney` and `$accountStatus` fields are read-only and cannot be set
+// via the API. The `$opportunity`, `$task`, `$note`, and `$meeting` relationships
+// are also read-only — manage them via the `$account` relationship on the
+// opportunity or task, the `$account`/`$opportunity` note relationships, or via
+// the meeting's `$contact` attendees that belong to this account.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -2034,6 +2034,9 @@ type AccountNewParams struct {
 	// <u>[Pipelines and stages](/using-the-api/fields-and-relationships/#pipelines-and-stages)</u>
 	// for write rules.
 	Fields map[string]AccountNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
+	// Skip background data enrichment for this account creation. The account summary
+	// and how-they-make-money field are still generated. Defaults to false.
+	SkipEnrichment param.Opt[bool] `json:"skipEnrichment,omitzero"`
 	// Relationships to set on the new account. System relationships use a `$` prefix
 	// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
 	// value is a single entity ID or an array of IDs. Call the
