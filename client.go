@@ -80,6 +80,9 @@ type Client struct {
 	// Enrichment fills in missing information on a record from Lightfield's data
 	// providers.
 	EnrichmentRun EnrichmentRunService
+	// Sequences are multi-step outreach cadences that send email and LinkedIn messages
+	// to enrolled contacts.
+	Sequence SequenceService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -126,6 +129,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Message = NewMessageService(opts...)
 	r.Channel = NewChannelService(opts...)
 	r.EnrichmentRun = NewEnrichmentRunService(opts...)
+	r.Sequence = NewSequenceService(opts...)
 
 	return
 }
