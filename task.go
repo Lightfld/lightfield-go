@@ -45,9 +45,10 @@ func NewTaskService(opts ...option.RequestOption) (r TaskService) {
 // Creates a new task record. The `$title` and `$status` fields and the
 // `$assignedTo` relationship are required.
 //
-// If `$createdBy` is omitted it defaults to the authenticated user, or to a
-// workspace admin for workspace-scoped auth. The `$note` relationship is read-only
-// — manage notes via their own relationships.
+// If `$createdBy` is omitted it defaults to the authenticated user (for a
+// workspace API key, the member who created the key), or to the assignee when no
+// member is acting. The `$note` relationship is read-only — manage notes via their
+// own relationships.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
