@@ -59,7 +59,9 @@ func (r *EmailService) Get(ctx context.Context, id string, opts ...option.Reques
 	return res, err
 }
 
-// Returns a paginated list of emails. Use `offset` and `limit` to paginate through
+// Returns a paginated list of emails. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. This is not the time the
+// email was sent or received. Use `offset` and `limit` to paginate through
 // results. Each email is privacy-filtered per caller, includes a read-only
 // `accessLevel`, and may redact the subject at metadata-only access.
 // `fields.$body` is not included on list items; use GET `/v1/emails/{id}` for

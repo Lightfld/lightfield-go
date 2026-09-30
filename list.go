@@ -90,9 +90,11 @@ func (r *ListService) Update(ctx context.Context, id string, body ListUpdatePara
 	return res, err
 }
 
-// Returns a paginated list of lists. Use `offset` and `limit` to paginate through
-// results. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
-// information about pagination.
+// Returns a paginated list of lists. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
+// paginate through results. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `lists:read`
 //
@@ -125,7 +127,9 @@ func (r *ListService) Delete(ctx context.Context, id string, body ListDeletePara
 	return res, err
 }
 
-// Returns a paginated list of accounts that belong to the specified list.
+// Returns a paginated list of accounts that belong to the specified list. Results
+// are sorted by when the record was created in Lightfield (`createdAt`), newest
+// first.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and `accounts:read`
 //
@@ -141,7 +145,9 @@ func (r *ListService) ListAccounts(ctx context.Context, listID string, query Lis
 	return res, err
 }
 
-// Returns a paginated list of contacts that belong to the specified list.
+// Returns a paginated list of contacts that belong to the specified list. Results
+// are sorted by when the record was created in Lightfield (`createdAt`), newest
+// first.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and `contacts:read`
 //
@@ -158,6 +164,8 @@ func (r *ListService) ListContacts(ctx context.Context, listID string, query Lis
 }
 
 // Returns a paginated list of opportunities that belong to the specified list.
+// Results are sorted by when the record was created in Lightfield (`createdAt`),
+// newest first.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and
 // `opportunities:read`

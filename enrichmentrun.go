@@ -139,10 +139,10 @@ type EnrichmentRunEnrichResponseEnrichmentRun struct {
 	Status string `json:"status" api:"required"`
 	// The fields this run set out to fill.
 	TargetFields []string `json:"targetFields" api:"required"`
-	// What started the run: `creation` when the record was created, `manual` when
-	// requested through the API.
+	// What started the run: `creation` when the record was created, `update` when it
+	// later gained an email or account, `manual` when requested through the API.
 	//
-	// Any of "creation", "manual".
+	// Any of "creation", "manual", "update".
 	Trigger   string `json:"trigger" api:"required"`
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -211,10 +211,10 @@ type EnrichmentRunGetEnrichmentRunResponse struct {
 	Status EnrichmentRunGetEnrichmentRunResponseStatus `json:"status" api:"required"`
 	// The fields this run set out to fill.
 	TargetFields []string `json:"targetFields" api:"required"`
-	// What started the run: `creation` when the record was created, `manual` when
-	// requested through the API.
+	// What started the run: `creation` when the record was created, `update` when it
+	// later gained an email or account, `manual` when requested through the API.
 	//
-	// Any of "creation", "manual".
+	// Any of "creation", "manual", "update".
 	Trigger   EnrichmentRunGetEnrichmentRunResponseTrigger `json:"trigger" api:"required"`
 	UpdatedAt string                                       `json:"updatedAt" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -260,13 +260,14 @@ const (
 	EnrichmentRunGetEnrichmentRunResponseStatusTimedOut  EnrichmentRunGetEnrichmentRunResponseStatus = "timed_out"
 )
 
-// What started the run: `creation` when the record was created, `manual` when
-// requested through the API.
+// What started the run: `creation` when the record was created, `update` when it
+// later gained an email or account, `manual` when requested through the API.
 type EnrichmentRunGetEnrichmentRunResponseTrigger string
 
 const (
 	EnrichmentRunGetEnrichmentRunResponseTriggerCreation EnrichmentRunGetEnrichmentRunResponseTrigger = "creation"
 	EnrichmentRunGetEnrichmentRunResponseTriggerManual   EnrichmentRunGetEnrichmentRunResponseTrigger = "manual"
+	EnrichmentRunGetEnrichmentRunResponseTriggerUpdate   EnrichmentRunGetEnrichmentRunResponseTrigger = "update"
 )
 
 type EnrichmentRunEnrichParams struct {

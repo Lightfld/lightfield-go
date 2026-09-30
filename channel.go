@@ -60,9 +60,10 @@ func (r *ChannelService) Get(ctx context.Context, id string, opts ...option.Requ
 	return res, err
 }
 
-// Returns a paginated list of channels. Use `offset` and `limit` to paginate
-// through results. Each page is filtered per caller to the channels they may see
-// (public channels, channels they are a member of, and org-wide-visible
+// Returns a paginated list of channels. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
+// paginate through results. Each page is filtered per caller to the channels they
+// may see (public channels, channels they are a member of, and org-wide-visible
 // providers). See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
 // information about pagination.
 //

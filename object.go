@@ -98,11 +98,13 @@ func (r *ObjectService) Update(ctx context.Context, id string, params ObjectUpda
 	return res, err
 }
 
-// Returns a paginated list of records for the specified custom object type. Use
-// `offset` and `limit` to paginate through results, and `$field` query parameters
-// to filter. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
-// information about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u>
-// and <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// Returns a paginated list of records for the specified custom object type.
+// Results are sorted by when the record was created in Lightfield (`createdAt`),
+// newest first. Use `offset` and `limit` to paginate through results, and `$field`
+// query parameters to filter. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
+// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
 func (r *ObjectService) List(ctx context.Context, entitySlug string, query ObjectListParams, opts ...option.RequestOption) (res *ObjectListResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if entitySlug == "" {
@@ -178,7 +180,8 @@ func (r *ObjectService) FieldHistory(ctx context.Context, fieldKey string, param
 	return res, err
 }
 
-// Returns all custom object types available to the caller.
+// Returns all custom object types available to the caller, sorted alphabetically
+// by `objectType`.
 func (r *ObjectService) ListDefinitions(ctx context.Context, opts ...option.RequestOption) (res *ObjectListDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/objects"

@@ -109,13 +109,14 @@ func (r *AccountService) Update(ctx context.Context, id string, body AccountUpda
 	return res, err
 }
 
-// Returns a paginated list of accounts. Use `offset` and `limit` to paginate
-// through results, and `$field` query parameters to filter. Pass `status=trashed`
-// to list accounts currently in the trash instead of live records. Listing trashed
-// records additionally requires the `accounts:restore` scope. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
-// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// Returns a paginated list of accounts. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
+// paginate through results, and `$field` query parameters to filter. Pass
+// `status=trashed` to list accounts currently in the trash instead of live
+// records. Listing trashed records additionally requires the `accounts:restore`
+// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u>
+// and <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
 //
 // **[Required scope](/using-the-api/scopes/):** `accounts:read`
 //

@@ -100,11 +100,13 @@ func (r *TaskService) Update(ctx context.Context, id string, body TaskUpdatePara
 	return res, err
 }
 
-// Returns a paginated list of tasks. Use `offset` and `limit` to paginate through
-// results. Pass `status=trashed` to list tasks currently in the trash instead of
-// live records. Listing trashed records additionally requires the `tasks:restore`
-// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
-// information about pagination.
+// Returns a paginated list of tasks. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
+// paginate through results. Pass `status=trashed` to list tasks currently in the
+// trash instead of live records. Listing trashed records additionally requires the
+// `tasks:restore` scope. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `tasks:read`
 //

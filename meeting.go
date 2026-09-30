@@ -117,14 +117,15 @@ func (r *MeetingService) Update(ctx context.Context, id string, body MeetingUpda
 	return res, err
 }
 
-// Returns a paginated list of meetings. Use `offset` and `limit` to paginate
-// through results. Each meeting is privacy-filtered per caller, includes a
-// read-only `accessLevel`, and may redact transcript or content fields based on
-// the caller-specific privacy resolution. Pass `status=trashed` to list meetings
-// currently in the trash instead of live records. Listing trashed records
-// additionally requires the `meetings:restore` scope. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about pagination.
+// Returns a paginated list of meetings. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. This is not the meeting start
+// time. Use `offset` and `limit` to paginate through results. Each meeting is
+// privacy-filtered per caller, includes a read-only `accessLevel`, and may redact
+// transcript or content fields based on the caller-specific privacy resolution.
+// Pass `status=trashed` to list meetings currently in the trash instead of live
+// records. Listing trashed records additionally requires the `meetings:restore`
+// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //

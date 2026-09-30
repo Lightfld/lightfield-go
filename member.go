@@ -57,8 +57,9 @@ func (r *MemberService) Get(ctx context.Context, id string, opts ...option.Reque
 	return res, err
 }
 
-// Returns a paginated list of members in your workspace. Use `offset` and `limit`
-// to paginate through results. See
+// Returns a paginated list of members in your workspace. Results are sorted by
+// when the record was created in Lightfield (`createdAt`), newest first. Use
+// `offset` and `limit` to paginate through results. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //

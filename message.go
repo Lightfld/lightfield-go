@@ -61,9 +61,11 @@ func (r *MessageService) Get(ctx context.Context, id string, opts ...option.Requ
 	return res, err
 }
 
-// Returns a paginated list of messages. Use `offset` and `limit` to paginate
-// through results. Each message is filtered per caller to those whose channel they
-// may see, and includes a read-only `accessLevel`. See
+// Returns a paginated list of messages. Results are sorted by when the record was
+// created in Lightfield (`createdAt`), newest first. This is not the time the
+// message was sent. Use `offset` and `limit` to paginate through results. Each
+// message is filtered per caller to those whose channel they may see, and includes
+// a read-only `accessLevel`. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //

@@ -92,8 +92,9 @@ func (r *FileService) Get(ctx context.Context, id string, opts ...option.Request
 	return res, err
 }
 
-// Returns a paginated list of files in your workspace. Use `offset` and `limit` to
-// paginate through results. See
+// Returns a paginated list of files in your workspace. Results are sorted by when
+// the record was created in Lightfield (`createdAt`), newest first. Use `offset`
+// and `limit` to paginate through results. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
