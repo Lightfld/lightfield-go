@@ -85,7 +85,7 @@ func (r *SequenceService) List(ctx context.Context, query SequenceListParams, op
 // and update asynchronously. Use `offset` and `limit` to paginate, and bracketed
 // field filters to narrow results. Test-run enrollments are excluded.
 //
-// Supported filters: `status[equal]` (ACTIVE, NEEDS_REVIEW, NEEDS_ATTENTION,
+// Supported filters: `status[equal]` (ACTIVE, AWAITING_REVIEW, NEEDS_ATTENTION,
 // REPLIED, COMPLETED, PAUSED, CANCELLED, FAILED), `contactId[equal]`,
 // `currentStepId[equal]`, and `enrolledAt`, `lastActivityAt`, or `repliedAt` with
 // `[greaterThanOrEqual]` or `[lessThanOrEqual]`. Date values must be ISO 8601
@@ -182,6 +182,25 @@ func (r *SequenceService) GetMessage(ctx context.Context, messageID string, quer
 	return res, err
 }
 
+// Returns lifetime engagement and current step enrollment counts for a published
+// sequence. Counts include live, nonremoved enrollments and may lag recent
+// activity while the search index updates. Rates are fractions; a rate is null
+// when its denominator is zero. Historical sent steps remain in the breakdown.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *SequenceService) GetStats(ctx context.Context, id string, opts ...option.RequestOption) (res *SequenceRetrieveStatsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/stats", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Adds and removes contacts in one atomic request. If any new enrollment is
 // invalid, nothing changes. Provide add, remove, or both, with at most 25 contact
 // IDs total. Duplicate IDs within a list are ignored; an ID cannot appear in both
@@ -257,10 +276,6 @@ type SequenceListEnrollmentsResponseData struct {
 	// work, or new sends may push it later. Null while awaiting review, sending,
 	// paused, or when eligibility is unknown.
 	NextSendAt string `json:"nextSendAt" api:"required"`
-	// Always `sequenceEnrollment`.
-	//
-	// Any of "sequenceEnrollment".
-	ObjectType string `json:"objectType" api:"required"`
 	// Unsent email and LinkedIn steps remaining, including connection requests; null
 	// on retrieval when a current indexed value is unavailable.
 	RemainingSends int64 `json:"remainingSends" api:"required"`
@@ -269,7 +284,7 @@ type SequenceListEnrollmentsResponseData struct {
 	// Display status of the enrollment, or null on retrieval when the index is
 	// unavailable or has not caught up with the enrollment lifecycle.
 	//
-	// Any of "ACTIVE", "NEEDS_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
+	// Any of "ACTIVE", "AWAITING_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
 	// "PAUSED", "CANCELLED", "FAILED".
 	Status string `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -284,7 +299,6 @@ type SequenceListEnrollmentsResponseData struct {
 		LastActivityAt   respjson.Field
 		LastActivityKind respjson.Field
 		NextSendAt       respjson.Field
-		ObjectType       respjson.Field
 		RemainingSends   respjson.Field
 		RepliedAt        respjson.Field
 		Status           respjson.Field
@@ -342,7 +356,6 @@ type SequenceListMessagesResponseDataUnion struct {
 	CreatedAt    string `json:"createdAt"`
 	Direction    string `json:"direction"`
 	EnrollmentID string `json:"enrollmentId"`
-	ObjectType   string `json:"objectType"`
 	// This field is from variant [SequenceListMessagesResponseDataObject].
 	OpenedAt string `json:"openedAt"`
 	// This field is from variant [SequenceListMessagesResponseDataObject].
@@ -371,7 +384,6 @@ type SequenceListMessagesResponseDataUnion struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		OpenedAt         respjson.Field
 		ReadAt           respjson.Field
 		Reference        respjson.Field
@@ -441,12 +453,8 @@ type SequenceListMessagesResponseDataObject struct {
 	Direction string `json:"direction" api:"required"`
 	// Enrollment ID beginning with `sqe_`.
 	EnrollmentID string `json:"enrollmentId" api:"required"`
-	// Always `sequenceMessage`.
-	//
-	// Any of "sequenceMessage".
-	ObjectType string `json:"objectType" api:"required"`
-	OpenedAt   string `json:"openedAt" api:"required"`
-	ReadAt     string `json:"readAt" api:"required"`
+	OpenedAt     string `json:"openedAt" api:"required"`
+	ReadAt       string `json:"readAt" api:"required"`
 	// Active same-workspace email or chat message reference, or null when unavailable;
 	// individual mail/chat privacy does not restrict this sequence reference, but the
 	// referenced endpoint retains its own scopes and access rules.
@@ -474,7 +482,6 @@ type SequenceListMessagesResponseDataObject struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		OpenedAt         respjson.Field
 		ReadAt           respjson.Field
 		Reference        respjson.Field
@@ -581,11 +588,7 @@ type SequenceListMessagesResponseDataObject2 struct {
 	Direction string `json:"direction" api:"required"`
 	// Enrollment ID beginning with `sqe_`.
 	EnrollmentID string `json:"enrollmentId" api:"required"`
-	// Always `sequenceMessage`.
-	//
-	// Any of "sequenceMessage".
-	ObjectType string `json:"objectType" api:"required"`
-	ReceivedAt string `json:"receivedAt" api:"required"`
+	ReceivedAt   string `json:"receivedAt" api:"required"`
 	// Active same-workspace email or chat message reference, or null when unavailable;
 	// individual mail/chat privacy does not restrict this sequence reference, but the
 	// referenced endpoint retains its own scopes and access rules.
@@ -603,7 +606,6 @@ type SequenceListMessagesResponseDataObject2 struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		ReceivedAt       respjson.Field
 		Reference        respjson.Field
 		SequenceStepID   respjson.Field
@@ -1077,10 +1079,6 @@ type SequenceRetrieveEnrollmentResponse struct {
 	// work, or new sends may push it later. Null while awaiting review, sending,
 	// paused, or when eligibility is unknown.
 	NextSendAt string `json:"nextSendAt" api:"required"`
-	// Always `sequenceEnrollment`.
-	//
-	// Any of "sequenceEnrollment".
-	ObjectType SequenceRetrieveEnrollmentResponseObjectType `json:"objectType" api:"required"`
 	// Unsent email and LinkedIn steps remaining, including connection requests; null
 	// on retrieval when a current indexed value is unavailable.
 	RemainingSends int64 `json:"remainingSends" api:"required"`
@@ -1089,7 +1087,7 @@ type SequenceRetrieveEnrollmentResponse struct {
 	// Display status of the enrollment, or null on retrieval when the index is
 	// unavailable or has not caught up with the enrollment lifecycle.
 	//
-	// Any of "ACTIVE", "NEEDS_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
+	// Any of "ACTIVE", "AWAITING_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
 	// "PAUSED", "CANCELLED", "FAILED".
 	Status SequenceRetrieveEnrollmentResponseStatus `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
@@ -1104,7 +1102,6 @@ type SequenceRetrieveEnrollmentResponse struct {
 		LastActivityAt   respjson.Field
 		LastActivityKind respjson.Field
 		NextSendAt       respjson.Field
-		ObjectType       respjson.Field
 		RemainingSends   respjson.Field
 		RepliedAt        respjson.Field
 		Status           respjson.Field
@@ -1133,20 +1130,13 @@ const (
 	SequenceRetrieveEnrollmentResponseLastActivityKindSeen      SequenceRetrieveEnrollmentResponseLastActivityKind = "SEEN"
 )
 
-// Always `sequenceEnrollment`.
-type SequenceRetrieveEnrollmentResponseObjectType string
-
-const (
-	SequenceRetrieveEnrollmentResponseObjectTypeSequenceEnrollment SequenceRetrieveEnrollmentResponseObjectType = "sequenceEnrollment"
-)
-
 // Display status of the enrollment, or null on retrieval when the index is
 // unavailable or has not caught up with the enrollment lifecycle.
 type SequenceRetrieveEnrollmentResponseStatus string
 
 const (
 	SequenceRetrieveEnrollmentResponseStatusActive         SequenceRetrieveEnrollmentResponseStatus = "ACTIVE"
-	SequenceRetrieveEnrollmentResponseStatusNeedsReview    SequenceRetrieveEnrollmentResponseStatus = "NEEDS_REVIEW"
+	SequenceRetrieveEnrollmentResponseStatusAwaitingReview SequenceRetrieveEnrollmentResponseStatus = "AWAITING_REVIEW"
 	SequenceRetrieveEnrollmentResponseStatusNeedsAttention SequenceRetrieveEnrollmentResponseStatus = "NEEDS_ATTENTION"
 	SequenceRetrieveEnrollmentResponseStatusReplied        SequenceRetrieveEnrollmentResponseStatus = "REPLIED"
 	SequenceRetrieveEnrollmentResponseStatusCompleted      SequenceRetrieveEnrollmentResponseStatus = "COMPLETED"
@@ -1174,7 +1164,6 @@ type SequenceRetrieveMessageResponseUnion struct {
 	CreatedAt    string                                      `json:"createdAt"`
 	Direction    string                                      `json:"direction"`
 	EnrollmentID string                                      `json:"enrollmentId"`
-	ObjectType   string                                      `json:"objectType"`
 	// This field is from variant [SequenceRetrieveMessageResponseObject].
 	OpenedAt string `json:"openedAt"`
 	// This field is from variant [SequenceRetrieveMessageResponseObject].
@@ -1204,7 +1193,6 @@ type SequenceRetrieveMessageResponseUnion struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		OpenedAt         respjson.Field
 		ReadAt           respjson.Field
 		Reference        respjson.Field
@@ -1299,12 +1287,8 @@ type SequenceRetrieveMessageResponseObject struct {
 	Direction string `json:"direction" api:"required"`
 	// Enrollment ID beginning with `sqe_`.
 	EnrollmentID string `json:"enrollmentId" api:"required"`
-	// Always `sequenceMessage`.
-	//
-	// Any of "sequenceMessage".
-	ObjectType string `json:"objectType" api:"required"`
-	OpenedAt   string `json:"openedAt" api:"required"`
-	ReadAt     string `json:"readAt" api:"required"`
+	OpenedAt     string `json:"openedAt" api:"required"`
+	ReadAt       string `json:"readAt" api:"required"`
 	// Active same-workspace email or chat message reference, or null when unavailable;
 	// individual mail/chat privacy does not restrict this sequence reference, but the
 	// referenced endpoint retains its own scopes and access rules.
@@ -1333,7 +1317,6 @@ type SequenceRetrieveMessageResponseObject struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		OpenedAt         respjson.Field
 		ReadAt           respjson.Field
 		Reference        respjson.Field
@@ -1467,11 +1450,7 @@ type SequenceRetrieveMessageResponseObject2 struct {
 	Direction string `json:"direction" api:"required"`
 	// Enrollment ID beginning with `sqe_`.
 	EnrollmentID string `json:"enrollmentId" api:"required"`
-	// Always `sequenceMessage`.
-	//
-	// Any of "sequenceMessage".
-	ObjectType string `json:"objectType" api:"required"`
-	ReceivedAt string `json:"receivedAt" api:"required"`
+	ReceivedAt   string `json:"receivedAt" api:"required"`
 	// Active same-workspace email or chat message reference, or null when unavailable;
 	// individual mail/chat privacy does not restrict this sequence reference, but the
 	// referenced endpoint retains its own scopes and access rules.
@@ -1490,7 +1469,6 @@ type SequenceRetrieveMessageResponseObject2 struct {
 		CreatedAt        respjson.Field
 		Direction        respjson.Field
 		EnrollmentID     respjson.Field
-		ObjectType       respjson.Field
 		ReceivedAt       respjson.Field
 		Reference        respjson.Field
 		SequenceStepID   respjson.Field
@@ -1939,6 +1917,354 @@ const (
 	SequenceRetrieveResponseStatusActive      SequenceRetrieveResponseStatus = "ACTIVE"
 	SequenceRetrieveResponseStatusDeactivated SequenceRetrieveResponseStatus = "DEACTIVATED"
 )
+
+type SequenceRetrieveStatsResponse struct {
+	// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
+	Email           SequenceRetrieveStatsResponseEmail           `json:"email" api:"required"`
+	Enrollments     SequenceRetrieveStatsResponseEnrollments     `json:"enrollments" api:"required"`
+	LinkedInInvite  SequenceRetrieveStatsResponseLinkedInInvite  `json:"linkedInInvite" api:"required"`
+	LinkedInMessage SequenceRetrieveStatsResponseLinkedInMessage `json:"linkedInMessage" api:"required"`
+	// Published steps, including zero-activity steps, followed by historical removed
+	// send steps with indexed activity.
+	Steps []SequenceRetrieveStatsResponseStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		Enrollments     respjson.Field
+		LinkedInInvite  respjson.Field
+		LinkedInMessage respjson.Field
+		Steps           respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
+type SequenceRetrieveStatsResponseEmail struct {
+	Bounced int64 `json:"bounced" api:"required"`
+	// Bounced divided by sent; null if none sent.
+	BounceRate float64 `json:"bounceRate" api:"required"`
+	Delivered  int64   `json:"delivered" api:"required"`
+	Opened     int64   `json:"opened" api:"required"`
+	// Opened divided by delivered; null if none delivered.
+	OpenRate float64 `json:"openRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by delivered; null if none delivered.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Bounced     respjson.Field
+		BounceRate  respjson.Field
+		Delivered   respjson.Field
+		Opened      respjson.Field
+		OpenRate    respjson.Field
+		Replied     respjson.Field
+		ReplyRate   respjson.Field
+		Sent        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseEnrollments struct {
+	// Enrollments with a first reply across email or LinkedIn, counted once per
+	// enrollment.
+	Replied int64 `json:"replied" api:"required"`
+	// Lifetime live, nonremoved enrollments.
+	Total int64 `json:"total" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Replied     respjson.Field
+		Total       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseEnrollments) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseEnrollments) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseLinkedInInvite struct {
+	// Accepted divided by sent; null if none sent.
+	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
+	Accepted       int64   `json:"accepted" api:"required"`
+	Replied        int64   `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AcceptanceRate respjson.Field
+		Accepted       respjson.Field
+		Replied        respjson.Field
+		ReplyRate      respjson.Field
+		Sent           respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseLinkedInInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseLinkedInInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseLinkedInMessage struct {
+	Read int64 `json:"read" api:"required"`
+	// Read divided by sent; null if none sent.
+	ReadRate float64 `json:"readRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Read        respjson.Field
+		ReadRate    respjson.Field
+		Replied     respjson.Field
+		ReplyRate   respjson.Field
+		Sent        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseLinkedInMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseLinkedInMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrieveStatsResponseStepUnion contains all possible properties and
+// values from [SequenceRetrieveStatsResponseStepObject],
+// [SequenceRetrieveStatsResponseStepObject2],
+// [SequenceRetrieveStatsResponseStepObject3],
+// [SequenceRetrieveStatsResponseStepObject4].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceRetrieveStatsResponseStepUnion struct {
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
+	Bounced int64 `json:"bounced"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
+	BounceRate         float64 `json:"bounceRate"`
+	CurrentEnrollments int64   `json:"currentEnrollments"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
+	Delivered int64 `json:"delivered"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
+	Opened int64 `json:"opened"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
+	OpenRate         float64 `json:"openRate"`
+	Replied          int64   `json:"replied"`
+	ReplyRate        float64 `json:"replyRate"`
+	Sent             int64   `json:"sent"`
+	SequenceStepID   string  `json:"sequenceStepId"`
+	SequenceStepType string  `json:"sequenceStepType"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject2].
+	Read int64 `json:"read"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject2].
+	ReadRate float64 `json:"readRate"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject3].
+	AcceptanceRate float64 `json:"acceptanceRate"`
+	// This field is from variant [SequenceRetrieveStatsResponseStepObject3].
+	Accepted int64 `json:"accepted"`
+	JSON     struct {
+		Bounced            respjson.Field
+		BounceRate         respjson.Field
+		CurrentEnrollments respjson.Field
+		Delivered          respjson.Field
+		Opened             respjson.Field
+		OpenRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		Read               respjson.Field
+		ReadRate           respjson.Field
+		AcceptanceRate     respjson.Field
+		Accepted           respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject() (v SequenceRetrieveStatsResponseStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject2() (v SequenceRetrieveStatsResponseStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject3() (v SequenceRetrieveStatsResponseStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject4() (v SequenceRetrieveStatsResponseStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceRetrieveStatsResponseStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceRetrieveStatsResponseStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseStepObject struct {
+	Bounced int64 `json:"bounced" api:"required"`
+	// Bounced divided by sent; null if none sent.
+	BounceRate float64 `json:"bounceRate" api:"required"`
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Delivered          int64 `json:"delivered" api:"required"`
+	Opened             int64 `json:"opened" api:"required"`
+	// Opened divided by delivered; null if none delivered.
+	OpenRate float64 `json:"openRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by delivered; null if none delivered.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "EMAIL".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Bounced            respjson.Field
+		BounceRate         respjson.Field
+		CurrentEnrollments respjson.Field
+		Delivered          respjson.Field
+		Opened             respjson.Field
+		OpenRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseStepObject2 struct {
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Read               int64 `json:"read" api:"required"`
+	// Read divided by sent; null if none sent.
+	ReadRate float64 `json:"readRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "LINKEDIN_MESSAGE".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		Read               respjson.Field
+		ReadRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseStepObject3 struct {
+	// Accepted divided by sent; null if none sent.
+	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
+	Accepted       int64   `json:"accepted" api:"required"`
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Replied            int64 `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "LINKEDIN_INVITE".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AcceptanceRate     respjson.Field
+		Accepted           respjson.Field
+		CurrentEnrollments respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveStatsResponseStepObject4 struct {
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64  `json:"currentEnrollments" api:"required"`
+	SequenceStepID     string `json:"sequenceStepId" api:"required"`
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveStatsResponseStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveStatsResponseStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type SequenceUpdateEnrollmentsResponse struct {
 	// One result per distinct contact, additions first, then removals; enrollment IDs
