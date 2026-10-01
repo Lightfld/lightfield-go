@@ -201,7 +201,10 @@ type MergeMergeAccountsResponsePrimary struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]MergeMergeAccountsResponsePrimaryRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -412,11 +415,16 @@ type MergeMergeAccountsResponsePrimaryRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions MergeMergeAccountsResponsePrimaryRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -425,6 +433,79 @@ type MergeMergeAccountsResponsePrimaryRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r MergeMergeAccountsResponsePrimaryRelationship) RawJSON() string { return r.JSON.raw }
 func (r *MergeMergeAccountsResponsePrimaryRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type MergeMergeAccountsResponsePrimaryRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeAccountsResponsePrimaryRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *MergeMergeAccountsResponsePrimaryRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeAccountsResponsePrimaryRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -502,7 +583,10 @@ type MergeMergeContactsResponsePrimary struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]MergeMergeContactsResponsePrimaryRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -713,11 +797,16 @@ type MergeMergeContactsResponsePrimaryRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions MergeMergeContactsResponsePrimaryRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -726,6 +815,79 @@ type MergeMergeContactsResponsePrimaryRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r MergeMergeContactsResponsePrimaryRelationship) RawJSON() string { return r.JSON.raw }
 func (r *MergeMergeContactsResponsePrimaryRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type MergeMergeContactsResponsePrimaryRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination MergeMergeContactsResponsePrimaryRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource MergeMergeContactsResponsePrimaryRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeContactsResponsePrimaryRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *MergeMergeContactsResponsePrimaryRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type MergeMergeContactsResponsePrimaryRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeContactsResponsePrimaryRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeContactsResponsePrimaryRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type MergeMergeContactsResponsePrimaryRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeContactsResponsePrimaryRelationshipDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeContactsResponsePrimaryRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -803,7 +965,10 @@ type MergeMergeObjectValuesResponsePrimary struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]MergeMergeObjectValuesResponsePrimaryRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -1022,11 +1187,16 @@ type MergeMergeObjectValuesResponsePrimaryRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions MergeMergeObjectValuesResponsePrimaryRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1035,6 +1205,81 @@ type MergeMergeObjectValuesResponsePrimaryRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r MergeMergeObjectValuesResponsePrimaryRelationship) RawJSON() string { return r.JSON.raw }
 func (r *MergeMergeObjectValuesResponsePrimaryRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type MergeMergeObjectValuesResponsePrimaryRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeObjectValuesResponsePrimaryRelationshipDirections) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeObjectValuesResponsePrimaryRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeObjectValuesResponsePrimaryRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1112,7 +1357,10 @@ type MergeMergeOpportunitiesResponsePrimary struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]MergeMergeOpportunitiesResponsePrimaryRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -1331,11 +1579,16 @@ type MergeMergeOpportunitiesResponsePrimaryRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions MergeMergeOpportunitiesResponsePrimaryRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1344,6 +1597,81 @@ type MergeMergeOpportunitiesResponsePrimaryRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r MergeMergeOpportunitiesResponsePrimaryRelationship) RawJSON() string { return r.JSON.raw }
 func (r *MergeMergeOpportunitiesResponsePrimaryRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type MergeMergeOpportunitiesResponsePrimaryRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeOpportunitiesResponsePrimaryRelationshipDirections) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeOpportunitiesResponsePrimaryRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *MergeMergeOpportunitiesResponsePrimaryRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

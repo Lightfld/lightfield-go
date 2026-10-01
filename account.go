@@ -220,7 +220,10 @@ type AccountCreateResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountCreateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -429,11 +432,16 @@ type AccountCreateResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountCreateResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -445,12 +453,82 @@ func (r *AccountCreateResponseRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountCreateResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountCreateResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountCreateResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountCreateResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountCreateResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountCreateResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountCreateResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *AccountCreateResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountCreateResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountCreateResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountCreateResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type AccountDefinitionsResponse struct {
 	// Map of field keys to their definitions, including both system and custom fields.
 	FieldDefinitions map[string]AccountDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
 	// The object type these definitions belong to (e.g. `account`).
 	ObjectType string `json:"objectType" api:"required"`
-	// Map of relationship keys to their definitions.
+	// Map of relationship keys to their definitions. Self-referential relationships
+	// include optional directional metadata on the bare definition.
 	RelationshipDefinitions map[string]AccountDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -586,6 +664,10 @@ type AccountDefinitionsResponseRelationshipDefinition struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// Unique identifier of the relationship definition.
 	ID string `json:"id"`
+	// Directional metadata for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -593,6 +675,7 @@ type AccountDefinitionsResponseRelationshipDefinition struct {
 		Label       respjson.Field
 		ObjectType  respjson.Field
 		ID          respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -601,6 +684,81 @@ type AccountDefinitionsResponseRelationshipDefinition struct {
 // Returns the unmodified JSON received from the API
 func (r AccountDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
 func (r *AccountDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional metadata for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountDefinitionsResponseRelationshipDefinitionDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountDefinitionsResponseRelationshipDefinitionDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountDefinitionsResponseRelationshipDefinitionDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDefinitionsResponseRelationshipDefinitionDirections) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountDefinitionsResponseRelationshipDefinitionDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountDefinitionsResponseRelationshipDefinitionDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountDefinitionsResponseRelationshipDefinitionDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDefinitionsResponseRelationshipDefinitionDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountDefinitionsResponseRelationshipDefinitionDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -615,7 +773,10 @@ type AccountDeleteResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountDeleteResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -824,11 +985,16 @@ type AccountDeleteResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountDeleteResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -837,6 +1003,75 @@ type AccountDeleteResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountDeleteResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountDeleteResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountDeleteResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDeleteResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountDeleteResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountDeleteResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDeleteResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *AccountDeleteResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountDeleteResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDeleteResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountDeleteResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1086,7 +1321,10 @@ type AccountListResponseData struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountListResponseDataRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -1295,11 +1533,16 @@ type AccountListResponseDataRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountListResponseDataRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1308,6 +1551,77 @@ type AccountListResponseDataRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountListResponseDataRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountListResponseDataRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountListResponseDataRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountListResponseDataRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListResponseDataRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountListResponseDataRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountListResponseDataRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListResponseDataRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountListResponseDataRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountListResponseDataRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListResponseDataRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountListResponseDataRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1322,7 +1636,10 @@ type AccountRestoreResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountRestoreResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -1531,11 +1848,16 @@ type AccountRestoreResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountRestoreResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1544,6 +1866,77 @@ type AccountRestoreResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountRestoreResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountRestoreResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountRestoreResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountRestoreResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountRestoreResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRestoreResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountRestoreResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountRestoreResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRestoreResponseRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountRestoreResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountRestoreResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRestoreResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1558,7 +1951,10 @@ type AccountRetrieveResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountRetrieveResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -1767,11 +2163,16 @@ type AccountRetrieveResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountRetrieveResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -1780,6 +2181,77 @@ type AccountRetrieveResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountRetrieveResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountRetrieveResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountRetrieveResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRetrieveResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountRetrieveResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountRetrieveResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRetrieveResponseRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountRetrieveResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountRetrieveResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRetrieveResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountRetrieveResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1794,7 +2266,10 @@ type AccountUpdateResponse struct {
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]AccountUpdateResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -2003,11 +2478,16 @@ type AccountUpdateResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountUpdateResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -2016,6 +2496,75 @@ type AccountUpdateResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r AccountUpdateResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *AccountUpdateResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountUpdateResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountUpdateResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountUpdateResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountUpdateResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountUpdateResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 

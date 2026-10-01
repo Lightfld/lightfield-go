@@ -115,7 +115,10 @@ type ChannelListResponseData struct {
 	// Any of "channel".
 	ObjectType string `json:"objectType" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]ChannelListResponseDataRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -325,11 +328,16 @@ type ChannelListResponseDataRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions ChannelListResponseDataRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -338,6 +346,77 @@ type ChannelListResponseDataRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r ChannelListResponseDataRelationship) RawJSON() string { return r.JSON.raw }
 func (r *ChannelListResponseDataRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type ChannelListResponseDataRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination ChannelListResponseDataRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource ChannelListResponseDataRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelListResponseDataRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *ChannelListResponseDataRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type ChannelListResponseDataRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelListResponseDataRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ChannelListResponseDataRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type ChannelListResponseDataRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelListResponseDataRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *ChannelListResponseDataRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -356,7 +435,10 @@ type ChannelRetrieveResponse struct {
 	// Any of "channel".
 	ObjectType ChannelRetrieveResponseObjectType `json:"objectType" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
-	// prefixed with `$` (e.g. `$owner`, `$contact`).
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
 	Relationships map[string]ChannelRetrieveResponseRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
@@ -573,11 +655,16 @@ type ChannelRetrieveResponseRelationship struct {
 	ObjectType string `json:"objectType" api:"required"`
 	// IDs of the related entities.
 	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions ChannelRetrieveResponseRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
 		ObjectType  respjson.Field
 		Values      respjson.Field
+		Directions  respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -586,6 +673,77 @@ type ChannelRetrieveResponseRelationship struct {
 // Returns the unmodified JSON received from the API
 func (r ChannelRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
 func (r *ChannelRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type ChannelRetrieveResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination ChannelRetrieveResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource ChannelRetrieveResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelRetrieveResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *ChannelRetrieveResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type ChannelRetrieveResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelRetrieveResponseRelationshipDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ChannelRetrieveResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type ChannelRetrieveResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ChannelRetrieveResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *ChannelRetrieveResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
