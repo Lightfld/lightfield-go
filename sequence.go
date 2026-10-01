@@ -183,20 +183,20 @@ func (r *SequenceService) GetMessage(ctx context.Context, messageID string, quer
 }
 
 // Returns lifetime engagement and current step enrollment counts for a published
-// sequence. Counts include live, nonremoved enrollments and may lag recent
-// activity while the search index updates. Rates are fractions; a rate is null
-// when its denominator is zero. Historical sent steps remain in the breakdown.
+// sequence. Includes live enrollments, excluding test enrollments and enrollments
+// removed from the sequence. Counts may lag recent activity while the search index
+// updates. Rates are fractions; a rate is null when its denominator is zero.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *SequenceService) GetStats(ctx context.Context, id string, opts ...option.RequestOption) (res *SequenceRetrieveStatsResponse, err error) {
+func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ...option.RequestOption) (res *SequenceRetrievePerformanceResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
 		return nil, err
 	}
-	path := fmt.Sprintf("v1/sequences/%s/stats", url.PathEscape(id))
+	path := fmt.Sprintf("v1/sequences/%s/performance", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -1578,6 +1578,445 @@ func (r *SequenceRetrieveMessageResponseObject2ReferenceObject2) UnmarshalJSON(d
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SequenceRetrievePerformanceResponse struct {
+	ByStepType SequenceRetrievePerformanceResponseByStepType `json:"byStepType" api:"required"`
+	// Per-step statistics in published sequence order, including steps with no
+	// activity. Steps no longer in the published definition are included if they have
+	// sent messages.
+	PerStep []SequenceRetrievePerformanceResponsePerStepUnion `json:"perStep" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ByStepType  respjson.Field
+		PerStep     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponseByStepType struct {
+	// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
+	Email             SequenceRetrievePerformanceResponseByStepTypeEmail             `json:"EMAIL" api:"required"`
+	LinkedinInvite    SequenceRetrievePerformanceResponseByStepTypeLinkedinInvite    `json:"LINKEDIN_INVITE" api:"required"`
+	LinkedinMessage   SequenceRetrievePerformanceResponseByStepTypeLinkedinMessage   `json:"LINKEDIN_MESSAGE" api:"required"`
+	Wait              SequenceRetrievePerformanceResponseByStepTypeWait              `json:"WAIT" api:"required"`
+	WaitForConnection SequenceRetrievePerformanceResponseByStepTypeWaitForConnection `json:"WAIT_FOR_CONNECTION" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email             respjson.Field
+		LinkedinInvite    respjson.Field
+		LinkedinMessage   respjson.Field
+		Wait              respjson.Field
+		WaitForConnection respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepType) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponseByStepType) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
+type SequenceRetrievePerformanceResponseByStepTypeEmail struct {
+	Bounced int64 `json:"bounced" api:"required"`
+	// Bounced divided by sent; null if none sent.
+	BounceRate float64 `json:"bounceRate" api:"required"`
+	// Live enrollments currently on steps of this type.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Delivered          int64 `json:"delivered" api:"required"`
+	Opened             int64 `json:"opened" api:"required"`
+	// Opened divided by delivered; null if none delivered.
+	OpenRate float64 `json:"openRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by delivered; null if none delivered.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Bounced            respjson.Field
+		BounceRate         respjson.Field
+		CurrentEnrollments respjson.Field
+		Delivered          respjson.Field
+		Opened             respjson.Field
+		OpenRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepTypeEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponseByStepTypeEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponseByStepTypeLinkedinInvite struct {
+	// Accepted divided by sent; null if none sent.
+	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
+	Accepted       int64   `json:"accepted" api:"required"`
+	// Live enrollments currently on steps of this type.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Replied            int64 `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AcceptanceRate     respjson.Field
+		Accepted           respjson.Field
+		CurrentEnrollments respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepTypeLinkedinInvite) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponseByStepTypeLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponseByStepTypeLinkedinMessage struct {
+	// Live enrollments currently on steps of this type.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Read               int64 `json:"read" api:"required"`
+	// Read divided by sent; null if none sent.
+	ReadRate float64 `json:"readRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate float64 `json:"replyRate" api:"required"`
+	Sent      int64   `json:"sent" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		Read               respjson.Field
+		ReadRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepTypeLinkedinMessage) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponseByStepTypeLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponseByStepTypeWait struct {
+	// Live enrollments currently on steps of this type.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepTypeWait) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponseByStepTypeWait) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponseByStepTypeWaitForConnection struct {
+	// Live enrollments currently on steps of this type.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponseByStepTypeWaitForConnection) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponseByStepTypeWaitForConnection) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrievePerformanceResponsePerStepUnion contains all possible properties
+// and values from [SequenceRetrievePerformanceResponsePerStepEmailStep],
+// [SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep],
+// [SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep],
+// [SequenceRetrievePerformanceResponsePerStepWaitStep],
+// [SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceRetrievePerformanceResponsePerStepUnion struct {
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepEmailStep].
+	Bounced int64 `json:"bounced"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepEmailStep].
+	BounceRate         float64 `json:"bounceRate"`
+	CurrentEnrollments int64   `json:"currentEnrollments"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepEmailStep].
+	Delivered int64 `json:"delivered"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepEmailStep].
+	Opened int64 `json:"opened"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepEmailStep].
+	OpenRate         float64 `json:"openRate"`
+	Replied          int64   `json:"replied"`
+	ReplyRate        float64 `json:"replyRate"`
+	Sent             int64   `json:"sent"`
+	SequenceStepID   string  `json:"sequenceStepId"`
+	SequenceStepType string  `json:"sequenceStepType"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep].
+	Read int64 `json:"read"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep].
+	ReadRate float64 `json:"readRate"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep].
+	AcceptanceRate float64 `json:"acceptanceRate"`
+	// This field is from variant
+	// [SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep].
+	Accepted int64 `json:"accepted"`
+	JSON     struct {
+		Bounced            respjson.Field
+		BounceRate         respjson.Field
+		CurrentEnrollments respjson.Field
+		Delivered          respjson.Field
+		Opened             respjson.Field
+		OpenRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		Read               respjson.Field
+		ReadRate           respjson.Field
+		AcceptanceRate     respjson.Field
+		Accepted           respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+func (u SequenceRetrievePerformanceResponsePerStepUnion) AsEmailStep() (v SequenceRetrievePerformanceResponsePerStepEmailStep) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrievePerformanceResponsePerStepUnion) AsLinkedInMessageStep() (v SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrievePerformanceResponsePerStepUnion) AsLinkedInInviteStep() (v SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrievePerformanceResponsePerStepUnion) AsWaitStep() (v SequenceRetrievePerformanceResponsePerStepWaitStep) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrievePerformanceResponsePerStepUnion) AsWaitForConnectionStep() (v SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceRetrievePerformanceResponsePerStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceRetrievePerformanceResponsePerStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponsePerStepEmailStep struct {
+	Bounced int64 `json:"bounced" api:"required"`
+	// Bounced divided by sent; null if none sent.
+	BounceRate float64 `json:"bounceRate" api:"required"`
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Delivered          int64 `json:"delivered" api:"required"`
+	Opened             int64 `json:"opened" api:"required"`
+	// Opened divided by delivered; null if none delivered.
+	OpenRate float64 `json:"openRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by delivered; null if none delivered.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "EMAIL".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Bounced            respjson.Field
+		BounceRate         respjson.Field
+		CurrentEnrollments respjson.Field
+		Delivered          respjson.Field
+		Opened             respjson.Field
+		OpenRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponsePerStepEmailStep) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponsePerStepEmailStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep struct {
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Read               int64 `json:"read" api:"required"`
+	// Read divided by sent; null if none sent.
+	ReadRate float64 `json:"readRate" api:"required"`
+	Replied  int64   `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "LINKEDIN_MESSAGE".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		Read               respjson.Field
+		ReadRate           respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponsePerStepLinkedInMessageStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep struct {
+	// Accepted divided by sent; null if none sent.
+	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
+	Accepted       int64   `json:"accepted" api:"required"`
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
+	Replied            int64 `json:"replied" api:"required"`
+	// Replied divided by sent; null if none sent.
+	ReplyRate      float64 `json:"replyRate" api:"required"`
+	Sent           int64   `json:"sent" api:"required"`
+	SequenceStepID string  `json:"sequenceStepId" api:"required"`
+	// Any of "LINKEDIN_INVITE".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AcceptanceRate     respjson.Field
+		Accepted           respjson.Field
+		CurrentEnrollments respjson.Field
+		Replied            respjson.Field
+		ReplyRate          respjson.Field
+		Sent               respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponsePerStepLinkedInInviteStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponsePerStepWaitStep struct {
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64  `json:"currentEnrollments" api:"required"`
+	SequenceStepID     string `json:"sequenceStepId" api:"required"`
+	// Any of "WAIT".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponsePerStepWaitStep) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrievePerformanceResponsePerStepWaitStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep struct {
+	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
+	// including review and attention states.
+	CurrentEnrollments int64  `json:"currentEnrollments" api:"required"`
+	SequenceStepID     string `json:"sequenceStepId" api:"required"`
+	// Any of "WAIT_FOR_CONNECTION".
+	SequenceStepType string `json:"sequenceStepType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CurrentEnrollments respjson.Field
+		SequenceStepID     respjson.Field
+		SequenceStepType   respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SequenceRetrieveResponse struct {
 	// Unique identifier of the sequence.
 	ID string `json:"id" api:"required"`
@@ -1917,354 +2356,6 @@ const (
 	SequenceRetrieveResponseStatusActive      SequenceRetrieveResponseStatus = "ACTIVE"
 	SequenceRetrieveResponseStatusDeactivated SequenceRetrieveResponseStatus = "DEACTIVATED"
 )
-
-type SequenceRetrieveStatsResponse struct {
-	// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
-	Email           SequenceRetrieveStatsResponseEmail           `json:"email" api:"required"`
-	Enrollments     SequenceRetrieveStatsResponseEnrollments     `json:"enrollments" api:"required"`
-	LinkedInInvite  SequenceRetrieveStatsResponseLinkedInInvite  `json:"linkedInInvite" api:"required"`
-	LinkedInMessage SequenceRetrieveStatsResponseLinkedInMessage `json:"linkedInMessage" api:"required"`
-	// Published steps, including zero-activity steps, followed by historical removed
-	// send steps with indexed activity.
-	Steps []SequenceRetrieveStatsResponseStepUnion `json:"steps" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Email           respjson.Field
-		Enrollments     respjson.Field
-		LinkedInInvite  respjson.Field
-		LinkedInMessage respjson.Field
-		Steps           respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponse) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Sent email outcomes. Delivered is sent minus bounced, clamped at zero.
-type SequenceRetrieveStatsResponseEmail struct {
-	Bounced int64 `json:"bounced" api:"required"`
-	// Bounced divided by sent; null if none sent.
-	BounceRate float64 `json:"bounceRate" api:"required"`
-	Delivered  int64   `json:"delivered" api:"required"`
-	Opened     int64   `json:"opened" api:"required"`
-	// Opened divided by delivered; null if none delivered.
-	OpenRate float64 `json:"openRate" api:"required"`
-	Replied  int64   `json:"replied" api:"required"`
-	// Replied divided by delivered; null if none delivered.
-	ReplyRate float64 `json:"replyRate" api:"required"`
-	Sent      int64   `json:"sent" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Bounced     respjson.Field
-		BounceRate  respjson.Field
-		Delivered   respjson.Field
-		Opened      respjson.Field
-		OpenRate    respjson.Field
-		Replied     respjson.Field
-		ReplyRate   respjson.Field
-		Sent        respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseEmail) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseEmail) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseEnrollments struct {
-	// Enrollments with a first reply across email or LinkedIn, counted once per
-	// enrollment.
-	Replied int64 `json:"replied" api:"required"`
-	// Lifetime live, nonremoved enrollments.
-	Total int64 `json:"total" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Replied     respjson.Field
-		Total       respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseEnrollments) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseEnrollments) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseLinkedInInvite struct {
-	// Accepted divided by sent; null if none sent.
-	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
-	Accepted       int64   `json:"accepted" api:"required"`
-	Replied        int64   `json:"replied" api:"required"`
-	// Replied divided by sent; null if none sent.
-	ReplyRate float64 `json:"replyRate" api:"required"`
-	Sent      int64   `json:"sent" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		AcceptanceRate respjson.Field
-		Accepted       respjson.Field
-		Replied        respjson.Field
-		ReplyRate      respjson.Field
-		Sent           respjson.Field
-		ExtraFields    map[string]respjson.Field
-		raw            string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseLinkedInInvite) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseLinkedInInvite) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseLinkedInMessage struct {
-	Read int64 `json:"read" api:"required"`
-	// Read divided by sent; null if none sent.
-	ReadRate float64 `json:"readRate" api:"required"`
-	Replied  int64   `json:"replied" api:"required"`
-	// Replied divided by sent; null if none sent.
-	ReplyRate float64 `json:"replyRate" api:"required"`
-	Sent      int64   `json:"sent" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Read        respjson.Field
-		ReadRate    respjson.Field
-		Replied     respjson.Field
-		ReplyRate   respjson.Field
-		Sent        respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseLinkedInMessage) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseLinkedInMessage) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// SequenceRetrieveStatsResponseStepUnion contains all possible properties and
-// values from [SequenceRetrieveStatsResponseStepObject],
-// [SequenceRetrieveStatsResponseStepObject2],
-// [SequenceRetrieveStatsResponseStepObject3],
-// [SequenceRetrieveStatsResponseStepObject4].
-//
-// Use the methods beginning with 'As' to cast the union to one of its variants.
-type SequenceRetrieveStatsResponseStepUnion struct {
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
-	Bounced int64 `json:"bounced"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
-	BounceRate         float64 `json:"bounceRate"`
-	CurrentEnrollments int64   `json:"currentEnrollments"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
-	Delivered int64 `json:"delivered"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
-	Opened int64 `json:"opened"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject].
-	OpenRate         float64 `json:"openRate"`
-	Replied          int64   `json:"replied"`
-	ReplyRate        float64 `json:"replyRate"`
-	Sent             int64   `json:"sent"`
-	SequenceStepID   string  `json:"sequenceStepId"`
-	SequenceStepType string  `json:"sequenceStepType"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject2].
-	Read int64 `json:"read"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject2].
-	ReadRate float64 `json:"readRate"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject3].
-	AcceptanceRate float64 `json:"acceptanceRate"`
-	// This field is from variant [SequenceRetrieveStatsResponseStepObject3].
-	Accepted int64 `json:"accepted"`
-	JSON     struct {
-		Bounced            respjson.Field
-		BounceRate         respjson.Field
-		CurrentEnrollments respjson.Field
-		Delivered          respjson.Field
-		Opened             respjson.Field
-		OpenRate           respjson.Field
-		Replied            respjson.Field
-		ReplyRate          respjson.Field
-		Sent               respjson.Field
-		SequenceStepID     respjson.Field
-		SequenceStepType   respjson.Field
-		Read               respjson.Field
-		ReadRate           respjson.Field
-		AcceptanceRate     respjson.Field
-		Accepted           respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject() (v SequenceRetrieveStatsResponseStepObject) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject2() (v SequenceRetrieveStatsResponseStepObject2) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject3() (v SequenceRetrieveStatsResponseStepObject3) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-func (u SequenceRetrieveStatsResponseStepUnion) AsSequenceRetrieveStatsResponseStepObject4() (v SequenceRetrieveStatsResponseStepObject4) {
-	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
-	return
-}
-
-// Returns the unmodified JSON received from the API
-func (u SequenceRetrieveStatsResponseStepUnion) RawJSON() string { return u.JSON.raw }
-
-func (r *SequenceRetrieveStatsResponseStepUnion) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseStepObject struct {
-	Bounced int64 `json:"bounced" api:"required"`
-	// Bounced divided by sent; null if none sent.
-	BounceRate float64 `json:"bounceRate" api:"required"`
-	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
-	// including review and attention states.
-	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
-	Delivered          int64 `json:"delivered" api:"required"`
-	Opened             int64 `json:"opened" api:"required"`
-	// Opened divided by delivered; null if none delivered.
-	OpenRate float64 `json:"openRate" api:"required"`
-	Replied  int64   `json:"replied" api:"required"`
-	// Replied divided by delivered; null if none delivered.
-	ReplyRate      float64 `json:"replyRate" api:"required"`
-	Sent           int64   `json:"sent" api:"required"`
-	SequenceStepID string  `json:"sequenceStepId" api:"required"`
-	// Any of "EMAIL".
-	SequenceStepType string `json:"sequenceStepType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Bounced            respjson.Field
-		BounceRate         respjson.Field
-		CurrentEnrollments respjson.Field
-		Delivered          respjson.Field
-		Opened             respjson.Field
-		OpenRate           respjson.Field
-		Replied            respjson.Field
-		ReplyRate          respjson.Field
-		Sent               respjson.Field
-		SequenceStepID     respjson.Field
-		SequenceStepType   respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseStepObject) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseStepObject) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseStepObject2 struct {
-	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
-	// including review and attention states.
-	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
-	Read               int64 `json:"read" api:"required"`
-	// Read divided by sent; null if none sent.
-	ReadRate float64 `json:"readRate" api:"required"`
-	Replied  int64   `json:"replied" api:"required"`
-	// Replied divided by sent; null if none sent.
-	ReplyRate      float64 `json:"replyRate" api:"required"`
-	Sent           int64   `json:"sent" api:"required"`
-	SequenceStepID string  `json:"sequenceStepId" api:"required"`
-	// Any of "LINKEDIN_MESSAGE".
-	SequenceStepType string `json:"sequenceStepType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		CurrentEnrollments respjson.Field
-		Read               respjson.Field
-		ReadRate           respjson.Field
-		Replied            respjson.Field
-		ReplyRate          respjson.Field
-		Sent               respjson.Field
-		SequenceStepID     respjson.Field
-		SequenceStepType   respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseStepObject2) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseStepObject2) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseStepObject3 struct {
-	// Accepted divided by sent; null if none sent.
-	AcceptanceRate float64 `json:"acceptanceRate" api:"required"`
-	Accepted       int64   `json:"accepted" api:"required"`
-	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
-	// including review and attention states.
-	CurrentEnrollments int64 `json:"currentEnrollments" api:"required"`
-	Replied            int64 `json:"replied" api:"required"`
-	// Replied divided by sent; null if none sent.
-	ReplyRate      float64 `json:"replyRate" api:"required"`
-	Sent           int64   `json:"sent" api:"required"`
-	SequenceStepID string  `json:"sequenceStepId" api:"required"`
-	// Any of "LINKEDIN_INVITE".
-	SequenceStepType string `json:"sequenceStepType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		AcceptanceRate     respjson.Field
-		Accepted           respjson.Field
-		CurrentEnrollments respjson.Field
-		Replied            respjson.Field
-		ReplyRate          respjson.Field
-		Sent               respjson.Field
-		SequenceStepID     respjson.Field
-		SequenceStepType   respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseStepObject3) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type SequenceRetrieveStatsResponseStepObject4 struct {
-	// Live enrollments currently on this step in ACTIVE or PAUSED lifecycle state,
-	// including review and attention states.
-	CurrentEnrollments int64  `json:"currentEnrollments" api:"required"`
-	SequenceStepID     string `json:"sequenceStepId" api:"required"`
-	// Any of "WAIT", "WAIT_FOR_CONNECTION".
-	SequenceStepType string `json:"sequenceStepType" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		CurrentEnrollments respjson.Field
-		SequenceStepID     respjson.Field
-		SequenceStepType   respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveStatsResponseStepObject4) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveStatsResponseStepObject4) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
 
 type SequenceUpdateEnrollmentsResponse struct {
 	// One result per distinct contact, additions first, then removals; enrollment IDs

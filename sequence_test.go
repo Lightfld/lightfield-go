@@ -174,7 +174,7 @@ func TestSequenceGetMessage(t *testing.T) {
 	}
 }
 
-func TestSequenceGetStats(t *testing.T) {
+func TestSequenceGetPerformance(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -186,7 +186,7 @@ func TestSequenceGetStats(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Sequence.GetStats(context.TODO(), "id")
+	_, err := client.Sequence.GetPerformance(context.TODO(), "id")
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
