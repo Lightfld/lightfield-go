@@ -251,7 +251,11 @@ type SequenceListEnrollmentsResponseData struct {
 	//
 	// Any of "SENT", "OPENED", "REPLIED", "BOUNCED", "INVITED", "CONNECTED", "SEEN".
 	LastActivityKind string `json:"lastActivityKind" api:"required"`
-	// Estimated next send time, or null when no estimate is available.
+	// Before a send is queued, an estimate from the planned cadence and send window.
+	// For a ready queued send, the earliest current eligibility based on its fixed
+	// sender, pacing limits, and send window. Randomized gaps, jitter, other queued
+	// work, or new sends may push it later. Null while awaiting review, sending,
+	// paused, or when eligibility is unknown.
 	NextSendAt string `json:"nextSendAt" api:"required"`
 	// Always `sequenceEnrollment`.
 	//
@@ -1067,7 +1071,11 @@ type SequenceRetrieveEnrollmentResponse struct {
 	//
 	// Any of "SENT", "OPENED", "REPLIED", "BOUNCED", "INVITED", "CONNECTED", "SEEN".
 	LastActivityKind SequenceRetrieveEnrollmentResponseLastActivityKind `json:"lastActivityKind" api:"required"`
-	// Estimated next send time, or null when no estimate is available.
+	// Before a send is queued, an estimate from the planned cadence and send window.
+	// For a ready queued send, the earliest current eligibility based on its fixed
+	// sender, pacing limits, and send window. Randomized gaps, jitter, other queued
+	// work, or new sends may push it later. Null while awaiting review, sending,
+	// paused, or when eligibility is unknown.
 	NextSendAt string `json:"nextSendAt" api:"required"`
 	// Always `sequenceEnrollment`.
 	//
