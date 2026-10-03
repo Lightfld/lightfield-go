@@ -80,6 +80,10 @@ type Client struct {
 	// Enrichment fills in missing information on a record from Lightfield's data
 	// providers.
 	EnrichmentRun EnrichmentRunService
+	// > [!WARNING] The Sequences API is in Preview. Endpoints, parameters, and
+	// > response schemas may change, including breaking changes, as we incorporate
+	// > feedback.
+	//
 	// Sequences are multi-step outreach cadences that send email and LinkedIn messages
 	// to enrolled contacts.
 	Sequence SequenceService

@@ -19,6 +19,10 @@ import (
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
+// > [!WARNING] The Sequences API is in Preview. Endpoints, parameters, and
+// > response schemas may change, including breaking changes, as we incorporate
+// > feedback.
+//
 // Sequences are multi-step outreach cadences that send email and LinkedIn messages
 // to enrolled contacts.
 //
