@@ -44,8 +44,7 @@ func NewSenderService(opts ...option.RequestOption) (r SenderService) {
 	return
 }
 
-// Retrieves a sender by its ID, archived ones included. Unlike the list, the
-// result reflects changes immediately.
+// Retrieves a sender by its ID, archived ones included.
 //
 // **[Required scope](/using-the-api/scopes/):** `senders:read`
 //
@@ -91,9 +90,8 @@ func (r *SenderService) Update(ctx context.Context, id string, body SenderUpdate
 }
 
 // Returns a paginated list of the email and LinkedIn senders that sequences send
-// from, archived ones included, ordered by `createdAt` descending. List results
-// update asynchronously and may lag recent changes. Use `offset` and `limit` to
-// paginate, and bracketed filters to narrow the list.
+// from, archived ones included, ordered by `createdAt` descending. Use `offset`
+// and `limit` to paginate, and bracketed filters to narrow the list.
 //
 // Supported filters: `channel[equal]` (EMAIL, LINKEDIN), `health[equal]`
 // (UNVERIFIED, HEALTHY, UNHEALTHY), `owner[equal]` (a member ID), and

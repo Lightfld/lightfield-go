@@ -63,10 +63,9 @@ func (r *SequenceService) Get(ctx context.Context, id string, opts ...option.Req
 }
 
 // Returns a paginated list of sequences, including unpublished drafts, ordered by
-// `createdAt` descending. An unpublished draft has a null definition. List results
-// update asynchronously and may lag recent changes. Use `offset` and `limit` to
-// paginate, and bracketed filters for status, channels, and creation or activation
-// dates.
+// `createdAt` descending. An unpublished draft has a null definition. Use `offset`
+// and `limit` to paginate, and bracketed filters for status, channels, and
+// creation or activation dates.
 //
 // Supported filters: `status[equal]` (DRAFT, ACTIVE, DEACTIVATED),
 // `channels[contains]` (EMAIL, LINKEDIN), and `createdAt`, `firstActivatedAt`, or
@@ -85,9 +84,9 @@ func (r *SequenceService) List(ctx context.Context, query SequenceListParams, op
 }
 
 // Returns a paginated list of live enrollments in a published sequence, including
-// completed and cancelled history. Results are ordered by `enrolledAt` descending
-// and update asynchronously. Use `offset` and `limit` to paginate, and bracketed
-// field filters to narrow results. Test-run enrollments are excluded.
+// completed and cancelled history. Results are ordered by `enrolledAt` descending.
+// Use `offset` and `limit` to paginate, and bracketed field filters to narrow
+// results. Test-run enrollments are excluded.
 //
 // Supported filters: `status[equal]` (ACTIVE, AWAITING_REVIEW, NEEDS_ATTENTION,
 // REPLIED, COMPLETED, PAUSED, CANCELLED, FAILED), `contactId[equal]`,
@@ -112,7 +111,7 @@ func (r *SequenceService) ListEnrollments(ctx context.Context, id string, query 
 // Lists outbound messages and each enrollment's first incoming reply across email
 // and LinkedIn in a published sequence. Only the first reply per enrollment is
 // returned, not every reply or one per channel. Superseded outbound attempts are
-// excluded. Results have no message content and update asynchronously.
+// excluded. Results have no message content.
 //
 // Results are ordered by `createdAt` descending. Supported equality filters:
 // `contactId`, `enrollmentId`, `sequenceStepId`, `sequenceStepType` (EMAIL,
@@ -165,8 +164,7 @@ func (r *SequenceService) GetEnrollment(ctx context.Context, enrollmentID string
 // and plain-text content. Callers with `sequences:read` can read related content
 // regardless of the sender or individual email/chat privacy. Content is null when
 // unavailable or its captured source was deleted; a LinkedIn invitation without a
-// note returns `content: { subject: null, body: null }`. Message visibility and
-// status update asynchronously.
+// note returns `content: { subject: null, body: null }`.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -188,8 +186,8 @@ func (r *SequenceService) GetMessage(ctx context.Context, messageID string, quer
 
 // Returns lifetime engagement and current step enrollment counts for a published
 // sequence. Includes live enrollments, excluding test enrollments and enrollments
-// removed from the sequence. Counts may lag recent activity while the search index
-// updates. Rates are fractions; a rate is null when its denominator is zero.
+// removed from the sequence. Rates are fractions; a rate is null when its
+// denominator is zero.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -2362,9 +2360,7 @@ const (
 )
 
 type SequenceUpdateEnrollmentsResponse struct {
-	// One result per distinct contact, additions first, then removals; enrollment IDs
-	// can be retrieved immediately, but indexed status, remaining sends and list
-	// visibility may lag.
+	// One result per distinct contact, additions first, then removals.
 	Results []SequenceUpdateEnrollmentsResponseResultUnion `json:"results" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
