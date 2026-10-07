@@ -87,6 +87,12 @@ type Client struct {
 	// Sequences are multi-step outreach cadences that send email and LinkedIn messages
 	// to enrolled contacts.
 	Sequence SequenceService
+	// > [!WARNING] The Senders API is in Preview. Endpoints, parameters, and response
+	// > schemas may change, including breaking changes, as we incorporate feedback.
+	//
+	// Senders are the email mailboxes and LinkedIn accounts sequences send from.
+	// Creating, connecting and archiving a sender happen in the Lightfield app.
+	Sender SenderService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -134,6 +140,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.Channel = NewChannelService(opts...)
 	r.EnrichmentRun = NewEnrichmentRunService(opts...)
 	r.Sequence = NewSequenceService(opts...)
+	r.Sender = NewSenderService(opts...)
 
 	return
 }
