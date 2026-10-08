@@ -13,6 +13,7 @@ import (
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	shimjson "github.com/Lightfld/lightfield-go/internal/encoding/json"
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
 	"github.com/Lightfld/lightfield-go/packages/param"
@@ -45,9 +46,26 @@ func NewSequenceService(opts ...option.RequestOption) (r SequenceService) {
 	return
 }
 
+// Creates an unpublished sequence with its first draft and returns the draft.
+// Unset send settings default to 9:00–17:00, Monday to Friday, UTC, with no daily
+// limits. The sequence sends nothing until its draft is published and it is
+// activated.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) New(ctx context.Context, body SequenceNewParams, opts ...option.RequestOption) (res *SequenceCreateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/sequences"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Retrieves a sequence by its ID. Published sequences include their steps and send
 // settings; a sequence that has never been published has a null definition and no
-// channels.
+// channels. Pending edits live in its draft.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -81,6 +99,63 @@ func (r *SequenceService) List(ctx context.Context, query SequenceListParams, op
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/sequences"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Starts sending a published sequence to its enrolled contacts. Requires a
+// published version and an available sender for each channel it uses; add senders
+// through the draft. An already active sequence is returned unchanged. Edit steps
+// and settings through the draft instead. The sequence's status changes
+// immediately; its enrollments' statuses follow asynchronously.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) Activate(ctx context.Context, id string, body SequenceActivateParams, opts ...option.RequestOption) (res *SequenceActivateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/activate", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Pauses sending for a published sequence; enrollments stay in place and resume on
+// activation. An already paused sequence is returned unchanged. The sequence's
+// status changes immediately; its enrollments' statuses follow asynchronously.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) Deactivate(ctx context.Context, id string, body SequenceDeactivateParams, opts ...option.RequestOption) (res *SequenceDeactivateResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/deactivate", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Discards the sequence's open draft at `expectedVersion`. A published sequence
+// keeps its published version. A sequence that was never published is deleted with
+// its draft, and `sequenceDeleted` is true. Returns 404 `draft_not_found` when no
+// draft is open, and 409 when the open draft is not the one that was read.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) DiscardDraft(ctx context.Context, id string, body SequenceDiscardDraftParams, opts ...option.RequestOption) (res *SequenceDiscardDraftResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/draft/discard", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
 }
 
@@ -137,6 +212,49 @@ func (r *SequenceService) ListMessages(ctx context.Context, id string, query Seq
 	}
 	path := fmt.Sprintf("v1/sequences/%s/messages", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// Publishes the sequence's open draft at `expectedVersion` and returns the
+// sequence. A first publish leaves the sequence `DEACTIVATED`; activate it to
+// start sending. Live enrollments move to the new version. On failure returns 400
+// with `issues` and changes nothing; problems are reported per stage (content,
+// reviewers, senders, entitlement), so fixing one stage may reveal the next. Two
+// refusals come without `issues`: 400 `permissions_not_granted` when the draft has
+// step permissions not yet granted (grant them on the sequence in Lightfield), and
+// 400 `no_selectable_sender` when the sequence is active and has no available
+// sender for a channel the published steps use. Returns 404 `draft_not_found` when
+// no draft is open, and 409 when the open draft is not the one that was read.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) PublishDraft(ctx context.Context, id string, body SequencePublishDraftParams, opts ...option.RequestOption) (res *SequencePublishDraftResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/draft/publish", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Retrieves the sequence's open draft, the one shared with editors in Lightfield.
+// Returns 404 `draft_not_found` when no draft is open. Its `version` is the
+// `expectedVersion` the next save, publish or discard must send.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *SequenceService) GetDraft(ctx context.Context, id string, opts ...option.RequestOption) (res *SequenceRetrieveDraftResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/draft", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
@@ -206,6 +324,37 @@ func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ..
 	return res, err
 }
 
+// Saves changes to the sequence's open draft, opening one from the published
+// version if none is open. Send the open draft’s `version` as `expectedVersion`;
+// omit it only when no draft is open. A stale version returns 409: retrieve the
+// draft and retry. `name` and `definition` are a JSON Merge Patch: omitted fields
+// are unchanged, `messaging`, `sendWindow` and `pacing` change only the fields
+// sent, `null` clears a messaging field or a `dailyLimit`, and `definition.steps`
+// replaces the whole step list; keep a step by sending its `id`. Anything a draft
+// read returns can be sent back. A value outside its field’s documented bounds
+// returns 400 naming the field in `param`. Otherwise the save is all-or-nothing: a
+// 400 lists its problems under `issues`, with step, settings, entitlement,
+// reviewer and sender problems reported together, and changes nothing. A version
+// conflict (409), a missing permission (403) or an unknown reference (400
+// `referenced_resource_missing`) refuses on its own. A `steps` save returns 409
+// while the draft has edits in Lightfield that are not valid yet. `reviewers` adds
+// and removes members, and `senders` adds and removes senders. Changes take effect
+// when the draft is published.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) UpdateDraft(ctx context.Context, id string, body SequenceUpdateDraftParams, opts ...option.RequestOption) (res *SequenceUpdateDraftResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/draft", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Adds and removes contacts in one atomic request. If any new enrollment is
 // invalid, nothing changes. Provide add, remove, or both, with at most 25 contact
 // IDs total. Duplicate IDs within a list are ignored; an ID cannot appear in both
@@ -228,6 +377,1405 @@ func (r *SequenceService) UpdateEnrollments(ctx context.Context, id string, body
 	path := fmt.Sprintf("v1/sequences/%s/enrollments", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
+}
+
+type SequenceActivateResponse struct {
+	// Unique identifier of the sequence.
+	ID string `json:"id" api:"required"`
+	// Channels the published steps send on; empty before the first publish.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// ISO 8601 creation timestamp.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Published configuration, or null before the first publish.
+	Definition SequenceActivateResponseDefinition `json:"definition" api:"required"`
+	// When the sequence was first activated.
+	FirstActivatedAt string `json:"firstActivatedAt" api:"required"`
+	// When the sequence was most recently activated.
+	LastActivatedAt string `json:"lastActivatedAt" api:"required"`
+	// Name of the sequence.
+	Name string `json:"name" api:"required"`
+	// Always `sequence`.
+	//
+	// Any of "sequence".
+	ObjectType SequenceActivateResponseObjectType `json:"objectType" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published. The
+	// published list; empty before the first publish. Lists active members only.
+	Reviewers []SequenceActivateResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. An archived sender stays listed
+	// but never sends; any change to the list drops it.
+	Senders []SequenceActivateResponseSender `json:"senders" api:"required"`
+	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+	// is published but paused.
+	//
+	// Any of "DRAFT", "ACTIVE", "DEACTIVATED".
+	Status SequenceActivateResponseStatus `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Channels         respjson.Field
+		CreatedAt        respjson.Field
+		Definition       respjson.Field
+		FirstActivatedAt respjson.Field
+		LastActivatedAt  respjson.Field
+		Name             respjson.Field
+		ObjectType       respjson.Field
+		Reviewers        respjson.Field
+		Senders          respjson.Field
+		Status           respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Published configuration, or null before the first publish.
+type SequenceActivateResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequenceActivateResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceActivateResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequenceActivateResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequenceActivateResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequenceActivateResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceActivateResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceActivateResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceActivateResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceActivateResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceActivateResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceActivateResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionPacingLinkedinInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceActivateResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionPacingLinkedinMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequenceActivateResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceActivateResponseDefinitionStepUnion contains all possible properties and
+// values from [SequenceActivateResponseDefinitionStepObject],
+// [SequenceActivateResponseDefinitionStepObject2],
+// [SequenceActivateResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceActivateResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequenceActivateResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequenceActivateResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequenceActivateResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject() (v SequenceActivateResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject2() (v SequenceActivateResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject3() (v SequenceActivateResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceActivateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceActivateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `sequence`.
+type SequenceActivateResponseObjectType string
+
+const (
+	SequenceActivateResponseObjectTypeSequence SequenceActivateResponseObjectType = "sequence"
+)
+
+type SequenceActivateResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+// is published but paused.
+type SequenceActivateResponseStatus string
+
+const (
+	SequenceActivateResponseStatusDraft       SequenceActivateResponseStatus = "DRAFT"
+	SequenceActivateResponseStatusActive      SequenceActivateResponseStatus = "ACTIVE"
+	SequenceActivateResponseStatusDeactivated SequenceActivateResponseStatus = "DEACTIVATED"
+)
+
+type SequenceCreateResponse struct {
+	// Channels the draft's steps send on.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// The draft configuration, in the same shape as a published definition.
+	Definition SequenceCreateResponseDefinition `json:"definition" api:"required"`
+	// Name the sequence takes when the draft is published.
+	Name string `json:"name" api:"required"`
+	// What publishing this draft would change for contacts already in the sequence.
+	// Before the first publish, only proposed senders it would leave off because they
+	// were archived. Empty when nothing is affected.
+	PublishWarnings []SequenceCreateResponsePublishWarning `json:"publishWarnings" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published.
+	// Lists active members only.
+	Reviewers []SequenceCreateResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. The list this draft publishes: the
+	// live list until a save changes it. An archived sender stays listed but never
+	// sends; any change to the list drops it.
+	Senders []SequenceCreateResponseSender `json:"senders" api:"required"`
+	// The sequence this draft belongs to.
+	SequenceID string `json:"sequenceId" api:"required"`
+	// When the draft last changed.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// Opaque token for the current state of the draft. Send it as `expectedVersion` on
+	// the next save, publish or discard; it changes whenever anyone edits the draft.
+	Version string `json:"version" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Channels        respjson.Field
+		Definition      respjson.Field
+		Name            respjson.Field
+		PublishWarnings respjson.Field
+		Reviewers       respjson.Field
+		Senders         respjson.Field
+		SequenceID      respjson.Field
+		UpdatedAt       respjson.Field
+		Version         respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The draft configuration, in the same shape as a published definition.
+type SequenceCreateResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequenceCreateResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceCreateResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequenceCreateResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequenceCreateResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequenceCreateResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceCreateResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceCreateResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceCreateResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceCreateResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceCreateResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceCreateResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionPacingLinkedinInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceCreateResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionPacingLinkedinMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequenceCreateResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceCreateResponseDefinitionStepUnion contains all possible properties and
+// values from [SequenceCreateResponseDefinitionStepObject],
+// [SequenceCreateResponseDefinitionStepObject2],
+// [SequenceCreateResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceCreateResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequenceCreateResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequenceCreateResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequenceCreateResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject() (v SequenceCreateResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject2() (v SequenceCreateResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject3() (v SequenceCreateResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceCreateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceCreateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponsePublishWarning struct {
+	// What publishing would change.
+	//
+	// Any of "delay_shortened", "delay_lengthened", "connection_wait_shortened",
+	// "connection_wait_lengthened", "send_schedule_changed",
+	// "send_configuration_changed", "send_priority_changed", "senders_changed",
+	// "email_sender_pool_emptied", "linkedin_account_pool_emptied",
+	// "assigned_sender_removed", "delivery_became_automatic", "invite_note_enabled",
+	// "invite_note_disabled", "step_inserted", "automatic_send_step_inserted",
+	// "step_removed", "step_type_changed", "step_order_changed",
+	// "full_identity_rewrite", "low_identity_overlap".
+	Code string `json:"code" api:"required"`
+	// What would change, in plain language.
+	Message string `json:"message" api:"required"`
+	// `destructive` when contacts already in the sequence may skip, repeat or receive
+	// a step they would not have; `warning` otherwise.
+	//
+	// Any of "warning", "destructive".
+	Severity string `json:"severity" api:"required"`
+	// The steps involved; empty for a sequence-wide change.
+	StepIDs []string `json:"stepIds" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code        respjson.Field
+		Message     respjson.Field
+		Severity    respjson.Field
+		StepIDs     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponsePublishWarning) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponsePublishWarning) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponse struct {
+	// Unique identifier of the sequence.
+	ID string `json:"id" api:"required"`
+	// Channels the published steps send on; empty before the first publish.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// ISO 8601 creation timestamp.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Published configuration, or null before the first publish.
+	Definition SequenceDeactivateResponseDefinition `json:"definition" api:"required"`
+	// When the sequence was first activated.
+	FirstActivatedAt string `json:"firstActivatedAt" api:"required"`
+	// When the sequence was most recently activated.
+	LastActivatedAt string `json:"lastActivatedAt" api:"required"`
+	// Name of the sequence.
+	Name string `json:"name" api:"required"`
+	// Always `sequence`.
+	//
+	// Any of "sequence".
+	ObjectType SequenceDeactivateResponseObjectType `json:"objectType" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published. The
+	// published list; empty before the first publish. Lists active members only.
+	Reviewers []SequenceDeactivateResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. An archived sender stays listed
+	// but never sends; any change to the list drops it.
+	Senders []SequenceDeactivateResponseSender `json:"senders" api:"required"`
+	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+	// is published but paused.
+	//
+	// Any of "DRAFT", "ACTIVE", "DEACTIVATED".
+	Status SequenceDeactivateResponseStatus `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Channels         respjson.Field
+		CreatedAt        respjson.Field
+		Definition       respjson.Field
+		FirstActivatedAt respjson.Field
+		LastActivatedAt  respjson.Field
+		Name             respjson.Field
+		ObjectType       respjson.Field
+		Reviewers        respjson.Field
+		Senders          respjson.Field
+		Status           respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Published configuration, or null before the first publish.
+type SequenceDeactivateResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequenceDeactivateResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceDeactivateResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequenceDeactivateResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequenceDeactivateResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequenceDeactivateResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceDeactivateResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceDeactivateResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceDeactivateResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceDeactivateResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceDeactivateResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceDeactivateResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionPacingLinkedinInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceDeactivateResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionPacingLinkedinMessage) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceDeactivateResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequenceDeactivateResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceDeactivateResponseDefinitionStepUnion contains all possible properties
+// and values from [SequenceDeactivateResponseDefinitionStepObject],
+// [SequenceDeactivateResponseDefinitionStepObject2],
+// [SequenceDeactivateResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceDeactivateResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject() (v SequenceDeactivateResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject2() (v SequenceDeactivateResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject3() (v SequenceDeactivateResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceDeactivateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceDeactivateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `sequence`.
+type SequenceDeactivateResponseObjectType string
+
+const (
+	SequenceDeactivateResponseObjectTypeSequence SequenceDeactivateResponseObjectType = "sequence"
+)
+
+type SequenceDeactivateResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+// is published but paused.
+type SequenceDeactivateResponseStatus string
+
+const (
+	SequenceDeactivateResponseStatusDraft       SequenceDeactivateResponseStatus = "DRAFT"
+	SequenceDeactivateResponseStatusActive      SequenceDeactivateResponseStatus = "ACTIVE"
+	SequenceDeactivateResponseStatusDeactivated SequenceDeactivateResponseStatus = "DEACTIVATED"
+)
+
+type SequenceDiscardDraftResponse struct {
+	// True when the sequence had never been published, so discarding its only draft
+	// deleted it.
+	SequenceDeleted bool `json:"sequenceDeleted" api:"required"`
+	// The sequence whose draft was discarded.
+	SequenceID string `json:"sequenceId" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		SequenceDeleted respjson.Field
+		SequenceID      respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDiscardDraftResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDiscardDraftResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type SequenceListEnrollmentsResponse struct {
@@ -751,6 +2299,10 @@ type SequenceListResponseData struct {
 	// not they are listed. A change applies to sends once the draft is published. The
 	// published list; empty before the first publish. Lists active members only.
 	Reviewers []SequenceListResponseDataReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. An archived sender stays listed
+	// but never sends; any change to the list drops it.
+	Senders []SequenceListResponseDataSender `json:"senders" api:"required"`
 	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 	// is published but paused.
 	//
@@ -767,6 +2319,7 @@ type SequenceListResponseData struct {
 		Name             respjson.Field
 		ObjectType       respjson.Field
 		Reviewers        respjson.Field
+		Senders          respjson.Field
 		Status           respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -1135,11 +2688,963 @@ func (r *SequenceListResponseDataReviewer) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SequenceListResponseDataSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SequenceListResponseObject string
 
 const (
 	SequenceListResponseObjectList SequenceListResponseObject = "list"
 )
+
+type SequencePublishDraftResponse struct {
+	// Unique identifier of the sequence.
+	ID string `json:"id" api:"required"`
+	// Channels the published steps send on; empty before the first publish.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// ISO 8601 creation timestamp.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Published configuration, or null before the first publish.
+	Definition SequencePublishDraftResponseDefinition `json:"definition" api:"required"`
+	// When the sequence was first activated.
+	FirstActivatedAt string `json:"firstActivatedAt" api:"required"`
+	// When the sequence was most recently activated.
+	LastActivatedAt string `json:"lastActivatedAt" api:"required"`
+	// Name of the sequence.
+	Name string `json:"name" api:"required"`
+	// Always `sequence`.
+	//
+	// Any of "sequence".
+	ObjectType SequencePublishDraftResponseObjectType `json:"objectType" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published. The
+	// published list; empty before the first publish. Lists active members only.
+	Reviewers []SequencePublishDraftResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. An archived sender stays listed
+	// but never sends; any change to the list drops it.
+	Senders []SequencePublishDraftResponseSender `json:"senders" api:"required"`
+	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+	// is published but paused.
+	//
+	// Any of "DRAFT", "ACTIVE", "DEACTIVATED".
+	Status SequencePublishDraftResponseStatus `json:"status" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID               respjson.Field
+		Channels         respjson.Field
+		CreatedAt        respjson.Field
+		Definition       respjson.Field
+		FirstActivatedAt respjson.Field
+		LastActivatedAt  respjson.Field
+		Name             respjson.Field
+		ObjectType       respjson.Field
+		Reviewers        respjson.Field
+		Senders          respjson.Field
+		Status           respjson.Field
+		ExtraFields      map[string]respjson.Field
+		raw              string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Published configuration, or null before the first publish.
+type SequencePublishDraftResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequencePublishDraftResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequencePublishDraftResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequencePublishDraftResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequencePublishDraftResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequencePublishDraftResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequencePublishDraftResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequencePublishDraftResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequencePublishDraftResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequencePublishDraftResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequencePublishDraftResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequencePublishDraftResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionPacingLinkedinInvite) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequencePublishDraftResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequencePublishDraftResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionPacingLinkedinMessage) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequencePublishDraftResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequencePublishDraftResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequencePublishDraftResponseDefinitionStepUnion contains all possible properties
+// and values from [SequencePublishDraftResponseDefinitionStepObject],
+// [SequencePublishDraftResponseDefinitionStepObject2],
+// [SequencePublishDraftResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequencePublishDraftResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject() (v SequencePublishDraftResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject2() (v SequencePublishDraftResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject3() (v SequencePublishDraftResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequencePublishDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequencePublishDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `sequence`.
+type SequencePublishDraftResponseObjectType string
+
+const (
+	SequencePublishDraftResponseObjectTypeSequence SequencePublishDraftResponseObjectType = "sequence"
+)
+
+type SequencePublishDraftResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
+// is published but paused.
+type SequencePublishDraftResponseStatus string
+
+const (
+	SequencePublishDraftResponseStatusDraft       SequencePublishDraftResponseStatus = "DRAFT"
+	SequencePublishDraftResponseStatusActive      SequencePublishDraftResponseStatus = "ACTIVE"
+	SequencePublishDraftResponseStatusDeactivated SequencePublishDraftResponseStatus = "DEACTIVATED"
+)
+
+type SequenceRetrieveDraftResponse struct {
+	// Channels the draft's steps send on.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// The draft configuration, in the same shape as a published definition.
+	Definition SequenceRetrieveDraftResponseDefinition `json:"definition" api:"required"`
+	// Name the sequence takes when the draft is published.
+	Name string `json:"name" api:"required"`
+	// What publishing this draft would change for contacts already in the sequence.
+	// Before the first publish, only proposed senders it would leave off because they
+	// were archived. Empty when nothing is affected.
+	PublishWarnings []SequenceRetrieveDraftResponsePublishWarning `json:"publishWarnings" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published.
+	// Lists active members only.
+	Reviewers []SequenceRetrieveDraftResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. The list this draft publishes: the
+	// live list until a save changes it. An archived sender stays listed but never
+	// sends; any change to the list drops it.
+	Senders []SequenceRetrieveDraftResponseSender `json:"senders" api:"required"`
+	// The sequence this draft belongs to.
+	SequenceID string `json:"sequenceId" api:"required"`
+	// When the draft last changed.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// Opaque token for the current state of the draft. Send it as `expectedVersion` on
+	// the next save, publish or discard; it changes whenever anyone edits the draft.
+	Version string `json:"version" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Channels        respjson.Field
+		Definition      respjson.Field
+		Name            respjson.Field
+		PublishWarnings respjson.Field
+		Reviewers       respjson.Field
+		Senders         respjson.Field
+		SequenceID      respjson.Field
+		UpdatedAt       respjson.Field
+		Version         respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The draft configuration, in the same shape as a published definition.
+type SequenceRetrieveDraftResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequenceRetrieveDraftResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceRetrieveDraftResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequenceRetrieveDraftResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequenceRetrieveDraftResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequenceRetrieveDraftResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceRetrieveDraftResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceRetrieveDraftResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceRetrieveDraftResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceRetrieveDraftResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceRetrieveDraftResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceRetrieveDraftResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionPacingLinkedinInvite) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrieveDraftResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceRetrieveDraftResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionPacingLinkedinMessage) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrieveDraftResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequenceRetrieveDraftResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrieveDraftResponseDefinitionStepUnion contains all possible
+// properties and values from [SequenceRetrieveDraftResponseDefinitionStepObject],
+// [SequenceRetrieveDraftResponseDefinitionStepObject2],
+// [SequenceRetrieveDraftResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceRetrieveDraftResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject() (v SequenceRetrieveDraftResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject2() (v SequenceRetrieveDraftResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject3() (v SequenceRetrieveDraftResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceRetrieveDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponsePublishWarning struct {
+	// What publishing would change.
+	//
+	// Any of "delay_shortened", "delay_lengthened", "connection_wait_shortened",
+	// "connection_wait_lengthened", "send_schedule_changed",
+	// "send_configuration_changed", "send_priority_changed", "senders_changed",
+	// "email_sender_pool_emptied", "linkedin_account_pool_emptied",
+	// "assigned_sender_removed", "delivery_became_automatic", "invite_note_enabled",
+	// "invite_note_disabled", "step_inserted", "automatic_send_step_inserted",
+	// "step_removed", "step_type_changed", "step_order_changed",
+	// "full_identity_rewrite", "low_identity_overlap".
+	Code string `json:"code" api:"required"`
+	// What would change, in plain language.
+	Message string `json:"message" api:"required"`
+	// `destructive` when contacts already in the sequence may skip, repeat or receive
+	// a step they would not have; `warning` otherwise.
+	//
+	// Any of "warning", "destructive".
+	Severity string `json:"severity" api:"required"`
+	// The steps involved; empty for a sequence-wide change.
+	StepIDs []string `json:"stepIds" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code        respjson.Field
+		Message     respjson.Field
+		Severity    respjson.Field
+		StepIDs     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponsePublishWarning) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponsePublishWarning) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type SequenceRetrieveEnrollmentResponse struct {
 	// Unique identifier of the enrollment.
@@ -2136,6 +4641,10 @@ type SequenceRetrieveResponse struct {
 	// not they are listed. A change applies to sends once the draft is published. The
 	// published list; empty before the first publish. Lists active members only.
 	Reviewers []SequenceRetrieveResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. An archived sender stays listed
+	// but never sends; any change to the list drops it.
+	Senders []SequenceRetrieveResponseSender `json:"senders" api:"required"`
 	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 	// is published but paused.
 	//
@@ -2152,6 +4661,7 @@ type SequenceRetrieveResponse struct {
 		Name             respjson.Field
 		ObjectType       respjson.Field
 		Reviewers        respjson.Field
+		Senders          respjson.Field
 		Status           respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -2527,6 +5037,28 @@ func (r *SequenceRetrieveResponseReviewer) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SequenceRetrieveResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 // is published but paused.
 type SequenceRetrieveResponseStatus string
@@ -2536,6 +5068,478 @@ const (
 	SequenceRetrieveResponseStatusActive      SequenceRetrieveResponseStatus = "ACTIVE"
 	SequenceRetrieveResponseStatusDeactivated SequenceRetrieveResponseStatus = "DEACTIVATED"
 )
+
+type SequenceUpdateDraftResponse struct {
+	// Channels the draft's steps send on.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
+	// The draft configuration, in the same shape as a published definition.
+	Definition SequenceUpdateDraftResponseDefinition `json:"definition" api:"required"`
+	// Name the sequence takes when the draft is published.
+	Name string `json:"name" api:"required"`
+	// What publishing this draft would change for contacts already in the sequence.
+	// Before the first publish, only proposed senders it would leave off because they
+	// were archived. Empty when nothing is affected.
+	PublishWarnings []SequenceUpdateDraftResponsePublishWarning `json:"publishWarnings" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published.
+	// Lists active members only.
+	Reviewers []SequenceUpdateDraftResponseReviewer `json:"reviewers" api:"required"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. The list this draft publishes: the
+	// live list until a save changes it. An archived sender stays listed but never
+	// sends; any change to the list drops it.
+	Senders []SequenceUpdateDraftResponseSender `json:"senders" api:"required"`
+	// The sequence this draft belongs to.
+	SequenceID string `json:"sequenceId" api:"required"`
+	// When the draft last changed.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// Opaque token for the current state of the draft. Send it as `expectedVersion` on
+	// the next save, publish or discard; it changes whenever anyone edits the draft.
+	Version string `json:"version" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Channels        respjson.Field
+		Definition      respjson.Field
+		Name            respjson.Field
+		PublishWarnings respjson.Field
+		Reviewers       respjson.Field
+		Senders         respjson.Field
+		SequenceID      respjson.Field
+		UpdatedAt       respjson.Field
+		Version         respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The draft configuration, in the same shape as a published definition.
+type SequenceUpdateDraftResponseDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// Messaging inputs that frame every step.
+	Messaging SequenceUpdateDraftResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceUpdateDraftResponseDefinitionPacing `json:"pacing" api:"required"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority" api:"required"`
+	// When the sequence may send.
+	SendWindow SequenceUpdateDraftResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
+	Steps []SequenceUpdateDraftResponseDefinitionStepUnion `json:"steps" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Description respjson.Field
+		Messaging   respjson.Field
+		Pacing      respjson.Field
+		Priority    respjson.Field
+		SendWindow  respjson.Field
+		Steps       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinition) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Messaging inputs that frame every step.
+type SequenceUpdateDraftResponseDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction string `json:"callToAction" api:"required"`
+	// Who the sequence targets.
+	Persona string `json:"persona" api:"required"`
+	// Why the outreach is timely.
+	Trigger string `json:"trigger" api:"required"`
+	// The value proposition.
+	ValueProp string `json:"valueProp" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		CallToAction respjson.Field
+		Persona      respjson.Field
+		Trigger      respjson.Field
+		ValueProp    respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceUpdateDraftResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceUpdateDraftResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceUpdateDraftResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceUpdateDraftResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceUpdateDraftResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceUpdateDraftResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionPacingLinkedinInvite) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceUpdateDraftResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceUpdateDraftResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionPacingLinkedinMessage) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceUpdateDraftResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send.
+type SequenceUpdateDraftResponseDefinitionSendWindow struct {
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek" api:"required"`
+	// Local hour sends stop, exclusive (1–24).
+	EndHour int64 `json:"endHour" api:"required"`
+	// First local hour sends may go out (0–23).
+	StartHour int64 `json:"startHour" api:"required"`
+	// IANA timezone of the window.
+	Timezone string `json:"timezone" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DaysOfWeek  respjson.Field
+		EndHour     respjson.Field
+		StartHour   respjson.Field
+		Timezone    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionSendWindow) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceUpdateDraftResponseDefinitionStepUnion contains all possible properties
+// and values from [SequenceUpdateDraftResponseDefinitionStepObject],
+// [SequenceUpdateDraftResponseDefinitionStepObject2],
+// [SequenceUpdateDraftResponseDefinitionStepObject3].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceUpdateDraftResponseDefinitionStepUnion struct {
+	ID           string `json:"id"`
+	DeliveryMode string `json:"deliveryMode"`
+	Name         string `json:"name"`
+	Prompt       string `json:"prompt"`
+	Type         string `json:"type"`
+	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject2].
+	IncludeNote bool `json:"includeNote"`
+	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject3].
+	Duration int64 `json:"duration"`
+	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject3].
+	Unit string `json:"unit"`
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		IncludeNote  respjson.Field
+		Duration     respjson.Field
+		Unit         respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject() (v SequenceUpdateDraftResponseDefinitionStepObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject2() (v SequenceUpdateDraftResponseDefinitionStepObject2) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject3() (v SequenceUpdateDraftResponseDefinitionStepObject3) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceUpdateDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject2 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Name         respjson.Field
+		Prompt       respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject2) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject3 struct {
+	// Step identifier.
+	ID string `json:"id" api:"required"`
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Duration    respjson.Field
+		Type        respjson.Field
+		Unit        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponsePublishWarning struct {
+	// What publishing would change.
+	//
+	// Any of "delay_shortened", "delay_lengthened", "connection_wait_shortened",
+	// "connection_wait_lengthened", "send_schedule_changed",
+	// "send_configuration_changed", "send_priority_changed", "senders_changed",
+	// "email_sender_pool_emptied", "linkedin_account_pool_emptied",
+	// "assigned_sender_removed", "delivery_became_automatic", "invite_note_enabled",
+	// "invite_note_disabled", "step_inserted", "automatic_send_step_inserted",
+	// "step_removed", "step_type_changed", "step_order_changed",
+	// "full_identity_rewrite", "low_identity_overlap".
+	Code string `json:"code" api:"required"`
+	// What would change, in plain language.
+	Message string `json:"message" api:"required"`
+	// `destructive` when contacts already in the sequence may skip, repeat or receive
+	// a step they would not have; `warning` otherwise.
+	//
+	// Any of "warning", "destructive".
+	Severity string `json:"severity" api:"required"`
+	// The steps involved; empty for a sequence-wide change.
+	StepIDs []string `json:"stepIds" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code        respjson.Field
+		Message     respjson.Field
+		Severity    respjson.Field
+		StepIDs     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponsePublishWarning) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponsePublishWarning) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseSender struct {
+	// ID of the sender.
+	ID string `json:"id" api:"required"`
+	// Always `sender`.
+	//
+	// Any of "sender".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseSender) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseSender) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 type SequenceUpdateEnrollmentsResponse struct {
 	// One result per distinct contact, additions first, then removals.
@@ -2658,6 +5662,313 @@ func (r *SequenceUpdateEnrollmentsResponseResultObject2) UnmarshalJSON(data []by
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type SequenceNewParams struct {
+	// Configuration of the first draft. `description` and `steps` are required.
+	Definition SequenceNewParamsDefinition `json:"definition,omitzero" api:"required"`
+	// Name of the sequence.
+	Name string `json:"name" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published.
+	// Member IDs of active members. Omit for none.
+	Reviewers []string `json:"reviewers,omitzero"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. Sender IDs of unarchived senders.
+	// Omit for none; activating needs a sender for each channel the steps use.
+	Senders []string `json:"senders,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParams) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Configuration of the first draft. `description` and `steps` are required.
+//
+// The properties Description, Steps are required.
+type SequenceNewParamsDefinition struct {
+	// What this version of the sequence is for.
+	Description string `json:"description" api:"required"`
+	// The ordered step list.
+	Steps []SequenceNewParamsDefinitionStepUnion `json:"steps,omitzero" api:"required"`
+	// Messaging inputs that frame every step. Omitted fields are unchanged; null
+	// clears a field.
+	Messaging SequenceNewParamsDefinitionMessaging `json:"messaging,omitzero"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type. Omitted step types are unchanged.
+	Pacing SequenceNewParamsDefinitionPacing `json:"pacing,omitzero"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority,omitzero"`
+	// When the sequence may send. Omitted fields are unchanged; a new sequence
+	// defaults to 9:00–17:00, Monday to Friday, UTC.
+	SendWindow SequenceNewParamsDefinitionSendWindow `json:"sendWindow,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinition](
+		"priority", "HIGH", "NORMAL",
+	)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type SequenceNewParamsDefinitionStepUnion struct {
+	OfSequenceNewsDefinitionStepObject  *SequenceNewParamsDefinitionStepObject  `json:",omitzero,inline"`
+	OfSequenceNewsDefinitionStepObject2 *SequenceNewParamsDefinitionStepObject2 `json:",omitzero,inline"`
+	OfSequenceNewsDefinitionStepObject3 *SequenceNewParamsDefinitionStepObject3 `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u SequenceNewParamsDefinitionStepUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfSequenceNewsDefinitionStepObject, u.OfSequenceNewsDefinitionStepObject2, u.OfSequenceNewsDefinitionStepObject3)
+}
+func (u *SequenceNewParamsDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// The properties DeliveryMode, Name, Prompt, Type are required.
+type SequenceNewParamsDefinitionStepObject struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
+		"type", "EMAIL", "LINKEDIN_MESSAGE",
+	)
+}
+
+// The properties DeliveryMode, Name, Prompt, Type are required.
+type SequenceNewParamsDefinitionStepObject2 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type,omitzero" api:"required"`
+	// Whether the connection request carries a note. Omit to keep the current setting;
+	// a new step defaults to false.
+	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject2) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject2
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject2](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject2](
+		"type", "LINKEDIN_INVITE",
+	)
+}
+
+// The properties Duration, Type, Unit are required.
+type SequenceNewParamsDefinitionStepObject3 struct {
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type,omitzero" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject3
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"type", "WAIT", "WAIT_FOR_CONNECTION",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"unit", "DAY", "MINUTE",
+	)
+}
+
+// Messaging inputs that frame every step. Omitted fields are unchanged; null
+// clears a field.
+type SequenceNewParamsDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction param.Opt[string] `json:"callToAction,omitzero"`
+	// Who the sequence targets.
+	Persona param.Opt[string] `json:"persona,omitzero"`
+	// Why the outreach is timely.
+	Trigger param.Opt[string] `json:"trigger,omitzero"`
+	// The value proposition.
+	ValueProp param.Opt[string] `json:"valueProp,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionMessaging) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionMessaging
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type. Omitted step types are unchanged.
+type SequenceNewParamsDefinitionPacing struct {
+	// Email steps.
+	Email SequenceNewParamsDefinitionPacingEmail `json:"EMAIL,omitzero"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceNewParamsDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE,omitzero"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceNewParamsDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionPacing) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionPacing
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+//
+// The property DailyLimit is required.
+type SequenceNewParamsDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionPacingEmail) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionPacingEmail
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+//
+// The property DailyLimit is required.
+type SequenceNewParamsDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionPacingLinkedinInvite) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionPacingLinkedinInvite
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+//
+// The property DailyLimit is required.
+type SequenceNewParamsDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionPacingLinkedinMessage) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionPacingLinkedinMessage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send. Omitted fields are unchanged; a new sequence
+// defaults to 9:00–17:00, Monday to Friday, UTC.
+type SequenceNewParamsDefinitionSendWindow struct {
+	// Local hour sends stop, exclusive (1–24).
+	EndHour param.Opt[int64] `json:"endHour,omitzero"`
+	// First local hour sends may go out (0–23).
+	StartHour param.Opt[int64] `json:"startHour,omitzero"`
+	// IANA timezone of the window.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionSendWindow) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionSendWindow
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SequenceListParams struct {
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
@@ -2672,6 +5983,68 @@ func (r SequenceListParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type SequenceActivateParams struct {
+	Body SequenceActivateParamsBody
+	paramObj
+}
+
+func (r SequenceActivateParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *SequenceActivateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateParamsBody struct {
+	paramObj
+}
+
+func (r SequenceActivateParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceActivateParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceActivateParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateParams struct {
+	Body SequenceDeactivateParamsBody
+	paramObj
+}
+
+func (r SequenceDeactivateParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *SequenceDeactivateParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateParamsBody struct {
+	paramObj
+}
+
+func (r SequenceDeactivateParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceDeactivateParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceDeactivateParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDiscardDraftParams struct {
+	// The draft `version` this request was decided against.
+	ExpectedVersion string `json:"expectedVersion" api:"required"`
+	paramObj
+}
+
+func (r SequenceDiscardDraftParams) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceDiscardDraftParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceDiscardDraftParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type SequenceListEnrollmentsParams struct {
@@ -2708,6 +6081,20 @@ func (r SequenceListMessagesParams) URLQuery() (v url.Values, err error) {
 	})
 }
 
+type SequencePublishDraftParams struct {
+	// The draft `version` this request was decided against.
+	ExpectedVersion string `json:"expectedVersion" api:"required"`
+	paramObj
+}
+
+func (r SequencePublishDraftParams) MarshalJSON() (data []byte, err error) {
+	type shadow SequencePublishDraftParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequencePublishDraftParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type SequenceGetEnrollmentParams struct {
 	// Unique identifier of the sequence.
 	ID string `path:"id" api:"required" json:"-"`
@@ -2718,6 +6105,365 @@ type SequenceGetMessageParams struct {
 	// Unique identifier of the sequence.
 	ID string `path:"id" api:"required" json:"-"`
 	paramObj
+}
+
+type SequenceUpdateDraftParams struct {
+	// The open draft’s `version`, unchanged. Required when a draft is open; omit it
+	// only when none is, to start one from the published version.
+	ExpectedVersion param.Opt[string] `json:"expectedVersion,omitzero"`
+	// Name of the sequence.
+	Name param.Opt[string] `json:"name,omitzero"`
+	// Fields to change. Omitted fields are unchanged.
+	Definition SequenceUpdateDraftParamsDefinition `json:"definition,omitzero"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published.
+	// Changes the list by adding and removing members; omit to keep it.
+	Reviewers SequenceUpdateDraftParamsReviewers `json:"reviewers,omitzero"`
+	// The senders this sequence sends from; new contacts rotate across them. A change
+	// applies to sends once the draft is published. Changes the list by adding and
+	// removing senders; omit to keep it.
+	Senders SequenceUpdateDraftParamsSenders `json:"senders,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParams) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Fields to change. Omitted fields are unchanged.
+type SequenceUpdateDraftParamsDefinition struct {
+	// What this version of the sequence is for.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Messaging inputs that frame every step. Omitted fields are unchanged; null
+	// clears a field.
+	Messaging SequenceUpdateDraftParamsDefinitionMessaging `json:"messaging,omitzero"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type. Omitted step types are unchanged.
+	Pacing SequenceUpdateDraftParamsDefinitionPacing `json:"pacing,omitzero"`
+	// Send priority relative to other sequences.
+	//
+	// Any of "HIGH", "NORMAL".
+	Priority string `json:"priority,omitzero"`
+	// When the sequence may send. Omitted fields are unchanged; a new sequence
+	// defaults to 9:00–17:00, Monday to Friday, UTC.
+	SendWindow SequenceUpdateDraftParamsDefinitionSendWindow `json:"sendWindow,omitzero"`
+	// The complete ordered step list, replacing the current one. Keep a step by
+	// sending its `id`; omit `id` for a new step.
+	Steps []SequenceUpdateDraftParamsDefinitionStepUnion `json:"steps,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinition](
+		"priority", "HIGH", "NORMAL",
+	)
+}
+
+// Messaging inputs that frame every step. Omitted fields are unchanged; null
+// clears a field.
+type SequenceUpdateDraftParamsDefinitionMessaging struct {
+	// What the recipient is asked to do.
+	CallToAction param.Opt[string] `json:"callToAction,omitzero"`
+	// Who the sequence targets.
+	Persona param.Opt[string] `json:"persona,omitzero"`
+	// Why the outreach is timely.
+	Trigger param.Opt[string] `json:"trigger,omitzero"`
+	// The value proposition.
+	ValueProp param.Opt[string] `json:"valueProp,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionMessaging) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionMessaging
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type. Omitted step types are unchanged.
+type SequenceUpdateDraftParamsDefinitionPacing struct {
+	// Email steps.
+	Email SequenceUpdateDraftParamsDefinitionPacingEmail `json:"EMAIL,omitzero"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceUpdateDraftParamsDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE,omitzero"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceUpdateDraftParamsDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionPacing) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionPacing
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+//
+// The property DailyLimit is required.
+type SequenceUpdateDraftParamsDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionPacingEmail) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionPacingEmail
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+//
+// The property DailyLimit is required.
+type SequenceUpdateDraftParamsDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionPacingLinkedinInvite) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionPacingLinkedinInvite
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+//
+// The property DailyLimit is required.
+type SequenceUpdateDraftParamsDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit param.Opt[int64] `json:"dailyLimit,omitzero" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionPacingLinkedinMessage) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionPacingLinkedinMessage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// When the sequence may send. Omitted fields are unchanged; a new sequence
+// defaults to 9:00–17:00, Monday to Friday, UTC.
+type SequenceUpdateDraftParamsDefinitionSendWindow struct {
+	// Local hour sends stop, exclusive (1–24).
+	EndHour param.Opt[int64] `json:"endHour,omitzero"`
+	// First local hour sends may go out (0–23).
+	StartHour param.Opt[int64] `json:"startHour,omitzero"`
+	// IANA timezone of the window.
+	Timezone param.Opt[string] `json:"timezone,omitzero"`
+	// Days sends may go out, 0 = Sunday.
+	DaysOfWeek []int64 `json:"daysOfWeek,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionSendWindow) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionSendWindow
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionSendWindow) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Only one field can be non-zero.
+//
+// Use [param.IsOmitted] to confirm if a field is set.
+type SequenceUpdateDraftParamsDefinitionStepUnion struct {
+	OfSequenceUpdateDraftsDefinitionStepObject  *SequenceUpdateDraftParamsDefinitionStepObject  `json:",omitzero,inline"`
+	OfSequenceUpdateDraftsDefinitionStepObject2 *SequenceUpdateDraftParamsDefinitionStepObject2 `json:",omitzero,inline"`
+	OfSequenceUpdateDraftsDefinitionStepObject3 *SequenceUpdateDraftParamsDefinitionStepObject3 `json:",omitzero,inline"`
+	paramUnion
+}
+
+func (u SequenceUpdateDraftParamsDefinitionStepUnion) MarshalJSON() ([]byte, error) {
+	return param.MarshalUnion(u, u.OfSequenceUpdateDraftsDefinitionStepObject, u.OfSequenceUpdateDraftsDefinitionStepObject2, u.OfSequenceUpdateDraftsDefinitionStepObject3)
+}
+func (u *SequenceUpdateDraftParamsDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, u)
+}
+
+// The properties DeliveryMode, Name, Prompt, Type are required.
+type SequenceUpdateDraftParamsDefinitionStepObject struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE".
+	Type string `json:"type,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
+		"type", "EMAIL", "LINKEDIN_MESSAGE",
+	)
+}
+
+// The properties DeliveryMode, Name, Prompt, Type are required.
+type SequenceUpdateDraftParamsDefinitionStepObject2 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// Instructions the agent follows when composing this message.
+	Prompt string `json:"prompt" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Whether the connection request carries a note. Omit to keep the current setting;
+	// a new step defaults to false.
+	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject2) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject2
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject2) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject2](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject2](
+		"type", "LINKEDIN_INVITE",
+	)
+}
+
+// The properties Duration, Type, Unit are required.
+type SequenceUpdateDraftParamsDefinitionStepObject3 struct {
+	// Length of the wait.
+	Duration int64 `json:"duration" api:"required"`
+	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
+	// a LinkedIn invite to be accepted.
+	//
+	// Any of "WAIT", "WAIT_FOR_CONNECTION".
+	Type string `json:"type,omitzero" api:"required"`
+	// Unit of `duration`.
+	//
+	// Any of "DAY", "MINUTE".
+	Unit string `json:"unit,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject3
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"type", "WAIT", "WAIT_FOR_CONNECTION",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"unit", "DAY", "MINUTE",
+	)
+}
+
+// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+// send. The sending member and the sequence’s creator always review, whether or
+// not they are listed. A change applies to sends once the draft is published.
+// Changes the list by adding and removing members; omit to keep it.
+type SequenceUpdateDraftParamsReviewers struct {
+	// Member IDs of active members to add. A member already listed is unchanged.
+	Add []string `json:"add,omitzero"`
+	// Member IDs to remove, including members who have left the workspace. A member
+	// not listed is unchanged.
+	Remove []string `json:"remove,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsReviewers) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsReviewers
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsReviewers) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The senders this sequence sends from; new contacts rotate across them. A change
+// applies to sends once the draft is published. Changes the list by adding and
+// removing senders; omit to keep it.
+type SequenceUpdateDraftParamsSenders struct {
+	// Sender IDs of unarchived senders to add. A sender already listed is unchanged.
+	Add []string `json:"add,omitzero"`
+	// Sender IDs to remove, including archived senders. A sender not listed is
+	// unchanged.
+	Remove []string `json:"remove,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsSenders) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsSenders
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsSenders) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type SequenceUpdateEnrollmentsParams struct {
