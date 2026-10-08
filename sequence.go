@@ -53,7 +53,7 @@ func NewSequenceService(opts ...option.RequestOption) (r SequenceService) {
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
-// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+// **[Required scope](/using-the-api/scopes/):** `sequences:create`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Write
 func (r *SequenceService) New(ctx context.Context, body SequenceNewParams, opts ...option.RequestOption) (res *SequenceCreateResponse, err error) {
