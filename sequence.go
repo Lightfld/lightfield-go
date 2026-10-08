@@ -222,9 +222,10 @@ func (r *SequenceService) ListMessages(ctx context.Context, id string, query Seq
 // reviewers, senders, entitlement), so fixing one stage may reveal the next. Two
 // refusals come without `issues`: 400 `permissions_not_granted` when the draft has
 // step permissions not yet granted (grant them on the sequence in Lightfield), and
-// 400 `no_selectable_sender` when the sequence is active and has no available
-// sender for a channel the published steps use. Returns 404 `draft_not_found` when
-// no draft is open, and 409 when the open draft is not the one that was read.
+// 400 `no_selectable_sender` when no sender is listed for a channel the steps use,
+// or the sequence is active and none of its senders for that channel is available.
+// Returns 404 `draft_not_found` when no draft is open, and 409 when the open draft
+// is not the one that was read.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:update`
 //
