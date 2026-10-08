@@ -45,7 +45,9 @@ func NewAccountService(opts ...option.RequestOption) (r AccountService) {
 // Creates a new account record. The `$name` field is required.
 //
 // Lightfield automatically enriches the account in the background unless
-// `skipEnrichment` is true; a `$website` improves the match. The
+// `skipEnrichment` is true; a `$website` improves the match. Enrichment is a
+// metered event, so when bulk-loading 50 or more records that do not require
+// additional enrichment, we recommend setting `skipEnrichment` to true. The
 // `$howTheyMakeMoney` and `$accountStatus` fields are read-only and cannot be set
 // via the API. The `$opportunity`, `$task`, `$note`, and `$meeting` relationships
 // are also read-only — manage them via the `$account` relationship on the
@@ -2585,7 +2587,9 @@ type AccountNewParams struct {
 	// for write rules.
 	Fields map[string]AccountNewParamsFieldUnion `json:"fields,omitzero" api:"required"`
 	// Skip background data enrichment for this account creation. The account summary
-	// and how-they-make-money field are still generated. Defaults to false.
+	// and how-they-make-money field are still generated. Defaults to false. Enrichment
+	// is a metered event, so when bulk-loading 50 or more records that do not require
+	// additional enrichment, we recommend `true`.
 	SkipEnrichment param.Opt[bool] `json:"skipEnrichment,omitzero"`
 	// Relationships to set on the new account. System relationships use a `$` prefix
 	// (e.g. `$owner`, `$contact`); custom relationships use their bare slug. Each
