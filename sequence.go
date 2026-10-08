@@ -362,8 +362,11 @@ func (r *SequenceService) UpdateDraft(ctx context.Context, id string, body Seque
 // sequence that has never been published returns 400 `sequence_not_published`.
 // Already-open enrollments remain unchanged, including paused enrollments.
 // Contacts whose prior enrollment completed, was cancelled, or failed are enrolled
-// again. Removing a contact with no open enrollment returns no_active_enrollment.
-// Execution starts asynchronously after enrollment.
+// again. Removing a contact cancels its open enrollment and stops its remaining
+// steps; the enrollment stays readable with status `CANCELLED`, and adding the
+// contact again starts a new enrollment. Removing a contact with no open
+// enrollment returns no_active_enrollment. Execution starts asynchronously after
+// enrollment.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:update`
 //
