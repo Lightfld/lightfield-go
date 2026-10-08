@@ -46,7 +46,8 @@ func NewSequenceService(opts ...option.RequestOption) (r SequenceService) {
 }
 
 // Retrieves a sequence by its ID. Published sequences include their steps and send
-// settings; an unpublished draft has a null definition.
+// settings; a sequence that has never been published has a null definition and no
+// channels.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -62,10 +63,10 @@ func (r *SequenceService) Get(ctx context.Context, id string, opts ...option.Req
 	return res, err
 }
 
-// Returns a paginated list of sequences, including unpublished drafts, ordered by
-// `createdAt` descending. An unpublished draft has a null definition. Use `offset`
-// and `limit` to paginate, and bracketed filters for status, channels, and
-// creation or activation dates.
+// Returns a paginated list of sequences, including ones never published, ordered
+// by `createdAt` descending. A sequence that has never been published has a null
+// definition and no channels. Use `offset` and `limit` to paginate, and bracketed
+// filters for status, channels, and creation or activation dates.
 //
 // Supported filters: `status[equal]` (DRAFT, ACTIVE, DEACTIVATED),
 // `channels[contains]` (EMAIL, LINKEDIN), and `createdAt`, `firstActivatedAt`, or
@@ -83,10 +84,11 @@ func (r *SequenceService) List(ctx context.Context, query SequenceListParams, op
 	return res, err
 }
 
-// Returns a paginated list of live enrollments in a published sequence, including
-// completed and cancelled history. Results are ordered by `enrolledAt` descending.
-// Use `offset` and `limit` to paginate, and bracketed field filters to narrow
-// results. Test-run enrollments are excluded.
+// Returns a paginated list of live enrollments in a sequence, including completed
+// and cancelled history; a sequence that has never been published has none.
+// Results are ordered by `enrolledAt` descending. Use `offset` and `limit` to
+// paginate, and bracketed field filters to narrow results. Test-run enrollments
+// are excluded.
 //
 // Supported filters: `status[equal]` (ACTIVE, AWAITING_REVIEW, NEEDS_ATTENTION,
 // REPLIED, COMPLETED, PAUSED, CANCELLED, FAILED), `contactId[equal]`,
@@ -109,9 +111,10 @@ func (r *SequenceService) ListEnrollments(ctx context.Context, id string, query 
 }
 
 // Lists outbound messages and each enrollment's first incoming reply across email
-// and LinkedIn in a published sequence. Only the first reply per enrollment is
-// returned, not every reply or one per channel. Superseded outbound attempts are
-// excluded. Results have no message content.
+// and LinkedIn in a sequence; a sequence that has never been published has none.
+// Only the first reply per enrollment is returned, not every reply or one per
+// channel. Superseded outbound attempts are excluded. Results have no message
+// content.
 //
 // Results are ordered by `createdAt` descending. Supported equality filters:
 // `contactId`, `enrollmentId`, `sequenceStepId`, `sequenceStepType` (EMAIL,
@@ -137,9 +140,9 @@ func (r *SequenceService) ListMessages(ctx context.Context, id string, query Seq
 	return res, err
 }
 
-// Retrieves one contact's enrollment in a published sequence: where it is in the
-// cadence and its latest activity. Test-run enrollments are not returned. Status
-// and remainingSends can be null until a current indexed value is available.
+// Retrieves one contact's enrollment in a sequence: where it is in the cadence and
+// its latest activity. Test-run enrollments are not returned. Status and
+// remainingSends can be null until a current indexed value is available.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -184,10 +187,10 @@ func (r *SequenceService) GetMessage(ctx context.Context, messageID string, quer
 	return res, err
 }
 
-// Returns lifetime engagement and current step enrollment counts for a published
-// sequence. Includes live enrollments, excluding test enrollments and enrollments
-// removed from the sequence. Rates are fractions; a rate is null when its
-// denominator is zero.
+// Returns lifetime engagement and current step enrollment counts for a sequence.
+// Includes live enrollments, excluding test enrollments and enrollments removed
+// from the sequence. A sequence that has never been published reports zero counts
+// and no steps. Rates are fractions; a rate is null when its denominator is zero.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -206,11 +209,12 @@ func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ..
 // Adds and removes contacts in one atomic request. If any new enrollment is
 // invalid, nothing changes. Provide add, remove, or both, with at most 25 contact
 // IDs total. Duplicate IDs within a list are ignored; an ID cannot appear in both
-// lists. Published, paused sequences accept enrollment and wait for activation.
-// Draft sequences return 404. Already-open enrollments remain unchanged, including
-// paused enrollments. Contacts whose prior enrollment completed, was cancelled, or
-// failed are enrolled again. Removing a contact with no open enrollment returns
-// no_active_enrollment. Execution starts asynchronously after enrollment.
+// lists. Published, paused sequences accept enrollment and wait for activation. A
+// sequence that has never been published returns 400 `sequence_not_published`.
+// Already-open enrollments remain unchanged, including paused enrollments.
+// Contacts whose prior enrollment completed, was cancelled, or failed are enrolled
+// again. Removing a contact with no open enrollment returns no_active_enrollment.
+// Execution starts asynchronously after enrollment.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:update`
 //
@@ -724,6 +728,10 @@ func (r *SequenceListResponse) UnmarshalJSON(data []byte) error {
 type SequenceListResponseData struct {
 	// Unique identifier of the sequence.
 	ID string `json:"id" api:"required"`
+	// Channels the published steps send on; empty before the first publish.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
 	// ISO 8601 creation timestamp.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Published configuration, or null before the first publish.
@@ -738,6 +746,11 @@ type SequenceListResponseData struct {
 	//
 	// Any of "sequence".
 	ObjectType string `json:"objectType" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published. The
+	// published list; empty before the first publish. Lists active members only.
+	Reviewers []SequenceListResponseDataReviewer `json:"reviewers" api:"required"`
 	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 	// is published but paused.
 	//
@@ -746,12 +759,14 @@ type SequenceListResponseData struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Channels         respjson.Field
 		CreatedAt        respjson.Field
 		Definition       respjson.Field
 		FirstActivatedAt respjson.Field
 		LastActivatedAt  respjson.Field
 		Name             respjson.Field
 		ObjectType       respjson.Field
+		Reviewers        respjson.Field
 		Status           respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -766,31 +781,27 @@ func (r *SequenceListResponseData) UnmarshalJSON(data []byte) error {
 
 // Published configuration, or null before the first publish.
 type SequenceListResponseDataDefinition struct {
-	// Channels the sequence sends on.
-	//
-	// Any of "EMAIL", "LINKEDIN".
-	Channels []string `json:"channels" api:"required"`
-	// Per-day send caps across the whole sequence, by step type.
-	DailyLimits SequenceListResponseDataDefinitionDailyLimits `json:"dailyLimits" api:"required"`
-	// Description of the published version.
+	// What this version of the sequence is for.
 	Description string `json:"description" api:"required"`
 	// Messaging inputs that frame every step.
 	Messaging SequenceListResponseDataDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceListResponseDataDefinitionPacing `json:"pacing" api:"required"`
 	// Send priority relative to other sequences.
 	//
 	// Any of "HIGH", "NORMAL".
 	Priority string `json:"priority" api:"required"`
 	// When the sequence may send.
 	SendWindow SequenceListResponseDataDefinitionSendWindow `json:"sendWindow" api:"required"`
-	// Published email, LinkedIn and wait steps in execution order; call steps are not
-	// exposed in this release.
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
 	Steps []SequenceListResponseDataDefinitionStepUnion `json:"steps" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Channels    respjson.Field
-		DailyLimits respjson.Field
 		Description respjson.Field
 		Messaging   respjson.Field
+		Pacing      respjson.Field
 		Priority    respjson.Field
 		SendWindow  respjson.Field
 		Steps       respjson.Field
@@ -802,33 +813,6 @@ type SequenceListResponseDataDefinition struct {
 // Returns the unmodified JSON received from the API
 func (r SequenceListResponseDataDefinition) RawJSON() string { return r.JSON.raw }
 func (r *SequenceListResponseDataDefinition) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Per-day send caps across the whole sequence, by step type.
-type SequenceListResponseDataDefinitionDailyLimits struct {
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	Email int64 `json:"EMAIL" api:"required"`
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	LinkedinInvite int64 `json:"LINKEDIN_INVITE" api:"required"`
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	LinkedinMessage int64 `json:"LINKEDIN_MESSAGE" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Email           respjson.Field
-		LinkedinInvite  respjson.Field
-		LinkedinMessage respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceListResponseDataDefinitionDailyLimits) RawJSON() string { return r.JSON.raw }
-func (r *SequenceListResponseDataDefinitionDailyLimits) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -856,6 +840,91 @@ type SequenceListResponseDataDefinitionMessaging struct {
 // Returns the unmodified JSON received from the API
 func (r SequenceListResponseDataDefinitionMessaging) RawJSON() string { return r.JSON.raw }
 func (r *SequenceListResponseDataDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceListResponseDataDefinitionPacing struct {
+	// Email steps.
+	Email SequenceListResponseDataDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceListResponseDataDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceListResponseDataDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceListResponseDataDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceListResponseDataDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionPacingLinkedinInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceListResponseDataDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionPacingLinkedinMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -983,8 +1052,8 @@ type SequenceListResponseDataDefinitionStepObject2 struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
-	// Whether the connection request carries a note. Null for sequences authored
-	// before this setting existed.
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
@@ -1041,6 +1110,28 @@ type SequenceListResponseDataDefinitionStepObject3 struct {
 // Returns the unmodified JSON received from the API
 func (r SequenceListResponseDataDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
 func (r *SequenceListResponseDataDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListResponseDataReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataReviewer) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2022,6 +2113,10 @@ func (r *SequenceRetrievePerformanceResponsePerStepWaitForConnectionStep) Unmars
 type SequenceRetrieveResponse struct {
 	// Unique identifier of the sequence.
 	ID string `json:"id" api:"required"`
+	// Channels the published steps send on; empty before the first publish.
+	//
+	// Any of "EMAIL", "LINKEDIN".
+	Channels []string `json:"channels" api:"required"`
 	// ISO 8601 creation timestamp.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Published configuration, or null before the first publish.
@@ -2036,6 +2131,11 @@ type SequenceRetrieveResponse struct {
 	//
 	// Any of "sequence".
 	ObjectType SequenceRetrieveResponseObjectType `json:"objectType" api:"required"`
+	// Extra members who may approve this sequence’s `FOR_REVIEW` messages before they
+	// send. The sending member and the sequence’s creator always review, whether or
+	// not they are listed. A change applies to sends once the draft is published. The
+	// published list; empty before the first publish. Lists active members only.
+	Reviewers []SequenceRetrieveResponseReviewer `json:"reviewers" api:"required"`
 	// `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 	// is published but paused.
 	//
@@ -2044,12 +2144,14 @@ type SequenceRetrieveResponse struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID               respjson.Field
+		Channels         respjson.Field
 		CreatedAt        respjson.Field
 		Definition       respjson.Field
 		FirstActivatedAt respjson.Field
 		LastActivatedAt  respjson.Field
 		Name             respjson.Field
 		ObjectType       respjson.Field
+		Reviewers        respjson.Field
 		Status           respjson.Field
 		ExtraFields      map[string]respjson.Field
 		raw              string
@@ -2064,31 +2166,27 @@ func (r *SequenceRetrieveResponse) UnmarshalJSON(data []byte) error {
 
 // Published configuration, or null before the first publish.
 type SequenceRetrieveResponseDefinition struct {
-	// Channels the sequence sends on.
-	//
-	// Any of "EMAIL", "LINKEDIN".
-	Channels []string `json:"channels" api:"required"`
-	// Per-day send caps across the whole sequence, by step type.
-	DailyLimits SequenceRetrieveResponseDefinitionDailyLimits `json:"dailyLimits" api:"required"`
-	// Description of the published version.
+	// What this version of the sequence is for.
 	Description string `json:"description" api:"required"`
 	// Messaging inputs that frame every step.
 	Messaging SequenceRetrieveResponseDefinitionMessaging `json:"messaging" api:"required"`
+	// How the whole sequence paces each step type it sends, keyed by sequence step
+	// type.
+	Pacing SequenceRetrieveResponseDefinitionPacing `json:"pacing" api:"required"`
 	// Send priority relative to other sequences.
 	//
 	// Any of "HIGH", "NORMAL".
 	Priority string `json:"priority" api:"required"`
 	// When the sequence may send.
 	SendWindow SequenceRetrieveResponseDefinitionSendWindow `json:"sendWindow" api:"required"`
-	// Published email, LinkedIn and wait steps in execution order; call steps are not
-	// exposed in this release.
+	// Email, LinkedIn and wait steps in execution order; call steps are not exposed in
+	// this release.
 	Steps []SequenceRetrieveResponseDefinitionStepUnion `json:"steps" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		Channels    respjson.Field
-		DailyLimits respjson.Field
 		Description respjson.Field
 		Messaging   respjson.Field
+		Pacing      respjson.Field
 		Priority    respjson.Field
 		SendWindow  respjson.Field
 		Steps       respjson.Field
@@ -2100,33 +2198,6 @@ type SequenceRetrieveResponseDefinition struct {
 // Returns the unmodified JSON received from the API
 func (r SequenceRetrieveResponseDefinition) RawJSON() string { return r.JSON.raw }
 func (r *SequenceRetrieveResponseDefinition) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-// Per-day send caps across the whole sequence, by step type.
-type SequenceRetrieveResponseDefinitionDailyLimits struct {
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	Email int64 `json:"EMAIL" api:"required"`
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	LinkedinInvite int64 `json:"LINKEDIN_INVITE" api:"required"`
-	// Sequence-level send cap for a one-day window, or null when no daily cap is
-	// configured; workspace and sender limits still apply.
-	LinkedinMessage int64 `json:"LINKEDIN_MESSAGE" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Email           respjson.Field
-		LinkedinInvite  respjson.Field
-		LinkedinMessage respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r SequenceRetrieveResponseDefinitionDailyLimits) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveResponseDefinitionDailyLimits) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2154,6 +2225,91 @@ type SequenceRetrieveResponseDefinitionMessaging struct {
 // Returns the unmodified JSON received from the API
 func (r SequenceRetrieveResponseDefinitionMessaging) RawJSON() string { return r.JSON.raw }
 func (r *SequenceRetrieveResponseDefinitionMessaging) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the whole sequence paces each step type it sends, keyed by sequence step
+// type.
+type SequenceRetrieveResponseDefinitionPacing struct {
+	// Email steps.
+	Email SequenceRetrieveResponseDefinitionPacingEmail `json:"EMAIL" api:"required"`
+	// LinkedIn connection requests.
+	LinkedinInvite SequenceRetrieveResponseDefinitionPacingLinkedinInvite `json:"LINKEDIN_INVITE" api:"required"`
+	// LinkedIn messages.
+	LinkedinMessage SequenceRetrieveResponseDefinitionPacingLinkedinMessage `json:"LINKEDIN_MESSAGE" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Email           respjson.Field
+		LinkedinInvite  respjson.Field
+		LinkedinMessage respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionPacing) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionPacing) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Email steps.
+type SequenceRetrieveResponseDefinitionPacingEmail struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionPacingEmail) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionPacingEmail) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn connection requests.
+type SequenceRetrieveResponseDefinitionPacingLinkedinInvite struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionPacingLinkedinInvite) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionPacingLinkedinInvite) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// LinkedIn messages.
+type SequenceRetrieveResponseDefinitionPacingLinkedinMessage struct {
+	// Most sends of this step type across the whole sequence in any rolling 24 hours,
+	// or null when the sequence sets no daily cap. Workspace and sender limits still
+	// apply.
+	DailyLimit int64 `json:"dailyLimit" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		DailyLimit  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionPacingLinkedinMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionPacingLinkedinMessage) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2281,8 +2437,8 @@ type SequenceRetrieveResponseDefinitionStepObject2 struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
-	// Whether the connection request carries a note. Null for sequences authored
-	// before this setting existed.
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
@@ -2348,6 +2504,28 @@ type SequenceRetrieveResponseObjectType string
 const (
 	SequenceRetrieveResponseObjectTypeSequence SequenceRetrieveResponseObjectType = "sequence"
 )
+
+type SequenceRetrieveResponseReviewer struct {
+	// ID of the member.
+	ID string `json:"id" api:"required"`
+	// Always `member`.
+	//
+	// Any of "member".
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseReviewer) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseReviewer) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
 
 // `DRAFT` has not been published; `ACTIVE` is enabled for sending; `DEACTIVATED`
 // is published but paused.
