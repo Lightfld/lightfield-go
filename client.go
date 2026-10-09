@@ -85,7 +85,10 @@ type Client struct {
 	// > feedback.
 	//
 	// Sequences are multi-step outreach cadences that send email and LinkedIn messages
-	// to enrolled contacts.
+	// to enrolled contacts. A sequence is edited through its draft, published, then
+	// activated; contacts are enrolled into the published sequence. Start with
+	// [Using sequences with the API](/sequences/using-the-api) for the lifecycle, the
+	// draft and version model, and a worked example.
 	Sequence SequenceService
 	// > [!WARNING] The Senders API is in Preview. Endpoints, parameters, and response
 	// > schemas may change, including breaking changes, as we incorporate feedback.
