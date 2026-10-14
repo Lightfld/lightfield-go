@@ -230,6 +230,22 @@ func (r *SequenceService) ListMessages(ctx context.Context, id string, query Seq
 	return res, err
 }
 
+// Lists the variables a sequence template may use: the first and last name, the
+// contact’s and its first account’s fields of a type a message can print, and the
+// sender’s name and email. Paste an entry’s `ref` into a send step’s subject or
+// body. Anything else inside `{{ }}` is refused when the draft is saved.
+//
+// **[Required scopes](/using-the-api/scopes/):** `sequences:read`, `contacts:read`
+// and `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *SequenceService) ListTemplateVariables(ctx context.Context, opts ...option.RequestOption) (res *SequenceListTemplateVariablesResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/sequences/template/variables"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Publishes the open draft at `expectedVersion` and returns the sequence. A first
 // publish leaves the sequence `DEACTIVATED`; activate it to start sending.
 // Contacts already enrolled continue on the new version.
@@ -2756,6 +2772,88 @@ type SequenceListResponseObject string
 
 const (
 	SequenceListResponseObjectList SequenceListResponseObject = "list"
+)
+
+type SequenceListTemplateVariablesResponse struct {
+	Data []SequenceListTemplateVariablesResponseData `json:"data" api:"required"`
+	// Any of "list".
+	Object     SequenceListTemplateVariablesResponseObject `json:"object" api:"required"`
+	TotalCount int64                                       `json:"totalCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		Object      respjson.Field
+		TotalCount  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListTemplateVariablesResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListTemplateVariablesResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListTemplateVariablesResponseData struct {
+	// The field the variable reads; null for built-in variables.
+	Field SequenceListTemplateVariablesResponseDataField `json:"field" api:"required"`
+	// Whose value the variable prints: the enrolled contact, its first account, or the
+	// step’s sender.
+	//
+	// Any of "contact", "account", "sender".
+	Group string `json:"group" api:"required"`
+	// Name of the variable, as the editor shows it.
+	Label string `json:"label" api:"required"`
+	// The exact text to paste into a template subject or body, e.g.
+	// `{{ {attr:ad_…} }}`.
+	Ref string `json:"ref" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Field       respjson.Field
+		Group       respjson.Field
+		Label       respjson.Field
+		Ref         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListTemplateVariablesResponseData) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListTemplateVariablesResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The field the variable reads; null for built-in variables.
+type SequenceListTemplateVariablesResponseDataField struct {
+	// The `ad_` id of the field, as the field-definitions endpoints list it.
+	ID string `json:"id" api:"required"`
+	// Type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListTemplateVariablesResponseDataField) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListTemplateVariablesResponseDataField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListTemplateVariablesResponseObject string
+
+const (
+	SequenceListTemplateVariablesResponseObjectList SequenceListTemplateVariablesResponseObject = "list"
 )
 
 type SequencePublishDraftResponse struct {
