@@ -8006,11 +8006,19 @@ type SequenceNewParamsDefinitionStepUnion struct {
 	OfSequenceNewsDefinitionStepObject  *SequenceNewParamsDefinitionStepObject  `json:",omitzero,inline"`
 	OfSequenceNewsDefinitionStepObject2 *SequenceNewParamsDefinitionStepObject2 `json:",omitzero,inline"`
 	OfSequenceNewsDefinitionStepObject3 *SequenceNewParamsDefinitionStepObject3 `json:",omitzero,inline"`
+	OfSequenceNewsDefinitionStepObject4 *SequenceNewParamsDefinitionStepObject4 `json:",omitzero,inline"`
+	OfSequenceNewsDefinitionStepObject5 *SequenceNewParamsDefinitionStepObject5 `json:",omitzero,inline"`
+	OfSequenceNewsDefinitionStepObject6 *SequenceNewParamsDefinitionStepObject6 `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u SequenceNewParamsDefinitionStepUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfSequenceNewsDefinitionStepObject, u.OfSequenceNewsDefinitionStepObject2, u.OfSequenceNewsDefinitionStepObject3)
+	return param.MarshalUnion(u, u.OfSequenceNewsDefinitionStepObject,
+		u.OfSequenceNewsDefinitionStepObject2,
+		u.OfSequenceNewsDefinitionStepObject3,
+		u.OfSequenceNewsDefinitionStepObject4,
+		u.OfSequenceNewsDefinitionStepObject5,
+		u.OfSequenceNewsDefinitionStepObject6)
 }
 func (u *SequenceNewParamsDefinitionStepUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -8031,7 +8039,11 @@ type SequenceNewParamsDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type,omitzero" api:"required"`
-	// Always `AGENT` for a step written over the API; may be left out.
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
@@ -8075,7 +8087,11 @@ type SequenceNewParamsDefinitionStepObject2 struct {
 	Type string `json:"type,omitzero" api:"required"`
 	// Whether the connection request carries a note. Defaults to false.
 	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
-	// Always `AGENT` for a step written over the API; may be left out.
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
@@ -8102,8 +8118,263 @@ func init() {
 	)
 }
 
-// The properties Duration, Type, Unit are required.
+// The properties DeliveryMode, Name, Template, Type are required.
 type SequenceNewParamsDefinitionStepObject3 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives. Requires template steps for the workspace.
+	Template SequenceNewParamsDefinitionStepObject3Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type,omitzero" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject3
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"type", "EMAIL",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The email every contact receives. Requires template steps for the workspace.
+//
+// The properties Body, Subject are required.
+type SequenceNewParamsDefinitionStepObject3Template struct {
+	// Email body as Markdown; paragraphs, bold, italics, links and lists keep their
+	// formatting. Leave out the sign-off and signature, which are added when the
+	// message is written. A variable cannot be part of a link address. Write each
+	// variable as {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts
+	// missing the value. A variable reads a contact field as {attr:<id>}, the
+	// contact's first or last name as {col:firstName} or {col:lastName}, the contact's
+	// first account's field as {rel:account.<id>}, that account's name as
+	// {rel:account.col:name}, and the sender's name or email as {rel:sender.col:name}
+	// or {rel:sender.col:email}; a SINGLE*SELECT field reads its option's label, as
+	// {attr:<id>.label} or {rel:account.<id>.label}. <id> is the literal id of a
+	// CrmContact or CrmAccount field in the CRM schema whose type is one of TEXT,
+	// NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug,
+	// a name, or an id starting with \_\_synthetic*. Nothing else is a variable: leave
+	// such a value out rather than reading a different field. A {{ }} that is not a
+	// variable would send as written, so it is refused. A field's <id> may be the
+	// `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject3Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject3Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties DeliveryMode, Name, Template, Type are required.
+type SequenceNewParamsDefinitionStepObject4 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote` and otherwise left empty. Requires template steps for
+	// the workspace.
+	Template SequenceNewParamsDefinitionStepObject4Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type,omitzero" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject4) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject4
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject4](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject4](
+		"type", "LINKEDIN_MESSAGE",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject4](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote` and otherwise left empty. Requires template steps for
+// the workspace.
+//
+// The property Body is required.
+type SequenceNewParamsDefinitionStepObject4Template struct {
+	// Plain-text message. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject4Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject4Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties DeliveryMode, Name, Template, Type are required.
+type SequenceNewParamsDefinitionStepObject5 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote` and otherwise left empty. Requires template steps for
+	// the workspace.
+	Template SequenceNewParamsDefinitionStepObject5Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type,omitzero" api:"required"`
+	// Whether the connection request carries a note. Defaults to false.
+	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject5) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject5
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject5](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject5](
+		"type", "LINKEDIN_INVITE",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject5](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote` and otherwise left empty. Requires template steps for
+// the workspace.
+//
+// The property Body is required.
+type SequenceNewParamsDefinitionStepObject5Template struct {
+	// Plain-text message. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	paramObj
+}
+
+func (r SequenceNewParamsDefinitionStepObject5Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject5Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceNewParamsDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Duration, Type, Unit are required.
+type SequenceNewParamsDefinitionStepObject6 struct {
 	// Length of the wait.
 	Duration int64 `json:"duration" api:"required"`
 	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
@@ -8118,19 +8389,19 @@ type SequenceNewParamsDefinitionStepObject3 struct {
 	paramObj
 }
 
-func (r SequenceNewParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
-	type shadow SequenceNewParamsDefinitionStepObject3
+func (r SequenceNewParamsDefinitionStepObject6) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceNewParamsDefinitionStepObject6
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *SequenceNewParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r *SequenceNewParamsDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 func init() {
-	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject6](
 		"type", "WAIT", "WAIT_FOR_CONNECTION",
 	)
-	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject6](
 		"unit", "DAY", "MINUTE",
 	)
 }
@@ -8583,11 +8854,19 @@ type SequenceUpdateDraftParamsDefinitionStepUnion struct {
 	OfSequenceUpdateDraftsDefinitionStepObject  *SequenceUpdateDraftParamsDefinitionStepObject  `json:",omitzero,inline"`
 	OfSequenceUpdateDraftsDefinitionStepObject2 *SequenceUpdateDraftParamsDefinitionStepObject2 `json:",omitzero,inline"`
 	OfSequenceUpdateDraftsDefinitionStepObject3 *SequenceUpdateDraftParamsDefinitionStepObject3 `json:",omitzero,inline"`
+	OfSequenceUpdateDraftsDefinitionStepObject4 *SequenceUpdateDraftParamsDefinitionStepObject4 `json:",omitzero,inline"`
+	OfSequenceUpdateDraftsDefinitionStepObject5 *SequenceUpdateDraftParamsDefinitionStepObject5 `json:",omitzero,inline"`
+	OfSequenceUpdateDraftsDefinitionStepObject6 *SequenceUpdateDraftParamsDefinitionStepObject6 `json:",omitzero,inline"`
 	paramUnion
 }
 
 func (u SequenceUpdateDraftParamsDefinitionStepUnion) MarshalJSON() ([]byte, error) {
-	return param.MarshalUnion(u, u.OfSequenceUpdateDraftsDefinitionStepObject, u.OfSequenceUpdateDraftsDefinitionStepObject2, u.OfSequenceUpdateDraftsDefinitionStepObject3)
+	return param.MarshalUnion(u, u.OfSequenceUpdateDraftsDefinitionStepObject,
+		u.OfSequenceUpdateDraftsDefinitionStepObject2,
+		u.OfSequenceUpdateDraftsDefinitionStepObject3,
+		u.OfSequenceUpdateDraftsDefinitionStepObject4,
+		u.OfSequenceUpdateDraftsDefinitionStepObject5,
+		u.OfSequenceUpdateDraftsDefinitionStepObject6)
 }
 func (u *SequenceUpdateDraftParamsDefinitionStepUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, u)
@@ -8611,7 +8890,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject struct {
 	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
 	// stay in their relative order and keep their type.
 	ID param.Opt[string] `json:"id,omitzero"`
-	// Always `AGENT` for a step written over the API; may be left out.
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
@@ -8659,7 +8942,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. Omit to keep the current setting;
 	// a new step defaults to false.
 	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
-	// Always `AGENT` for a step written over the API; may be left out.
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
@@ -8686,8 +8973,273 @@ func init() {
 	)
 }
 
-// The properties Duration, Type, Unit are required.
+// The properties DeliveryMode, Name, Template, Type are required.
 type SequenceUpdateDraftParamsDefinitionStepObject3 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives. Requires template steps for the workspace.
+	Template SequenceUpdateDraftParamsDefinitionStepObject3Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject3
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"type", "EMAIL",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The email every contact receives. Requires template steps for the workspace.
+//
+// The properties Body, Subject are required.
+type SequenceUpdateDraftParamsDefinitionStepObject3Template struct {
+	// Email body as Markdown; paragraphs, bold, italics, links and lists keep their
+	// formatting. Leave out the sign-off and signature, which are added when the
+	// message is written. A variable cannot be part of a link address. Write each
+	// variable as {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts
+	// missing the value. A variable reads a contact field as {attr:<id>}, the
+	// contact's first or last name as {col:firstName} or {col:lastName}, the contact's
+	// first account's field as {rel:account.<id>}, that account's name as
+	// {rel:account.col:name}, and the sender's name or email as {rel:sender.col:name}
+	// or {rel:sender.col:email}; a SINGLE*SELECT field reads its option's label, as
+	// {attr:<id>.label} or {rel:account.<id>.label}. <id> is the literal id of a
+	// CrmContact or CrmAccount field in the CRM schema whose type is one of TEXT,
+	// NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug,
+	// a name, or an id starting with \_\_synthetic*. Nothing else is a variable: leave
+	// such a value out rather than reading a different field. A {{ }} that is not a
+	// variable would send as written, so it is refused. A field's <id> may be the
+	// `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject3Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject3Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties DeliveryMode, Name, Template, Type are required.
+type SequenceUpdateDraftParamsDefinitionStepObject4 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote` and otherwise left empty. Requires template steps for
+	// the workspace.
+	Template SequenceUpdateDraftParamsDefinitionStepObject4Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject4) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject4
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject4](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject4](
+		"type", "LINKEDIN_MESSAGE",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject4](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote` and otherwise left empty. Requires template steps for
+// the workspace.
+//
+// The property Body is required.
+type SequenceUpdateDraftParamsDefinitionStepObject4Template struct {
+	// Plain-text message. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject4Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject4Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties DeliveryMode, Name, Template, Type are required.
+type SequenceUpdateDraftParamsDefinitionStepObject5 struct {
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode,omitzero" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote` and otherwise left empty. Requires template steps for
+	// the workspace.
+	Template SequenceUpdateDraftParamsDefinitionStepObject5Template `json:"template,omitzero" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type,omitzero" api:"required"`
+	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
+	// stay in their relative order and keep their type.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Whether the connection request carries a note. Omit to keep the current setting;
+	// a new step defaults to false.
+	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in. Optional: the content
+	// decides, a `prompt` for `AGENT` and a `template` for `TEMPLATE`. A kept template
+	// step sent with a `prompt` is refused unless `mode` is `AGENT`, so its template
+	// is never dropped by accident.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode,omitzero"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject5) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject5
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject5](
+		"deliveryMode", "AUTO", "FOR_REVIEW",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject5](
+		"type", "LINKEDIN_INVITE",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject5](
+		"mode", "TEMPLATE",
+	)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote` and otherwise left empty. Requires template steps for
+// the workspace.
+//
+// The property Body is required.
+type SequenceUpdateDraftParamsDefinitionStepObject5Template struct {
+	// Plain-text message. Write each variable as
+	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
+	// value. A variable reads a contact field as {attr:<id>}, the contact's first or
+	// last name as {col:firstName} or {col:lastName}, the contact's first account's
+	// field as {rel:account.<id>}, that account's name as {rel:account.col:name}, and
+	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
+	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
+	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
+	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
+	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
+	// than reading a different field. A {{ }} that is not a variable would send as
+	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	paramObj
+}
+
+func (r SequenceUpdateDraftParamsDefinitionStepObject5Template) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject5Template
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceUpdateDraftParamsDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Duration, Type, Unit are required.
+type SequenceUpdateDraftParamsDefinitionStepObject6 struct {
 	// Length of the wait.
 	Duration int64 `json:"duration" api:"required"`
 	// `WAIT` pauses for a fixed time; `WAIT_FOR_CONNECTION` waits up to that long for
@@ -8705,19 +9257,19 @@ type SequenceUpdateDraftParamsDefinitionStepObject3 struct {
 	paramObj
 }
 
-func (r SequenceUpdateDraftParamsDefinitionStepObject3) MarshalJSON() (data []byte, err error) {
-	type shadow SequenceUpdateDraftParamsDefinitionStepObject3
+func (r SequenceUpdateDraftParamsDefinitionStepObject6) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceUpdateDraftParamsDefinitionStepObject6
 	return param.MarshalObject(r, (*shadow)(&r))
 }
-func (r *SequenceUpdateDraftParamsDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r *SequenceUpdateDraftParamsDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 func init() {
-	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject6](
 		"type", "WAIT", "WAIT_FOR_CONNECTION",
 	)
-	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject6](
 		"unit", "DAY", "MINUTE",
 	)
 }
