@@ -13,14 +13,16 @@ import (
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
+	shimjson "github.com/Lightfld/lightfield-go/internal/encoding/json"
 	"github.com/Lightfld/lightfield-go/internal/requestconfig"
 	"github.com/Lightfld/lightfield-go/option"
 	"github.com/Lightfld/lightfield-go/packages/param"
 	"github.com/Lightfld/lightfield-go/packages/respjson"
 )
 
-// Emails represent messages synced from connected email accounts in Lightfield.
-// Read responses are privacy-aware and may be redacted based on the caller.
+// Emails represent messages synced from connected email accounts in Lightfield,
+// and emails you log through the API. Read responses are privacy-aware and may be
+// redacted based on the caller.
 //
 // EmailService contains methods and other services that help with interacting with
 // the Lightfield API.
@@ -78,6 +80,24 @@ func (r *EmailService) List(ctx context.Context, query EmailListParams, opts ...
 	return res, err
 }
 
+// Moves an email logged through `POST /v1/emails/log` to the trash. Synced emails
+// cannot be deleted here. Only participants on the email and workspace owners may
+// delete it.
+//
+// **[Required scope](/using-the-api/scopes/):** `emails:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *EmailService) Delete(ctx context.Context, id string, body EmailDeleteParams, opts ...option.RequestOption) (res *EmailDeleteResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/emails/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, body, &res, opts...)
+	return res, err
+}
+
 // Creates a draft in the connected email account that owns the `from` address.
 // Mirrors native email-client behavior: only `from` is required — `to`, `cc`,
 // `bcc`, `subject`, `messageBody`, and `attachments` are all optional. At least
@@ -96,6 +116,53 @@ func (r *EmailService) Draft(ctx context.Context, body EmailDraftParams, opts ..
 	return res, err
 }
 
+// Logs an email that no connected account will sync, such as history from a
+// previous CRM or a mailbox export. The email appears on account, contact, and
+// opportunity timelines at `$sentAt` and threads with related emails. `$sentAt`
+// must be in the past, and at least one participant must be a workspace member and
+// one must be external.
+//
+// The `Message-ID` header (or a generated one) identifies the email. If an email
+// with the same `Message-ID` already exists, the request returns 409 and writes
+// nothing. Group emails into threads with `$threadId`, or pass `In-Reply-To` and
+// `References` in `headers`.
+//
+// Privacy defaults to the most permissive setting among the participants’
+// connected accounts, else `METADATA`. Set `$privacySetting` to override it.
+// Logging an email never sends it, never cancels a sequence enrollment, and
+// creates records only when `autoCreateRecords` is true. Filter out personal and
+// non-sales mail before logging.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `emails:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *EmailService) Log(ctx context.Context, body EmailLogParams, opts ...option.RequestOption) (res *EmailLogResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/emails/log"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// Restores a trashed email that was logged through `POST /v1/emails/log`, bringing
+// it back to active. Synced emails cannot be restored here. Calling restore on an
+// email that is not trashed is a no-op and returns the existing record.
+//
+// **[Required scope](/using-the-api/scopes/):** `emails:restore`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *EmailService) Restore(ctx context.Context, id string, body EmailRestoreParams, opts ...option.RequestOption) (res *EmailRestoreResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/emails/%s/restore", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Sends an email via the connected email account that owns the `from` address.
 // Currently supports new sends only; replies and forwards are not yet supported.
 //
@@ -109,6 +176,343 @@ func (r *EmailService) Send(ctx context.Context, body EmailSendParams, opts ...o
 	path := "v1/emails/send"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
+}
+
+type EmailDeleteResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// The caller's resolved access level for this email.
+	//
+	// Any of "FULL", "METADATA".
+	AccessLevel EmailDeleteResponseAccessLevel `json:"accessLevel" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]EmailDeleteResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Always `email`.
+	//
+	// Any of "email".
+	ObjectType EmailDeleteResponseObjectType `json:"objectType" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
+	Relationships map[string]EmailDeleteResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		AccessLevel   respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		ObjectType    respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponse) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The caller's resolved access level for this email.
+type EmailDeleteResponseAccessLevel string
+
+const (
+	EmailDeleteResponseAccessLevelFull     EmailDeleteResponseAccessLevel = "FULL"
+	EmailDeleteResponseAccessLevelMetadata EmailDeleteResponseAccessLevel = "METADATA"
+)
+
+type EmailDeleteResponseField struct {
+	// The field value, or null if unset.
+	Value EmailDeleteResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseField) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// EmailDeleteResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [EmailDeleteResponseFieldValueAddress], [EmailDeleteResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type EmailDeleteResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [EmailDeleteResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [EmailDeleteResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [EmailDeleteResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsAddress() (v EmailDeleteResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailDeleteResponseFieldValueUnion) AsFullName() (v EmailDeleteResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u EmailDeleteResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *EmailDeleteResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailDeleteResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailDeleteResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `email`.
+type EmailDeleteResponseObjectType string
+
+const (
+	EmailDeleteResponseObjectTypeEmail EmailDeleteResponseObjectType = "email"
+)
+
+type EmailDeleteResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions EmailDeleteResponseRelationshipDirections `json:"directions"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		Directions  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type EmailDeleteResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination EmailDeleteResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource EmailDeleteResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type EmailDeleteResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type EmailDeleteResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailDeleteResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *EmailDeleteResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type EmailDraftResponse struct {
@@ -471,6 +875,681 @@ type EmailListResponseDataRelationshipDirectionsAsSource struct {
 // Returns the unmodified JSON received from the API
 func (r EmailListResponseDataRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
 func (r *EmailListResponseDataRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailLogResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// The caller's resolved access level for this email.
+	//
+	// Any of "FULL", "METADATA".
+	AccessLevel EmailLogResponseAccessLevel `json:"accessLevel" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]EmailLogResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Always `email`.
+	//
+	// Any of "email".
+	ObjectType EmailLogResponseObjectType `json:"objectType" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
+	Relationships map[string]EmailLogResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		AccessLevel   respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		ObjectType    respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponse) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The caller's resolved access level for this email.
+type EmailLogResponseAccessLevel string
+
+const (
+	EmailLogResponseAccessLevelFull     EmailLogResponseAccessLevel = "FULL"
+	EmailLogResponseAccessLevelMetadata EmailLogResponseAccessLevel = "METADATA"
+)
+
+type EmailLogResponseField struct {
+	// The field value, or null if unset.
+	Value EmailLogResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseField) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// EmailLogResponseFieldValueUnion contains all possible properties and values from
+// [string], [float64], [bool], [[]string], [EmailLogResponseFieldValueAddress],
+// [EmailLogResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type EmailLogResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [EmailLogResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [EmailLogResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [EmailLogResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u EmailLogResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailLogResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailLogResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailLogResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailLogResponseFieldValueUnion) AsAddress() (v EmailLogResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailLogResponseFieldValueUnion) AsFullName() (v EmailLogResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u EmailLogResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *EmailLogResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailLogResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailLogResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `email`.
+type EmailLogResponseObjectType string
+
+const (
+	EmailLogResponseObjectTypeEmail EmailLogResponseObjectType = "email"
+)
+
+type EmailLogResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions EmailLogResponseRelationshipDirections `json:"directions"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		Directions  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type EmailLogResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination EmailLogResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource EmailLogResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type EmailLogResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type EmailLogResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailLogResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *EmailLogResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailRestoreResponse struct {
+	// Unique identifier for the entity.
+	ID string `json:"id" api:"required"`
+	// The caller's resolved access level for this email.
+	//
+	// Any of "FULL", "METADATA".
+	AccessLevel EmailRestoreResponseAccessLevel `json:"accessLevel" api:"required"`
+	// ISO 8601 timestamp of when the entity was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// Map of field names to their typed values. System fields are prefixed with `$`
+	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
+	Fields map[string]EmailRestoreResponseField `json:"fields" api:"required"`
+	// URL to view the entity in the Lightfield web app, or null.
+	HTTPLink string `json:"httpLink" api:"required"`
+	// Always `email`.
+	//
+	// Any of "email".
+	ObjectType EmailRestoreResponseObjectType `json:"objectType" api:"required"`
+	// Map of relationship names to their associated entities. System relationships are
+	// prefixed with `$` (e.g. `$owner`, `$contact`). A self-referential relationship
+	// keeps its merged values and includes optional directional values. List filters
+	// select the current record's role with `:asSource` or `:asDestination`, for
+	// example `?parent:asSource[contains]=account_id`.
+	Relationships map[string]EmailRestoreResponseRelationship `json:"relationships" api:"required"`
+	// ISO 8601 timestamp of when the entity was last updated, or null.
+	UpdatedAt string `json:"updatedAt" api:"required"`
+	// External identifier for the entity, or null if unset.
+	ExternalID string `json:"externalId" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID            respjson.Field
+		AccessLevel   respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		ObjectType    respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponse) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The caller's resolved access level for this email.
+type EmailRestoreResponseAccessLevel string
+
+const (
+	EmailRestoreResponseAccessLevelFull     EmailRestoreResponseAccessLevel = "FULL"
+	EmailRestoreResponseAccessLevelMetadata EmailRestoreResponseAccessLevel = "METADATA"
+)
+
+type EmailRestoreResponseField struct {
+	// The field value, or null if unset.
+	Value EmailRestoreResponseFieldValueUnion `json:"value" api:"required"`
+	// The data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
+	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
+	// "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Value       respjson.Field
+		ValueType   respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseField) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseField) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// EmailRestoreResponseFieldValueUnion contains all possible properties and values
+// from [string], [float64], [bool], [[]string],
+// [EmailRestoreResponseFieldValueAddress],
+// [EmailRestoreResponseFieldValueFullName].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+//
+// If the underlying value is not a json object, one of the following properties
+// will be valid: OfString OfFloat OfBool OfStringArray]
+type EmailRestoreResponseFieldValueUnion struct {
+	// This field will be present if the value is a [string] instead of an object.
+	OfString string `json:",inline"`
+	// This field will be present if the value is a [float64] instead of an object.
+	OfFloat float64 `json:",inline"`
+	// This field will be present if the value is a [bool] instead of an object.
+	OfBool bool `json:",inline"`
+	// This field will be present if the value is a [[]string] instead of an object.
+	OfStringArray []string `json:",inline"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	City string `json:"city"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	Country string `json:"country"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	Latitude float64 `json:"latitude"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	Longitude float64 `json:"longitude"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	PostalCode string `json:"postalCode"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	State string `json:"state"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	Street string `json:"street"`
+	// This field is from variant [EmailRestoreResponseFieldValueAddress].
+	Street2 string `json:"street2"`
+	// This field is from variant [EmailRestoreResponseFieldValueFullName].
+	FirstName string `json:"firstName"`
+	// This field is from variant [EmailRestoreResponseFieldValueFullName].
+	LastName string `json:"lastName"`
+	JSON     struct {
+		OfString      respjson.Field
+		OfFloat       respjson.Field
+		OfBool        respjson.Field
+		OfStringArray respjson.Field
+		City          respjson.Field
+		Country       respjson.Field
+		Latitude      respjson.Field
+		Longitude     respjson.Field
+		PostalCode    respjson.Field
+		State         respjson.Field
+		Street        respjson.Field
+		Street2       respjson.Field
+		FirstName     respjson.Field
+		LastName      respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsString() (v string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsFloat() (v float64) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsBool() (v bool) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsStringArray() (v []string) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsAddress() (v EmailRestoreResponseFieldValueAddress) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u EmailRestoreResponseFieldValueUnion) AsFullName() (v EmailRestoreResponseFieldValueFullName) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u EmailRestoreResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *EmailRestoreResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailRestoreResponseFieldValueAddress struct {
+	// City name.
+	City string `json:"city" api:"nullable"`
+	// 2-letter ISO 3166-1 alpha-2 country code.
+	Country string `json:"country" api:"nullable"`
+	// Latitude coordinate.
+	Latitude float64 `json:"latitude" api:"nullable"`
+	// Longitude coordinate.
+	Longitude float64 `json:"longitude" api:"nullable"`
+	// Postal or ZIP code.
+	PostalCode string `json:"postalCode" api:"nullable"`
+	// State or province.
+	State string `json:"state" api:"nullable"`
+	// Street address line 1.
+	Street string `json:"street" api:"nullable"`
+	// Street address line 2.
+	Street2 string `json:"street2" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		City        respjson.Field
+		Country     respjson.Field
+		Latitude    respjson.Field
+		Longitude   respjson.Field
+		PostalCode  respjson.Field
+		State       respjson.Field
+		Street      respjson.Field
+		Street2     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailRestoreResponseFieldValueFullName struct {
+	// The contact's first name.
+	FirstName string `json:"firstName" api:"nullable"`
+	// The contact's last name.
+	LastName string `json:"lastName" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FirstName   respjson.Field
+		LastName    respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `email`.
+type EmailRestoreResponseObjectType string
+
+const (
+	EmailRestoreResponseObjectTypeEmail EmailRestoreResponseObjectType = "email"
+)
+
+type EmailRestoreResponseRelationship struct {
+	// Whether the relationship is `has_one` or `has_many`.
+	Cardinality string `json:"cardinality" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// IDs of the related entities.
+	Values []string `json:"values" api:"required"`
+	// Directional values for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions EmailRestoreResponseRelationshipDirections `json:"directions"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		ObjectType  respjson.Field
+		Values      respjson.Field
+		Directions  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseRelationship) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseRelationship) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional values for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type EmailRestoreResponseRelationshipDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination EmailRestoreResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource EmailRestoreResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type EmailRestoreResponseRelationshipDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseRelationshipDirectionsAsDestination) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type EmailRestoreResponseRelationshipDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// IDs of the related entities in this direction.
+	Values []string `json:"values" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Values      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r EmailRestoreResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
+func (r *EmailRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -845,6 +1924,30 @@ func (r EmailListParams) URLQuery() (v url.Values, err error) {
 	})
 }
 
+type EmailDeleteParams struct {
+	Body EmailDeleteParamsBody
+	paramObj
+}
+
+func (r EmailDeleteParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *EmailDeleteParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailDeleteParamsBody struct {
+	paramObj
+}
+
+func (r EmailDeleteParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow EmailDeleteParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *EmailDeleteParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type EmailDraftParams struct {
 	// Bare email address (no display name). Must match a connected email account owned
 	// by the API key user. Compared case-insensitively. Mailbox where the draft is
@@ -902,6 +2005,114 @@ func init() {
 	apijson.RegisterFieldValidator[EmailDraftParamsMessageBody](
 		"contentType", "HTML", "TEXT",
 	)
+}
+
+type EmailLogParams struct {
+	// Field values for the logged email. System fields use a `$` prefix. Required:
+	// `$sentAt` and `$from`, plus at least one recipient across `$to`, `$cc`, and
+	// `$bcc`.
+	Fields EmailLogParamsFields `json:"fields,omitzero" api:"required"`
+	// When true, the post-create sync may create account and contact records for
+	// unknown external participants.
+	AutoCreateRecords param.Opt[bool] `json:"autoCreateRecords,omitzero"`
+	// Raw RFC 5322 headers, passed through as read (any key case). Only `Message-ID`,
+	// `In-Reply-To`, and `References` are used. At most 64 KB.
+	Headers map[string]string `json:"headers,omitzero"`
+	paramObj
+}
+
+func (r EmailLogParams) MarshalJSON() (data []byte, err error) {
+	type shadow EmailLogParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *EmailLogParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Field values for the logged email. System fields use a `$` prefix. Required:
+// `$sentAt` and `$from`, plus at least one recipient across `$to`, `$cc`, and
+// `$bcc`.
+//
+// The properties From, SentAt are required.
+type EmailLogParamsFields struct {
+	// The sender address. This field accepts a single email address.
+	From string `json:"$from" api:"required"`
+	// When the email was sent, in ISO 8601 format. Must be in the past.
+	SentAt string `json:"$sentAt" api:"required"`
+	// The email subject line.
+	Subject param.Opt[string] `json:"$subject,omitzero"`
+	// Any stable grouping key. Emails with the same value share a thread. Overrides
+	// threading derived from `headers`.
+	ThreadID param.Opt[string] `json:"$threadId,omitzero"`
+	// The privacy setting for the email (`FULL` or `METADATA`). Defaults to the most
+	// permissive setting among the participants’ connected accounts, else `METADATA`.
+	//
+	// Any of "FULL", "METADATA".
+	PrivacySetting string `json:"$privacySetting,omitzero"`
+	// Bcc-recipient addresses.
+	Bcc []string `json:"$bcc,omitzero"`
+	// The email body. Pass whichever parts you have.
+	Body EmailLogParamsFieldsBody `json:"$body,omitzero"`
+	// Cc-recipient addresses.
+	Cc []string `json:"$cc,omitzero"`
+	// To-recipient addresses.
+	To []string `json:"$to,omitzero"`
+	paramObj
+}
+
+func (r EmailLogParamsFields) MarshalJSON() (data []byte, err error) {
+	type shadow EmailLogParamsFields
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *EmailLogParamsFields) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[EmailLogParamsFields](
+		"$privacySetting", "FULL", "METADATA",
+	)
+}
+
+// The email body. Pass whichever parts you have.
+type EmailLogParamsFieldsBody struct {
+	// The HTML part of the email.
+	HTML param.Opt[string] `json:"html,omitzero"`
+	// The plain-text part of the email.
+	Text param.Opt[string] `json:"text,omitzero"`
+	paramObj
+}
+
+func (r EmailLogParamsFieldsBody) MarshalJSON() (data []byte, err error) {
+	type shadow EmailLogParamsFieldsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *EmailLogParamsFieldsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailRestoreParams struct {
+	Body EmailRestoreParamsBody
+	paramObj
+}
+
+func (r EmailRestoreParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *EmailRestoreParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type EmailRestoreParamsBody struct {
+	paramObj
+}
+
+func (r EmailRestoreParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow EmailRestoreParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *EmailRestoreParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type EmailSendParams struct {

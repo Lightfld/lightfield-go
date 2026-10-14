@@ -65,8 +65,9 @@ type Client struct {
 	// can be fetched and manipulated via these endpoints, and definitions can be
 	// fetched to discover the available custom object types in the system.
 	Object ObjectService
-	// Emails represent messages synced from connected email accounts in Lightfield.
-	// Read responses are privacy-aware and may be redacted based on the caller.
+	// Emails represent messages synced from connected email accounts in Lightfield,
+	// and emails you log through the API. Read responses are privacy-aware and may be
+	// redacted based on the caller.
 	Email EmailService
 	// Merge operations combine two records into one.
 	Merge MergeService

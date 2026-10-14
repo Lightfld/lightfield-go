@@ -89,15 +89,20 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // Updates an existing meeting by ID. Only included fields and relationships are
 // modified.
 //
-// Only `fields.$privacySetting` and `relationships.$transcript.replace` are
-// writable. `$transcript` is the file ID of the canonical transcript.
-// `$transcripts` lists the file ID of every transcript on the meeting. Use
-// `$transcript.replace` to make that file canonical. A file that is not already on
-// the meeting is attached first. Clearing or removing `$transcript` is not
-// supported. The `$account` and `$opportunity` relationships are read-only and are
-// derived from the meeting's `$contact` attendees and the accounts/opportunities
-// those contacts belong to. The response is privacy-aware and includes a read-only
-// `accessLevel`. See
+// Only `fields.$privacySetting`, `fields.$attendeeEmails` and
+// `relationships.$transcript.replace` are writable. `$attendeeEmails` replaces the
+// full attendee list and only works on meetings that have ended. Adding an address
+// on the workspace blocklist or a teammate's do-not-track list hides the meeting
+// after the next sync, and only an admin can bring it back by removing the
+// blocklist entry; the response lists manual changes in the read-only
+// `$manuallyAddedAttendeeEmails` and `$manuallyRemovedAttendeeEmails`.
+// `$transcript` is the file ID of the canonical transcript. `$transcripts` lists
+// the file ID of every transcript on the meeting. Use `$transcript.replace` to
+// make that file canonical. A file that is not already on the meeting is attached
+// first. Clearing or removing `$transcript` is not supported. The `$account` and
+// `$opportunity` relationships are read-only and are derived from the meeting's
+// `$contact` attendees and the accounts/opportunities those contacts belong to.
+// The response is privacy-aware and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -2577,8 +2582,8 @@ func (u *MeetingNewParamsRelationshipsTranscriptUnion) UnmarshalJSON(data []byte
 }
 
 type MeetingUpdateParams struct {
-	// Field values to update. Only `$privacySetting` is writable, and omitted fields
-	// are left unchanged.
+	// Field values to update. Only `$privacySetting` and `$attendeeEmails` are
+	// writable, and omitted fields are left unchanged.
 	Fields MeetingUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. Only `$transcript.replace` is supported;
 	// removing or clearing `$transcript` is not supported.
@@ -2594,13 +2599,16 @@ func (r *MeetingUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Field values to update. Only `$privacySetting` is writable, and omitted fields
-// are left unchanged.
+// Field values to update. Only `$privacySetting` and `$attendeeEmails` are
+// writable, and omitted fields are left unchanged.
 type MeetingUpdateParamsFields struct {
 	// The privacy setting for the meeting.
 	//
 	// Any of "FULL", "METADATA".
 	PrivacySetting string `json:"$privacySetting,omitzero"`
+	// The full list of attendee email addresses, up to 500. Only meetings that have
+	// ended can be edited.
+	AttendeeEmails []string `json:"$attendeeEmails,omitzero"`
 	paramObj
 }
 
