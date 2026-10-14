@@ -647,28 +647,38 @@ func (r *SequenceActivateResponseDefinitionSendWindow) UnmarshalJSON(data []byte
 // SequenceActivateResponseDefinitionStepUnion contains all possible properties and
 // values from [SequenceActivateResponseDefinitionStepObject],
 // [SequenceActivateResponseDefinitionStepObject2],
-// [SequenceActivateResponseDefinitionStepObject3].
+// [SequenceActivateResponseDefinitionStepObject3],
+// [SequenceActivateResponseDefinitionStepObject4],
+// [SequenceActivateResponseDefinitionStepObject5],
+// [SequenceActivateResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceActivateResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceActivateResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceActivateResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceActivateResponseDefinitionStepObject3Template],
+	// [SequenceActivateResponseDefinitionStepObject4Template],
+	// [SequenceActivateResponseDefinitionStepObject5Template]
+	Template SequenceActivateResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceActivateResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceActivateResponseDefinitionStepObject3].
+	// This field is from variant [SequenceActivateResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -690,10 +700,48 @@ func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseD
 	return
 }
 
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject4() (v SequenceActivateResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject5() (v SequenceActivateResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceActivateResponseDefinitionStepUnion) AsSequenceActivateResponseDefinitionStepObject6() (v SequenceActivateResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceActivateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceActivateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceActivateResponseDefinitionStepUnionTemplate is an implicit subunion of
+// [SequenceActivateResponseDefinitionStepUnion].
+// SequenceActivateResponseDefinitionStepUnionTemplate provides convenient access
+// to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceActivateResponseDefinitionStepUnion].
+type SequenceActivateResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceActivateResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceActivateResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -706,6 +754,11 @@ type SequenceActivateResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -718,6 +771,7 @@ type SequenceActivateResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -744,6 +798,11 @@ type SequenceActivateResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -757,6 +816,7 @@ type SequenceActivateResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -772,6 +832,203 @@ func (r *SequenceActivateResponseDefinitionStepObject2) UnmarshalJSON(data []byt
 }
 
 type SequenceActivateResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceActivateResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceActivateResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceActivateResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceActivateResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceActivateResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceActivateResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceActivateResponseDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceActivateResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -797,8 +1054,8 @@ type SequenceActivateResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceActivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceActivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceActivateResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceActivateResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1091,28 +1348,37 @@ func (r *SequenceCreateResponseDefinitionSendWindow) UnmarshalJSON(data []byte) 
 // SequenceCreateResponseDefinitionStepUnion contains all possible properties and
 // values from [SequenceCreateResponseDefinitionStepObject],
 // [SequenceCreateResponseDefinitionStepObject2],
-// [SequenceCreateResponseDefinitionStepObject3].
+// [SequenceCreateResponseDefinitionStepObject3],
+// [SequenceCreateResponseDefinitionStepObject4],
+// [SequenceCreateResponseDefinitionStepObject5],
+// [SequenceCreateResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceCreateResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceCreateResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceCreateResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of [SequenceCreateResponseDefinitionStepObject3Template],
+	// [SequenceCreateResponseDefinitionStepObject4Template],
+	// [SequenceCreateResponseDefinitionStepObject5Template]
+	Template SequenceCreateResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceCreateResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceCreateResponseDefinitionStepObject3].
+	// This field is from variant [SequenceCreateResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -1134,10 +1400,48 @@ func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefin
 	return
 }
 
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject4() (v SequenceCreateResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject5() (v SequenceCreateResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceCreateResponseDefinitionStepUnion) AsSequenceCreateResponseDefinitionStepObject6() (v SequenceCreateResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceCreateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceCreateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceCreateResponseDefinitionStepUnionTemplate is an implicit subunion of
+// [SequenceCreateResponseDefinitionStepUnion].
+// SequenceCreateResponseDefinitionStepUnionTemplate provides convenient access to
+// the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceCreateResponseDefinitionStepUnion].
+type SequenceCreateResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceCreateResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceCreateResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1150,6 +1454,11 @@ type SequenceCreateResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -1162,6 +1471,7 @@ type SequenceCreateResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -1188,6 +1498,11 @@ type SequenceCreateResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -1201,6 +1516,7 @@ type SequenceCreateResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -1216,6 +1532,203 @@ func (r *SequenceCreateResponseDefinitionStepObject2) UnmarshalJSON(data []byte)
 }
 
 type SequenceCreateResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceCreateResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceCreateResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceCreateResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceCreateResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceCreateResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceCreateResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceCreateResponseDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceCreateResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -1241,8 +1754,8 @@ type SequenceCreateResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceCreateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceCreateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceCreateResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceCreateResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1565,28 +2078,38 @@ func (r *SequenceDeactivateResponseDefinitionSendWindow) UnmarshalJSON(data []by
 // SequenceDeactivateResponseDefinitionStepUnion contains all possible properties
 // and values from [SequenceDeactivateResponseDefinitionStepObject],
 // [SequenceDeactivateResponseDefinitionStepObject2],
-// [SequenceDeactivateResponseDefinitionStepObject3].
+// [SequenceDeactivateResponseDefinitionStepObject3],
+// [SequenceDeactivateResponseDefinitionStepObject4],
+// [SequenceDeactivateResponseDefinitionStepObject5],
+// [SequenceDeactivateResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceDeactivateResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceDeactivateResponseDefinitionStepObject3Template],
+	// [SequenceDeactivateResponseDefinitionStepObject4Template],
+	// [SequenceDeactivateResponseDefinitionStepObject5Template]
+	Template SequenceDeactivateResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject3].
+	// This field is from variant [SequenceDeactivateResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -1608,10 +2131,48 @@ func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateRespo
 	return
 }
 
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject4() (v SequenceDeactivateResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject5() (v SequenceDeactivateResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceDeactivateResponseDefinitionStepUnion) AsSequenceDeactivateResponseDefinitionStepObject6() (v SequenceDeactivateResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceDeactivateResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceDeactivateResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceDeactivateResponseDefinitionStepUnionTemplate is an implicit subunion of
+// [SequenceDeactivateResponseDefinitionStepUnion].
+// SequenceDeactivateResponseDefinitionStepUnionTemplate provides convenient access
+// to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceDeactivateResponseDefinitionStepUnion].
+type SequenceDeactivateResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceDeactivateResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceDeactivateResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -1624,6 +2185,11 @@ type SequenceDeactivateResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -1636,6 +2202,7 @@ type SequenceDeactivateResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -1662,6 +2229,11 @@ type SequenceDeactivateResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -1675,6 +2247,7 @@ type SequenceDeactivateResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -1690,6 +2263,203 @@ func (r *SequenceDeactivateResponseDefinitionStepObject2) UnmarshalJSON(data []b
 }
 
 type SequenceDeactivateResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceDeactivateResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceDeactivateResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceDeactivateResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceDeactivateResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceDeactivateResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceDeactivateResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceDeactivateResponseDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceDeactivateResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -1715,8 +2485,8 @@ type SequenceDeactivateResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceDeactivateResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceDeactivateResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceDeactivateResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceDeactivateResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2569,28 +3339,38 @@ func (r *SequenceListResponseDataDefinitionSendWindow) UnmarshalJSON(data []byte
 // SequenceListResponseDataDefinitionStepUnion contains all possible properties and
 // values from [SequenceListResponseDataDefinitionStepObject],
 // [SequenceListResponseDataDefinitionStepObject2],
-// [SequenceListResponseDataDefinitionStepObject3].
+// [SequenceListResponseDataDefinitionStepObject3],
+// [SequenceListResponseDataDefinitionStepObject4],
+// [SequenceListResponseDataDefinitionStepObject5],
+// [SequenceListResponseDataDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceListResponseDataDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceListResponseDataDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceListResponseDataDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceListResponseDataDefinitionStepObject3Template],
+	// [SequenceListResponseDataDefinitionStepObject4Template],
+	// [SequenceListResponseDataDefinitionStepObject5Template]
+	Template SequenceListResponseDataDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceListResponseDataDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceListResponseDataDefinitionStepObject3].
+	// This field is from variant [SequenceListResponseDataDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -2612,10 +3392,48 @@ func (u SequenceListResponseDataDefinitionStepUnion) AsSequenceListResponseDataD
 	return
 }
 
+func (u SequenceListResponseDataDefinitionStepUnion) AsSequenceListResponseDataDefinitionStepObject4() (v SequenceListResponseDataDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceListResponseDataDefinitionStepUnion) AsSequenceListResponseDataDefinitionStepObject5() (v SequenceListResponseDataDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceListResponseDataDefinitionStepUnion) AsSequenceListResponseDataDefinitionStepObject6() (v SequenceListResponseDataDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceListResponseDataDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceListResponseDataDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceListResponseDataDefinitionStepUnionTemplate is an implicit subunion of
+// [SequenceListResponseDataDefinitionStepUnion].
+// SequenceListResponseDataDefinitionStepUnionTemplate provides convenient access
+// to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceListResponseDataDefinitionStepUnion].
+type SequenceListResponseDataDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceListResponseDataDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceListResponseDataDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2628,6 +3446,11 @@ type SequenceListResponseDataDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -2640,6 +3463,7 @@ type SequenceListResponseDataDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -2666,6 +3490,11 @@ type SequenceListResponseDataDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -2679,6 +3508,7 @@ type SequenceListResponseDataDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -2694,6 +3524,203 @@ func (r *SequenceListResponseDataDefinitionStepObject2) UnmarshalJSON(data []byt
 }
 
 type SequenceListResponseDataDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceListResponseDataDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceListResponseDataDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListResponseDataDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceListResponseDataDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceListResponseDataDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListResponseDataDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceListResponseDataDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceListResponseDataDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceListResponseDataDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceListResponseDataDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -2719,8 +3746,8 @@ type SequenceListResponseDataDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceListResponseDataDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceListResponseDataDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceListResponseDataDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceListResponseDataDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3095,28 +4122,38 @@ func (r *SequencePublishDraftResponseDefinitionSendWindow) UnmarshalJSON(data []
 // SequencePublishDraftResponseDefinitionStepUnion contains all possible properties
 // and values from [SequencePublishDraftResponseDefinitionStepObject],
 // [SequencePublishDraftResponseDefinitionStepObject2],
-// [SequencePublishDraftResponseDefinitionStepObject3].
+// [SequencePublishDraftResponseDefinitionStepObject3],
+// [SequencePublishDraftResponseDefinitionStepObject4],
+// [SequencePublishDraftResponseDefinitionStepObject5],
+// [SequencePublishDraftResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequencePublishDraftResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequencePublishDraftResponseDefinitionStepObject3Template],
+	// [SequencePublishDraftResponseDefinitionStepObject4Template],
+	// [SequencePublishDraftResponseDefinitionStepObject5Template]
+	Template SequencePublishDraftResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject3].
+	// This field is from variant [SequencePublishDraftResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -3138,10 +4175,48 @@ func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftR
 	return
 }
 
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject4() (v SequencePublishDraftResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject5() (v SequencePublishDraftResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequencePublishDraftResponseDefinitionStepUnion) AsSequencePublishDraftResponseDefinitionStepObject6() (v SequencePublishDraftResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequencePublishDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequencePublishDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequencePublishDraftResponseDefinitionStepUnionTemplate is an implicit subunion
+// of [SequencePublishDraftResponseDefinitionStepUnion].
+// SequencePublishDraftResponseDefinitionStepUnionTemplate provides convenient
+// access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequencePublishDraftResponseDefinitionStepUnion].
+type SequencePublishDraftResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequencePublishDraftResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequencePublishDraftResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3154,6 +4229,11 @@ type SequencePublishDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -3166,6 +4246,7 @@ type SequencePublishDraftResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -3192,6 +4273,11 @@ type SequencePublishDraftResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -3205,6 +4291,7 @@ type SequencePublishDraftResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -3220,6 +4307,209 @@ func (r *SequencePublishDraftResponseDefinitionStepObject2) UnmarshalJSON(data [
 }
 
 type SequencePublishDraftResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequencePublishDraftResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequencePublishDraftResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject3Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequencePublishDraftResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequencePublishDraftResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequencePublishDraftResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject4Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequencePublishDraftResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequencePublishDraftResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequencePublishDraftResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequencePublishDraftResponseDefinitionStepObject5Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequencePublishDraftResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequencePublishDraftResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -3245,8 +4535,8 @@ type SequencePublishDraftResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequencePublishDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequencePublishDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequencePublishDraftResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequencePublishDraftResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3543,28 +4833,38 @@ func (r *SequenceRetrieveDraftResponseDefinitionSendWindow) UnmarshalJSON(data [
 // SequenceRetrieveDraftResponseDefinitionStepUnion contains all possible
 // properties and values from [SequenceRetrieveDraftResponseDefinitionStepObject],
 // [SequenceRetrieveDraftResponseDefinitionStepObject2],
-// [SequenceRetrieveDraftResponseDefinitionStepObject3].
+// [SequenceRetrieveDraftResponseDefinitionStepObject3],
+// [SequenceRetrieveDraftResponseDefinitionStepObject4],
+// [SequenceRetrieveDraftResponseDefinitionStepObject5],
+// [SequenceRetrieveDraftResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceRetrieveDraftResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceRetrieveDraftResponseDefinitionStepObject3Template],
+	// [SequenceRetrieveDraftResponseDefinitionStepObject4Template],
+	// [SequenceRetrieveDraftResponseDefinitionStepObject5Template]
+	Template SequenceRetrieveDraftResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject3].
+	// This field is from variant [SequenceRetrieveDraftResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -3586,10 +4886,48 @@ func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraf
 	return
 }
 
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject4() (v SequenceRetrieveDraftResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject5() (v SequenceRetrieveDraftResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveDraftResponseDefinitionStepUnion) AsSequenceRetrieveDraftResponseDefinitionStepObject6() (v SequenceRetrieveDraftResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceRetrieveDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceRetrieveDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrieveDraftResponseDefinitionStepUnionTemplate is an implicit subunion
+// of [SequenceRetrieveDraftResponseDefinitionStepUnion].
+// SequenceRetrieveDraftResponseDefinitionStepUnionTemplate provides convenient
+// access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceRetrieveDraftResponseDefinitionStepUnion].
+type SequenceRetrieveDraftResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceRetrieveDraftResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceRetrieveDraftResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3602,6 +4940,11 @@ type SequenceRetrieveDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -3614,6 +4957,7 @@ type SequenceRetrieveDraftResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -3640,6 +4984,11 @@ type SequenceRetrieveDraftResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -3653,6 +5002,7 @@ type SequenceRetrieveDraftResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -3668,6 +5018,209 @@ func (r *SequenceRetrieveDraftResponseDefinitionStepObject2) UnmarshalJSON(data 
 }
 
 type SequenceRetrieveDraftResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceRetrieveDraftResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceRetrieveDraftResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject3Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceRetrieveDraftResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceRetrieveDraftResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject4Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceRetrieveDraftResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceRetrieveDraftResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveDraftResponseDefinitionStepObject5Template) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveDraftResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -3693,8 +5246,8 @@ type SequenceRetrieveDraftResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceRetrieveDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceRetrieveDraftResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveDraftResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5056,28 +6609,38 @@ func (r *SequenceRetrieveResponseDefinitionSendWindow) UnmarshalJSON(data []byte
 // SequenceRetrieveResponseDefinitionStepUnion contains all possible properties and
 // values from [SequenceRetrieveResponseDefinitionStepObject],
 // [SequenceRetrieveResponseDefinitionStepObject2],
-// [SequenceRetrieveResponseDefinitionStepObject3].
+// [SequenceRetrieveResponseDefinitionStepObject3],
+// [SequenceRetrieveResponseDefinitionStepObject4],
+// [SequenceRetrieveResponseDefinitionStepObject5],
+// [SequenceRetrieveResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceRetrieveResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceRetrieveResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceRetrieveResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceRetrieveResponseDefinitionStepObject3Template],
+	// [SequenceRetrieveResponseDefinitionStepObject4Template],
+	// [SequenceRetrieveResponseDefinitionStepObject5Template]
+	Template SequenceRetrieveResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceRetrieveResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceRetrieveResponseDefinitionStepObject3].
+	// This field is from variant [SequenceRetrieveResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -5099,10 +6662,48 @@ func (u SequenceRetrieveResponseDefinitionStepUnion) AsSequenceRetrieveResponseD
 	return
 }
 
+func (u SequenceRetrieveResponseDefinitionStepUnion) AsSequenceRetrieveResponseDefinitionStepObject4() (v SequenceRetrieveResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveResponseDefinitionStepUnion) AsSequenceRetrieveResponseDefinitionStepObject5() (v SequenceRetrieveResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveResponseDefinitionStepUnion) AsSequenceRetrieveResponseDefinitionStepObject6() (v SequenceRetrieveResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceRetrieveResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceRetrieveResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrieveResponseDefinitionStepUnionTemplate is an implicit subunion of
+// [SequenceRetrieveResponseDefinitionStepUnion].
+// SequenceRetrieveResponseDefinitionStepUnionTemplate provides convenient access
+// to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceRetrieveResponseDefinitionStepUnion].
+type SequenceRetrieveResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceRetrieveResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceRetrieveResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5115,6 +6716,11 @@ type SequenceRetrieveResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -5127,6 +6733,7 @@ type SequenceRetrieveResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -5153,6 +6760,11 @@ type SequenceRetrieveResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -5166,6 +6778,7 @@ type SequenceRetrieveResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -5181,6 +6794,203 @@ func (r *SequenceRetrieveResponseDefinitionStepObject2) UnmarshalJSON(data []byt
 }
 
 type SequenceRetrieveResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceRetrieveResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceRetrieveResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceRetrieveResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceRetrieveResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceRetrieveResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceRetrieveResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveResponseDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -5206,8 +7016,8 @@ type SequenceRetrieveResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceRetrieveResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceRetrieveResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceRetrieveResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5504,28 +7314,38 @@ func (r *SequenceUpdateDraftResponseDefinitionSendWindow) UnmarshalJSON(data []b
 // SequenceUpdateDraftResponseDefinitionStepUnion contains all possible properties
 // and values from [SequenceUpdateDraftResponseDefinitionStepObject],
 // [SequenceUpdateDraftResponseDefinitionStepObject2],
-// [SequenceUpdateDraftResponseDefinitionStepObject3].
+// [SequenceUpdateDraftResponseDefinitionStepObject3],
+// [SequenceUpdateDraftResponseDefinitionStepObject4],
+// [SequenceUpdateDraftResponseDefinitionStepObject5],
+// [SequenceUpdateDraftResponseDefinitionStepObject6].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 type SequenceUpdateDraftResponseDefinitionStepUnion struct {
 	ID           string `json:"id"`
 	DeliveryMode string `json:"deliveryMode"`
+	Mode         string `json:"mode"`
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
-	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject2].
-	IncludeNote bool `json:"includeNote"`
-	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject3].
+	IncludeNote  bool   `json:"includeNote"`
+	// This field is a union of
+	// [SequenceUpdateDraftResponseDefinitionStepObject3Template],
+	// [SequenceUpdateDraftResponseDefinitionStepObject4Template],
+	// [SequenceUpdateDraftResponseDefinitionStepObject5Template]
+	Template SequenceUpdateDraftResponseDefinitionStepUnionTemplate `json:"template"`
+	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject6].
 	Duration int64 `json:"duration"`
-	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject3].
+	// This field is from variant [SequenceUpdateDraftResponseDefinitionStepObject6].
 	Unit string `json:"unit"`
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
 		IncludeNote  respjson.Field
+		Template     respjson.Field
 		Duration     respjson.Field
 		Unit         respjson.Field
 		raw          string
@@ -5547,10 +7367,48 @@ func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftRes
 	return
 }
 
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject4() (v SequenceUpdateDraftResponseDefinitionStepObject4) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject5() (v SequenceUpdateDraftResponseDefinitionStepObject5) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceUpdateDraftResponseDefinitionStepUnion) AsSequenceUpdateDraftResponseDefinitionStepObject6() (v SequenceUpdateDraftResponseDefinitionStepObject6) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
 // Returns the unmodified JSON received from the API
 func (u SequenceUpdateDraftResponseDefinitionStepUnion) RawJSON() string { return u.JSON.raw }
 
 func (r *SequenceUpdateDraftResponseDefinitionStepUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceUpdateDraftResponseDefinitionStepUnionTemplate is an implicit subunion
+// of [SequenceUpdateDraftResponseDefinitionStepUnion].
+// SequenceUpdateDraftResponseDefinitionStepUnionTemplate provides convenient
+// access to the sub-properties of the union.
+//
+// For type safety it is recommended to directly use a variant of the
+// [SequenceUpdateDraftResponseDefinitionStepUnion].
+type SequenceUpdateDraftResponseDefinitionStepUnionTemplate struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceUpdateDraftResponseDefinitionStepObject3Template].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (r *SequenceUpdateDraftResponseDefinitionStepUnionTemplate) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5563,6 +7421,11 @@ type SequenceUpdateDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "AUTO", "FOR_REVIEW".
 	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -5575,6 +7438,7 @@ type SequenceUpdateDraftResponseDefinitionStepObject struct {
 	JSON struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -5601,6 +7465,11 @@ type SequenceUpdateDraftResponseDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. A step authored before this
 	// setting existed reads as true.
 	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode" api:"required"`
 	// Display name of the step.
 	Name string `json:"name" api:"required"`
 	// Instructions the agent follows when composing this message.
@@ -5614,6 +7483,7 @@ type SequenceUpdateDraftResponseDefinitionStepObject2 struct {
 		ID           respjson.Field
 		DeliveryMode respjson.Field
 		IncludeNote  respjson.Field
+		Mode         respjson.Field
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
@@ -5629,6 +7499,203 @@ func (r *SequenceUpdateDraftResponseDefinitionStepObject2) UnmarshalJSON(data []
 }
 
 type SequenceUpdateDraftResponseDefinitionStepObject3 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The email every contact receives.
+	Template SequenceUpdateDraftResponseDefinitionStepObject3Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The email every contact receives.
+type SequenceUpdateDraftResponseDefinitionStepObject3Template struct {
+	// Email body as Markdown, without the sign-off or signature, which are added when
+	// the message is written. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// Plain-text subject line. Each `{{ }}` is a variable filled in per contact, with
+	// a fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject3Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject3Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject4 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceUpdateDraftResponseDefinitionStepObject4Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_MESSAGE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject4) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject4) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceUpdateDraftResponseDefinitionStepObject4Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject4Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject4Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject5 struct {
+	// Step identifier, referenced by enrollment `currentStepId` and message
+	// `sequenceStepId`.
+	ID string `json:"id" api:"required"`
+	// `AUTO` sends without manual approval, subject to the send window and limits;
+	// `FOR_REVIEW` requires a person to approve the draft before sending.
+	//
+	// Any of "AUTO", "FOR_REVIEW".
+	DeliveryMode string `json:"deliveryMode" api:"required"`
+	// Whether the connection request carries a note. A step authored before this
+	// setting existed reads as true.
+	IncludeNote bool `json:"includeNote" api:"required"`
+	// How each message is written: `AGENT` composes it from `prompt`; `TEMPLATE` sends
+	// `template` to every contact, with its variables filled in.
+	//
+	// Any of "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Display name of the step.
+	Name string `json:"name" api:"required"`
+	// The message every contact receives; for an invite, its connection note, sent
+	// only with `includeNote`.
+	Template SequenceUpdateDraftResponseDefinitionStepObject5Template `json:"template" api:"required"`
+	// Step type.
+	//
+	// Any of "LINKEDIN_INVITE".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID           respjson.Field
+		DeliveryMode respjson.Field
+		IncludeNote  respjson.Field
+		Mode         respjson.Field
+		Name         respjson.Field
+		Template     respjson.Field
+		Type         respjson.Field
+		ExtraFields  map[string]respjson.Field
+		raw          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject5) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject5) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The message every contact receives; for an invite, its connection note, sent
+// only with `includeNote`.
+type SequenceUpdateDraftResponseDefinitionStepObject5Template struct {
+	// Plain-text message. Each `{{ }}` is a variable filled in per contact, with a
+	// fallback for a contact missing the value; a field variable names the field by
+	// the `ad_` ID the field-definitions endpoints list.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceUpdateDraftResponseDefinitionStepObject5Template) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject5Template) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceUpdateDraftResponseDefinitionStepObject6 struct {
 	// Step identifier.
 	ID string `json:"id" api:"required"`
 	// Length of the wait.
@@ -5654,8 +7721,8 @@ type SequenceUpdateDraftResponseDefinitionStepObject3 struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r SequenceUpdateDraftResponseDefinitionStepObject3) RawJSON() string { return r.JSON.raw }
-func (r *SequenceUpdateDraftResponseDefinitionStepObject3) UnmarshalJSON(data []byte) error {
+func (r SequenceUpdateDraftResponseDefinitionStepObject6) RawJSON() string { return r.JSON.raw }
+func (r *SequenceUpdateDraftResponseDefinitionStepObject6) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -5964,6 +8031,10 @@ type SequenceNewParamsDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type,omitzero" api:"required"`
+	// Always `AGENT` for a step written over the API; may be left out.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode,omitzero"`
 	paramObj
 }
 
@@ -5981,6 +8052,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
 		"type", "EMAIL", "LINKEDIN_MESSAGE",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
+		"mode", "AGENT",
 	)
 }
 
@@ -6001,6 +8075,10 @@ type SequenceNewParamsDefinitionStepObject2 struct {
 	Type string `json:"type,omitzero" api:"required"`
 	// Whether the connection request carries a note. Defaults to false.
 	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	// Always `AGENT` for a step written over the API; may be left out.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode,omitzero"`
 	paramObj
 }
 
@@ -6018,6 +8096,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject2](
 		"type", "LINKEDIN_INVITE",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject2](
+		"mode", "AGENT",
 	)
 }
 
@@ -6530,6 +8611,10 @@ type SequenceUpdateDraftParamsDefinitionStepObject struct {
 	// ID of a step in the current draft to keep. Omit for a new step. Kept steps must
 	// stay in their relative order and keep their type.
 	ID param.Opt[string] `json:"id,omitzero"`
+	// Always `AGENT` for a step written over the API; may be left out.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode,omitzero"`
 	paramObj
 }
 
@@ -6547,6 +8632,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
 		"type", "EMAIL", "LINKEDIN_MESSAGE",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
+		"mode", "AGENT",
 	)
 }
 
@@ -6571,6 +8659,10 @@ type SequenceUpdateDraftParamsDefinitionStepObject2 struct {
 	// Whether the connection request carries a note. Omit to keep the current setting;
 	// a new step defaults to false.
 	IncludeNote param.Opt[bool] `json:"includeNote,omitzero"`
+	// Always `AGENT` for a step written over the API; may be left out.
+	//
+	// Any of "AGENT".
+	Mode string `json:"mode,omitzero"`
 	paramObj
 }
 
@@ -6588,6 +8680,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject2](
 		"type", "LINKEDIN_INVITE",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject2](
+		"mode", "AGENT",
 	)
 }
 
