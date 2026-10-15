@@ -232,8 +232,10 @@ func (r *SequenceService) ListMessages(ctx context.Context, id string, query Seq
 
 // Lists the variables a sequence template may use: the first and last name, the
 // contact’s and its first account’s fields of a type a message can print, and the
-// sender’s name and email. Paste an entry’s `ref` into a send step’s subject or
-// body. Anything else inside `{{ }}` is refused when the draft is saved.
+// sender’s name and email. Use an entry’s `ref` in a send step’s subject or body.
+// A variable needs a fallback for contacts missing the value: `{{ {attr:ad_…} }}`
+// is written `{{ coalesce({attr:ad_…}, "fallback") }}`, and one without a fallback
+// is refused when the draft is saved. Anything else inside `{{ }}` is refused too.
 //
 // **[Required scopes](/using-the-api/scopes/):** `sequences:read`, `contacts:read`
 // and `accounts:read`
@@ -3832,8 +3834,10 @@ type SequenceListTemplateVariablesResponseData struct {
 	Group string `json:"group" api:"required"`
 	// Name of the variable, as the editor shows it.
 	Label string `json:"label" api:"required"`
-	// The exact text to paste into a template subject or body, e.g.
-	// `{{ {attr:ad_…} }}`.
+	// The variable, e.g. `{{ {attr:ad_…} }}`. A variable needs a fallback for contacts
+	// missing the value: `{{ {attr:ad_…} }}` is written
+	// `{{ coalesce({attr:ad_…}, "fallback") }}`, and one without a fallback is refused
+	// when the draft is saved.
 	Ref string `json:"ref" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
