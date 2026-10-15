@@ -98,11 +98,11 @@ func (r *EmailService) Delete(ctx context.Context, id string, body EmailDeletePa
 	return res, err
 }
 
-// Creates a draft in the connected email account that owns the `from` address.
-// Mirrors native email-client behavior: only `from` is required — `to`, `cc`,
-// `bcc`, `subject`, `messageBody`, and `attachments` are all optional. At least
-// one of those optional fields must be populated; sending only `from` returns
-// a 400.
+// Creates a draft in the connected email account that owns the `from` address (its
+// primary address or one of its verified aliases). Mirrors native email-client
+// behavior: only `from` is required — `to`, `cc`, `bcc`, `subject`, `messageBody`,
+// and `attachments` are all optional. At least one of those optional fields must
+// be populated; sending only `from` returns a 400.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -163,8 +163,9 @@ func (r *EmailService) Restore(ctx context.Context, id string, body EmailRestore
 	return res, err
 }
 
-// Sends an email via the connected email account that owns the `from` address.
-// Currently supports new sends only; replies and forwards are not yet supported.
+// Sends an email via the connected email account that owns the `from` address (its
+// primary address or one of its verified aliases). Currently supports new sends
+// only; replies and forwards are not yet supported.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -1949,9 +1950,9 @@ func (r *EmailDeleteParamsBody) UnmarshalJSON(data []byte) error {
 }
 
 type EmailDraftParams struct {
-	// Bare email address (no display name). Must match a connected email account owned
-	// by the API key user. Compared case-insensitively. Mailbox where the draft is
-	// created.
+	// Bare email address (no display name). The primary address or a verified alias of
+	// a connected email account owned by the API key user. Compared
+	// case-insensitively. Mailbox where the draft is created.
 	From string `json:"from" api:"required"`
 	// Email subject.
 	Subject param.Opt[string] `json:"subject,omitzero"`
@@ -2116,9 +2117,9 @@ func (r *EmailRestoreParamsBody) UnmarshalJSON(data []byte) error {
 }
 
 type EmailSendParams struct {
-	// Bare email address (no display name). Must match a connected email account owned
-	// by the API key user. Compared case-insensitively. Used as the From header when
-	// sending.
+	// Bare email address (no display name). The primary address or a verified alias of
+	// a connected email account owned by the API key user. Compared
+	// case-insensitively. Used as the From header when sending.
 	From string `json:"from" api:"required"`
 	// Email message body (HTML or plain text).
 	MessageBody EmailSendParamsMessageBody `json:"messageBody,omitzero" api:"required"`
