@@ -2582,8 +2582,9 @@ func (u *MeetingNewParamsRelationshipsTranscriptUnion) UnmarshalJSON(data []byte
 }
 
 type MeetingUpdateParams struct {
-	// Field values to update. Only `$privacySetting` and `$attendeeEmails` are
-	// writable, and omitted fields are left unchanged.
+	// Field values to update. Only `$privacySetting`, `$attendeeEmails`,
+	// `$meetingPrep` and `$postMeetingSummary` are writable, and omitted fields are
+	// left unchanged.
 	Fields MeetingUpdateParamsFields `json:"fields,omitzero"`
 	// Relationship operations to apply. Only `$transcript.replace` is supported;
 	// removing or clearing `$transcript` is not supported.
@@ -2599,9 +2600,16 @@ func (r *MeetingUpdateParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Field values to update. Only `$privacySetting` and `$attendeeEmails` are
-// writable, and omitted fields are left unchanged.
+// Field values to update. Only `$privacySetting`, `$attendeeEmails`,
+// `$meetingPrep` and `$postMeetingSummary` are writable, and omitted fields are
+// left unchanged.
 type MeetingUpdateParamsFields struct {
+	// The meeting prep, as Markdown. Lightfield regenerates it as new activity
+	// arrives, which replaces an edit; null or an empty string clears it until then.
+	MeetingPrep param.Opt[string] `json:"$meetingPrep,omitzero"`
+	// The meeting summary, as Markdown. Lightfield regenerates it as new activity
+	// arrives, which replaces an edit; null or an empty string clears it until then.
+	PostMeetingSummary param.Opt[string] `json:"$postMeetingSummary,omitzero"`
 	// The privacy setting for the meeting.
 	//
 	// Any of "FULL", "METADATA".

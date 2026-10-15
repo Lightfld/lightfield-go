@@ -91,8 +91,10 @@ func TestMeetingUpdateWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.MeetingUpdateParams{
 			Fields: githubcomlightfldlightfieldgo.MeetingUpdateParamsFields{
-				AttendeeEmails: []string{"string"},
-				PrivacySetting: "FULL",
+				AttendeeEmails:     []string{"string"},
+				MeetingPrep:        githubcomlightfldlightfieldgo.String("$meetingPrep"),
+				PostMeetingSummary: githubcomlightfldlightfieldgo.String("$postMeetingSummary"),
+				PrivacySetting:     "FULL",
 			},
 			Relationships: githubcomlightfldlightfieldgo.MeetingUpdateParamsRelationships{
 				Transcript: githubcomlightfldlightfieldgo.MeetingUpdateParamsRelationshipsTranscript{
