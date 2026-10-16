@@ -353,6 +353,43 @@ func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ..
 	return res, err
 }
 
+// Tries the sequence on one contact without sending anything: the contact is
+// enrolled in a test, its steps run back to back with waits skipped, and each
+// message is composed from the contact’s real data and kept as a draft. Use it to
+// check what a step, a template variable or its fallback produces before
+// publishing.
+//
+// Tests the open draft when there is one or the sequence has never been published,
+// otherwise the published version; `target` in the response says which. Send
+// `expectedVersion` to test exactly the draft you last read. The test continues
+// after the response, so the request returns right away with status `RUNNING`.
+//
+// Returns 400 `invalid_configuration` with `invalidContacts` naming a contact that
+// does not exist or lacks what a step needs (an email address, a LinkedIn URL or a
+// phone number), or with `issues` when the draft cannot run, 400
+// `permissions_not_granted` when the draft has agent steps whose permissions are
+// not granted (grant them in Lightfield), 400 `no_selectable_sender` when a
+// channel has no available sender, and 409 when `expectedVersion` is not the open
+// draft’s `version`; retrieve the draft and retry. See
+// <u>[Sequence errors](/using-the-api/errors/#sequence-errors)</u>.
+//
+// Each call creates a test enrollment and drafts, and agent steps use model
+// credits.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *SequenceService) StartTest(ctx context.Context, id string, body SequenceStartTestParams, opts ...option.RequestOption) (res *SequenceStartTestResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/tests", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Saves changes to the sequence’s open draft, or opens one from the published
 // version when none is open. Only the fields sent are changed; `definition.steps`
 // replaces the whole step list. Changes take effect when the draft is published.
@@ -7086,6 +7123,53 @@ const (
 	SequenceRetrieveResponseStatusDeactivated SequenceRetrieveResponseStatus = "DEACTIVATED"
 )
 
+type SequenceStartTestResponse struct {
+	// ID of the test, an enrollment ID. Use it to read the result.
+	ID string `json:"id" api:"required"`
+	// ID of the contact being tested.
+	ContactID string `json:"contactId" api:"required"`
+	// Always `RUNNING`: the test continues after the response.
+	//
+	// Any of "RUNNING".
+	Status SequenceStartTestResponseStatus `json:"status" api:"required"`
+	// Which version is being tested: the open `DRAFT` when there is one or the
+	// sequence was never published, otherwise the `PUBLISHED` version.
+	//
+	// Any of "DRAFT", "PUBLISHED".
+	Target SequenceStartTestResponseTarget `json:"target" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ContactID   respjson.Field
+		Status      respjson.Field
+		Target      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceStartTestResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceStartTestResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Always `RUNNING`: the test continues after the response.
+type SequenceStartTestResponseStatus string
+
+const (
+	SequenceStartTestResponseStatusRunning SequenceStartTestResponseStatus = "RUNNING"
+)
+
+// Which version is being tested: the open `DRAFT` when there is one or the
+// sequence was never published, otherwise the `PUBLISHED` version.
+type SequenceStartTestResponseTarget string
+
+const (
+	SequenceStartTestResponseTargetDraft     SequenceStartTestResponseTarget = "DRAFT"
+	SequenceStartTestResponseTargetPublished SequenceStartTestResponseTarget = "PUBLISHED"
+)
+
 type SequenceUpdateDraftResponse struct {
 	// Channels the draft's steps send on.
 	//
@@ -8666,6 +8750,25 @@ type SequenceGetMessageParams struct {
 	// Unique identifier of the sequence.
 	ID string `path:"id" api:"required" json:"-"`
 	paramObj
+}
+
+type SequenceStartTestParams struct {
+	// ID of the contact to test the sequence on. The test composes each message from
+	// this contact’s real data and sends nothing.
+	ContactID string `json:"contactId" api:"required"`
+	// The open draft’s `version` as last read. When sent, the test runs exactly that
+	// draft, and is refused with 409 if the draft has changed or none is open. Omit it
+	// to test whatever is open now.
+	ExpectedVersion param.Opt[string] `json:"expectedVersion,omitzero"`
+	paramObj
+}
+
+func (r SequenceStartTestParams) MarshalJSON() (data []byte, err error) {
+	type shadow SequenceStartTestParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *SequenceStartTestParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type SequenceUpdateDraftParams struct {
