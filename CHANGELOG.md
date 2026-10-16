@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.12.0](https://github.com/Lightfld/lightfield-go/compare/v0.11.0...v0.12.0) (2026-10-16)
+
+
+### Features
+
+* **sequences:** cap and rate-limit sequence test starts per workspace over REST (Close LFD-29075) ([8cbab95](https://github.com/Lightfld/lightfield-go/commit/8cbab95adfa56f12f2693aa8d98fbcfc7c9af6d4))
+* **sequences:** list the variables a sequence template may use ([a084235](https://github.com/Lightfld/lightfield-go/commit/a08423544dfcbb2477cb51ea3cd8c540d7f5cece))
+* **sequences:** read a sequence test run's result over REST ([ef6befd](https://github.com/Lightfld/lightfield-go/commit/ef6befd4ce7fe28dcfe432a6bb0fa3349a4891fc))
+* **sequences:** start a sequence test run over REST ([c075357](https://github.com/Lightfld/lightfield-go/commit/c07535797f6c4a6304a229918f9292285d563c40))
+
+
+### Bug Fixes
+
+* **sequences:** document that a listed template variable ref needs a coalesce fallback ([4f38862](https://github.com/Lightfld/lightfield-go/commit/4f3886224fe1f44ac8785074feceaf9c7bd8255f))
+
 ## [0.11.0](https://github.com/Lightfld/lightfield-go/compare/v0.10.0...v0.11.0) (2026-09-17)
 
 
