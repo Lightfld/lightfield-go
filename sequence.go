@@ -353,6 +353,43 @@ func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ..
 	return res, err
 }
 
+// Retrieves the result of a test started with
+// [Start a sequence test](/api/resources/sequence/methods/startTest): its status,
+// and for every step of the tested version whether it composed a message, was
+// skipped or failed. Poll it until `status` is `COMPLETED` or `FAILED`.
+//
+// An email step’s message is its subject and a markdown body, and a LinkedIn
+// step’s message is its text. A step that failed carries the reason under `error`;
+// a template step whose variable could not be filled for the contact fails this
+// way, naming the fields. Steps that have not run are `PENDING`, including a step
+// a finished test never reached; a step that produced nothing is `SKIPPED`. A test
+// never waits, so a wait is always `SKIPPED`; a send step is `SKIPPED` when it has
+// nothing to send, such as a LinkedIn invite another step already sent. A test
+// never sends anything.
+//
+// Returns 404 for a test that does not exist, belongs to another sequence, or is a
+// live enrollment: use
+// [Retrieve a sequence enrollment](/api/resources/sequence/methods/retrieveEnrollment)
+// for those.
+//
+// **[Required scope](/using-the-api/scopes/):** `sequences:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *SequenceService) GetTest(ctx context.Context, testID string, query SequenceGetTestParams, opts ...option.RequestOption) (res *SequenceRetrieveTestResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if query.ID == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	if testID == "" {
+		err = errors.New("missing required testId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/sequences/%s/tests/%s", url.PathEscape(query.ID), url.PathEscape(testID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Tries the sequence on one contact without sending anything: the contact is
 // enrolled in a test, its steps run back to back with waits skipped, and each
 // message is composed from the contact’s real data and kept as a draft. Use it to
@@ -7123,6 +7160,200 @@ const (
 	SequenceRetrieveResponseStatusDeactivated SequenceRetrieveResponseStatus = "DEACTIVATED"
 )
 
+type SequenceRetrieveTestResponse struct {
+	// ID of the test, an enrollment ID.
+	ID string `json:"id" api:"required"`
+	// ID of the contact tested.
+	ContactID string `json:"contactId" api:"required"`
+	// `RUNNING` until every step has finished, then `COMPLETED`, or `FAILED` when the
+	// test ended on a failure.
+	//
+	// Any of "RUNNING", "COMPLETED", "FAILED".
+	Status SequenceRetrieveTestResponseStatus `json:"status" api:"required"`
+	// Every step of the tested version that the Sequences API lists, in run order.
+	// Call steps are not part of the API yet, so a test reports nothing for them.
+	Steps []SequenceRetrieveTestResponseStep `json:"steps" api:"required"`
+	// Which version was tested.
+	//
+	// Any of "DRAFT", "PUBLISHED".
+	Target SequenceRetrieveTestResponseTarget `json:"target" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		ContactID   respjson.Field
+		Status      respjson.Field
+		Steps       respjson.Field
+		Target      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveTestResponse) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveTestResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// `RUNNING` until every step has finished, then `COMPLETED`, or `FAILED` when the
+// test ended on a failure.
+type SequenceRetrieveTestResponseStatus string
+
+const (
+	SequenceRetrieveTestResponseStatusRunning   SequenceRetrieveTestResponseStatus = "RUNNING"
+	SequenceRetrieveTestResponseStatusCompleted SequenceRetrieveTestResponseStatus = "COMPLETED"
+	SequenceRetrieveTestResponseStatusFailed    SequenceRetrieveTestResponseStatus = "FAILED"
+)
+
+type SequenceRetrieveTestResponseStep struct {
+	// Why the step failed; null unless `outcome` is `FAILED`.
+	Error SequenceRetrieveTestResponseStepError `json:"error" api:"required"`
+	// The composed message; null when the step has not composed one.
+	Message SequenceRetrieveTestResponseStepMessageUnion `json:"message" api:"required"`
+	// How a send step’s content is composed; null for a wait step.
+	//
+	// Any of "AGENT", "TEMPLATE".
+	Mode string `json:"mode" api:"required"`
+	// Name of the step, as in `definition.steps`; null for a wait step.
+	Name string `json:"name" api:"required"`
+	// `PENDING` while the step has not run, including a step a finished test never
+	// reached, `COMPOSED` when it produced a message, `SKIPPED` when it produced
+	// nothing: a test never waits, so a wait is always `SKIPPED`, and a send step is
+	// `SKIPPED` when it has nothing to send, such as a LinkedIn invite another step
+	// already sent. `FAILED` when it failed: see `error`.
+	//
+	// Any of "PENDING", "COMPOSED", "SKIPPED", "FAILED".
+	Outcome string `json:"outcome" api:"required"`
+	// ID of the step, as in the sequence’s `definition.steps`.
+	StepID string `json:"stepId" api:"required"`
+	// Step type.
+	//
+	// Any of "EMAIL", "LINKEDIN_MESSAGE", "LINKEDIN_INVITE", "WAIT",
+	// "WAIT_FOR_CONNECTION".
+	Type string `json:"type" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Error       respjson.Field
+		Message     respjson.Field
+		Mode        respjson.Field
+		Name        respjson.Field
+		Outcome     respjson.Field
+		StepID      respjson.Field
+		Type        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveTestResponseStep) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveTestResponseStep) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Why the step failed; null unless `outcome` is `FAILED`.
+type SequenceRetrieveTestResponseStepError struct {
+	// `CONFIGURATION_ERROR` when the sequence or the contact needs a change,
+	// `SYSTEM_ERROR` when Lightfield failed.
+	//
+	// Any of "CONFIGURATION_ERROR", "SYSTEM_ERROR".
+	Code string `json:"code" api:"required"`
+	// What went wrong, in plain words.
+	Message string `json:"message" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Code        respjson.Field
+		Message     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveTestResponseStepError) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveTestResponseStepError) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// SequenceRetrieveTestResponseStepMessageUnion contains all possible properties
+// and values from [SequenceRetrieveTestResponseStepMessageEmailMessage],
+// [SequenceRetrieveTestResponseStepMessageLinkedInMessage].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type SequenceRetrieveTestResponseStepMessageUnion struct {
+	Body string `json:"body"`
+	// This field is from variant
+	// [SequenceRetrieveTestResponseStepMessageEmailMessage].
+	Subject string `json:"subject"`
+	JSON    struct {
+		Body    respjson.Field
+		Subject respjson.Field
+		raw     string
+	} `json:"-"`
+}
+
+func (u SequenceRetrieveTestResponseStepMessageUnion) AsEmailMessage() (v SequenceRetrieveTestResponseStepMessageEmailMessage) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u SequenceRetrieveTestResponseStepMessageUnion) AsLinkedInMessage() (v SequenceRetrieveTestResponseStepMessageLinkedInMessage) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u SequenceRetrieveTestResponseStepMessageUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *SequenceRetrieveTestResponseStepMessageUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveTestResponseStepMessageEmailMessage struct {
+	// Body as markdown, the same form a template step reads back in.
+	Body string `json:"body" api:"required"`
+	// Subject line, as composed.
+	Subject string `json:"subject" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		Subject     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveTestResponseStepMessageEmailMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveTestResponseStepMessageEmailMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type SequenceRetrieveTestResponseStepMessageLinkedInMessage struct {
+	// Message text, as composed.
+	Body string `json:"body" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Body        respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r SequenceRetrieveTestResponseStepMessageLinkedInMessage) RawJSON() string { return r.JSON.raw }
+func (r *SequenceRetrieveTestResponseStepMessageLinkedInMessage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Which version was tested.
+type SequenceRetrieveTestResponseTarget string
+
+const (
+	SequenceRetrieveTestResponseTargetDraft     SequenceRetrieveTestResponseTarget = "DRAFT"
+	SequenceRetrieveTestResponseTargetPublished SequenceRetrieveTestResponseTarget = "PUBLISHED"
+)
+
 type SequenceStartTestResponse struct {
 	// ID of the test, an enrollment ID. Use it to read the result.
 	ID string `json:"id" api:"required"`
@@ -8747,6 +8978,12 @@ type SequenceGetEnrollmentParams struct {
 }
 
 type SequenceGetMessageParams struct {
+	// Unique identifier of the sequence.
+	ID string `path:"id" api:"required" json:"-"`
+	paramObj
+}
+
+type SequenceGetTestParams struct {
 	// Unique identifier of the sequence.
 	ID string `path:"id" api:"required" json:"-"`
 	paramObj
