@@ -406,8 +406,11 @@ func (r *SequenceService) GetTest(ctx context.Context, testID string, query Sequ
 // phone number), or with `issues` when the draft cannot run, 400
 // `permissions_not_granted` when the draft has agent steps whose permissions are
 // not granted (grant them in Lightfield), 400 `no_selectable_sender` when a
-// channel has no available sender, and 409 when `expectedVersion` is not the open
-// draft’s `version`; retrieve the draft and retry. See
+// channel has no available sender, 409 when `expectedVersion` is not the open
+// draft’s `version`; retrieve the draft and retry, and 429 when a test limit is
+// reached, with a message naming it: the workspace already has 10 tests running
+// (retry once one is `COMPLETED` or `FAILED`), or it started more than 5 tests a
+// minute (retry after `Retry-After` seconds). See
 // <u>[Sequence errors](/using-the-api/errors/#sequence-errors)</u>.
 //
 // Each call creates a test enrollment and drafts, and agent steps use model
