@@ -114,9 +114,9 @@ func (r *SenderService) List(ctx context.Context, query SenderListParams, opts .
 // Clears `healthReason` `BOUNCE_THRESHOLD`, `RATE_LIMIT`, `INVITE_LIMIT` on an
 // email sender, and `RATE_LIMIT`, `INVITE_LIMIT`, `UNKNOWN` on a LinkedIn sender.
 // Clearing `BOUNCE_THRESHOLD` turns bounce protection off until hard bounces
-// recur. Contacts the sender paused stay paused until they are resumed, and a
-// LinkedIn limit may also have deactivated sequences that list the sender;
-// clearing it does not reactivate them.
+// recur. Contacts the sender paused on their own resume once it can send again,
+// unless another sender they are pinned to still cannot. Sequences an earlier
+// LinkedIn limit deactivated stay deactivated until they are resumed.
 //
 // Returns 409 for any other health reason, which clears only once its cause is
 // fixed, for example reconnecting the account or fixing DNS; for an archived
