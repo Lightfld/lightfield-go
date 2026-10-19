@@ -76,7 +76,8 @@ type Client struct {
 	Message MessageService
 	// Channels represent chat channels synced from connected providers (Slack,
 	// Microsoft Teams, LinkedIn) in Lightfield. Read responses are visibility-aware:
-	// callers only see channels they have access to.
+	// callers only see channels they have access to. `$includeInCrm` can be updated
+	// only by the channel owner.
 	Channel ChannelService
 	// Enrichment fills in missing information on a record from Lightfield's data
 	// providers.
