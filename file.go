@@ -151,6 +151,11 @@ func (r *FileService) Complete(ctx context.Context, id string, body FileComplete
 // `COMPLETED` status. Works for any retrievable file id, including files uploaded
 // through the app.
 //
+// Synced email attachments are fetched from the mail provider on first download.
+// If the provider fails, the call returns `502` with code
+// `mail_attachment_provider_unavailable`. Retry with backoff, and stop after a few
+// attempts: some attachments fail on every request.
+//
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
