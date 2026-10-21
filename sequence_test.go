@@ -38,10 +38,10 @@ func TestSequenceNewWithOptionalParams(t *testing.T) {
 				},
 			}},
 			Messaging: githubcomlightfldlightfieldgo.SequenceNewParamsDefinitionMessaging{
-				CallToAction: githubcomlightfldlightfieldgo.String("x"),
-				Persona:      githubcomlightfldlightfieldgo.String("x"),
-				Trigger:      githubcomlightfldlightfieldgo.String("x"),
-				ValueProp:    githubcomlightfldlightfieldgo.String("x"),
+				CallToAction: githubcomlightfldlightfieldgo.String("P"),
+				Persona:      githubcomlightfldlightfieldgo.String("P"),
+				Trigger:      githubcomlightfldlightfieldgo.String("P"),
+				ValueProp:    githubcomlightfldlightfieldgo.String("P"),
 			},
 			Pacing: githubcomlightfldlightfieldgo.SequenceNewParamsDefinitionPacing{
 				Email: githubcomlightfldlightfieldgo.SequenceNewParamsDefinitionPacingEmail{
@@ -490,10 +490,10 @@ func TestSequenceUpdateDraftWithOptionalParams(t *testing.T) {
 			Definition: githubcomlightfldlightfieldgo.SequenceUpdateDraftParamsDefinition{
 				Description: githubcomlightfldlightfieldgo.String("x"),
 				Messaging: githubcomlightfldlightfieldgo.SequenceUpdateDraftParamsDefinitionMessaging{
-					CallToAction: githubcomlightfldlightfieldgo.String("x"),
-					Persona:      githubcomlightfldlightfieldgo.String("x"),
-					Trigger:      githubcomlightfldlightfieldgo.String("x"),
-					ValueProp:    githubcomlightfldlightfieldgo.String("x"),
+					CallToAction: githubcomlightfldlightfieldgo.String("P"),
+					Persona:      githubcomlightfldlightfieldgo.String("P"),
+					Trigger:      githubcomlightfldlightfieldgo.String("P"),
+					ValueProp:    githubcomlightfldlightfieldgo.String("P"),
 				},
 				Pacing: githubcomlightfldlightfieldgo.SequenceUpdateDraftParamsDefinitionPacing{
 					Email: githubcomlightfldlightfieldgo.SequenceUpdateDraftParamsDefinitionPacingEmail{
