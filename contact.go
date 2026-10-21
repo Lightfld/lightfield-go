@@ -65,12 +65,14 @@ func (r *ContactService) New(ctx context.Context, body ContactNewParams, opts ..
 	return res, err
 }
 
-// Retrieves a single contact by its ID.
+// Retrieves a single contact by its ID. A record you may see by name only is
+// returned as `{ id, restricted: { name, reason } }`, with no `fields` or
+// `relationships`; check for `restricted` before reading them.
 //
 // **[Required scope](/using-the-api/scopes/):** `contacts:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *ContactService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactRetrieveResponse, err error) {
+func (r *ContactService) Get(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactRetrieveResponseUnion, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if id == "" {
 		err = errors.New("missing required id parameter")
@@ -159,7 +161,9 @@ func (r *ContactService) Definitions(ctx context.Context, opts ...option.Request
 // Consecutive identical values are collapsed. History is cursor-paginated: pass
 // `nextCursor` from the previous response as `after` to page through older values.
 // Only attribute-backed fields (custom attributes and attribute-backed system
-// fields) have history — column-backed system fields return an error.
+// fields) have history — column-backed system fields return an error. A record you
+// may see by name only has no visible history and returns 404, like a record that
+// does not exist.
 //
 // **[Required scope](/using-the-api/scopes/):** `contacts:read`
 //
@@ -1930,14 +1934,64 @@ func (r *ContactRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(dat
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactRetrieveResponse struct {
+// ContactRetrieveResponseUnion contains all possible properties and values from
+// [ContactRetrieveResponseEntity], [ContactRetrieveResponseRestricted].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type ContactRetrieveResponseUnion struct {
+	ID string `json:"id"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	CreatedAt string `json:"createdAt"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	Fields map[string]ContactRetrieveResponseEntityField `json:"fields"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	HTTPLink string `json:"httpLink"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	Relationships map[string]ContactRetrieveResponseEntityRelationship `json:"relationships"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	UpdatedAt string `json:"updatedAt"`
+	// This field is from variant [ContactRetrieveResponseEntity].
+	ExternalID string `json:"externalId"`
+	// This field is from variant [ContactRetrieveResponseRestricted].
+	Restricted ContactRetrieveResponseRestrictedRestricted `json:"restricted"`
+	JSON       struct {
+		ID            respjson.Field
+		CreatedAt     respjson.Field
+		Fields        respjson.Field
+		HTTPLink      respjson.Field
+		Relationships respjson.Field
+		UpdatedAt     respjson.Field
+		ExternalID    respjson.Field
+		Restricted    respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+func (u ContactRetrieveResponseUnion) AsEntity() (v ContactRetrieveResponseEntity) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactRetrieveResponseUnion) AsRestricted() (v ContactRetrieveResponseRestricted) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ContactRetrieveResponseUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *ContactRetrieveResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactRetrieveResponseEntity struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
 	// ISO 8601 timestamp of when the entity was created.
 	CreatedAt string `json:"createdAt" api:"required"`
 	// Map of field names to their typed values. System fields are prefixed with `$`
 	// (e.g. `$name`, `$email`); custom attributes use their bare slug.
-	Fields map[string]ContactRetrieveResponseField `json:"fields" api:"required"`
+	Fields map[string]ContactRetrieveResponseEntityField `json:"fields" api:"required"`
 	// URL to view the entity in the Lightfield web app, or null.
 	HTTPLink string `json:"httpLink" api:"required"`
 	// Map of relationship names to their associated entities. System relationships are
@@ -1945,7 +1999,7 @@ type ContactRetrieveResponse struct {
 	// keeps its merged values and includes optional directional values. List filters
 	// select the current record's role with `:asSource` or `:asDestination`, for
 	// example `?parent:asSource[contains]=account_id`.
-	Relationships map[string]ContactRetrieveResponseRelationship `json:"relationships" api:"required"`
+	Relationships map[string]ContactRetrieveResponseEntityRelationship `json:"relationships" api:"required"`
 	// ISO 8601 timestamp of when the entity was last updated, or null.
 	UpdatedAt string `json:"updatedAt" api:"required"`
 	// External identifier for the entity, or null if unset.
@@ -1965,14 +2019,14 @@ type ContactRetrieveResponse struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponse) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponse) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntity) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntity) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactRetrieveResponseField struct {
+type ContactRetrieveResponseEntityField struct {
 	// The field value, or null if unset.
-	Value ContactRetrieveResponseFieldValueUnion `json:"value" api:"required"`
+	Value ContactRetrieveResponseEntityFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
 	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
@@ -1989,21 +2043,21 @@ type ContactRetrieveResponseField struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseField) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseField) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityField) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntityField) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// ContactRetrieveResponseFieldValueUnion contains all possible properties and
-// values from [string], [float64], [bool], [[]string],
-// [ContactRetrieveResponseFieldValueAddress],
-// [ContactRetrieveResponseFieldValueFullName].
+// ContactRetrieveResponseEntityFieldValueUnion contains all possible properties
+// and values from [string], [float64], [bool], [[]string],
+// [ContactRetrieveResponseEntityFieldValueAddress],
+// [ContactRetrieveResponseEntityFieldValueFullName].
 //
 // Use the methods beginning with 'As' to cast the union to one of its variants.
 //
 // If the underlying value is not a json object, one of the following properties
 // will be valid: OfString OfFloat OfBool OfStringArray]
-type ContactRetrieveResponseFieldValueUnion struct {
+type ContactRetrieveResponseEntityFieldValueUnion struct {
 	// This field will be present if the value is a [string] instead of an object.
 	OfString string `json:",inline"`
 	// This field will be present if the value is a [float64] instead of an object.
@@ -2012,25 +2066,25 @@ type ContactRetrieveResponseFieldValueUnion struct {
 	OfBool bool `json:",inline"`
 	// This field will be present if the value is a [[]string] instead of an object.
 	OfStringArray []string `json:",inline"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	City string `json:"city"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	Country string `json:"country"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	Latitude float64 `json:"latitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	Longitude float64 `json:"longitude"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	PostalCode string `json:"postalCode"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	State string `json:"state"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	Street string `json:"street"`
-	// This field is from variant [ContactRetrieveResponseFieldValueAddress].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueAddress].
 	Street2 string `json:"street2"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueFullName].
 	FirstName string `json:"firstName"`
-	// This field is from variant [ContactRetrieveResponseFieldValueFullName].
+	// This field is from variant [ContactRetrieveResponseEntityFieldValueFullName].
 	LastName string `json:"lastName"`
 	JSON     struct {
 		OfString      respjson.Field
@@ -2051,44 +2105,44 @@ type ContactRetrieveResponseFieldValueUnion struct {
 	} `json:"-"`
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsString() (v string) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsString() (v string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsFloat() (v float64) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsFloat() (v float64) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsBool() (v bool) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsBool() (v bool) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsStringArray() (v []string) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsStringArray() (v []string) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsAddress() (v ContactRetrieveResponseFieldValueAddress) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsAddress() (v ContactRetrieveResponseEntityFieldValueAddress) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
-func (u ContactRetrieveResponseFieldValueUnion) AsFullName() (v ContactRetrieveResponseFieldValueFullName) {
+func (u ContactRetrieveResponseEntityFieldValueUnion) AsFullName() (v ContactRetrieveResponseEntityFieldValueFullName) {
 	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
 	return
 }
 
 // Returns the unmodified JSON received from the API
-func (u ContactRetrieveResponseFieldValueUnion) RawJSON() string { return u.JSON.raw }
+func (u ContactRetrieveResponseEntityFieldValueUnion) RawJSON() string { return u.JSON.raw }
 
-func (r *ContactRetrieveResponseFieldValueUnion) UnmarshalJSON(data []byte) error {
+func (r *ContactRetrieveResponseEntityFieldValueUnion) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactRetrieveResponseFieldValueAddress struct {
+type ContactRetrieveResponseEntityFieldValueAddress struct {
 	// City name.
 	City string `json:"city" api:"nullable"`
 	// 2-letter ISO 3166-1 alpha-2 country code.
@@ -2121,12 +2175,12 @@ type ContactRetrieveResponseFieldValueAddress struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueAddress) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueAddress) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityFieldValueAddress) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntityFieldValueAddress) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactRetrieveResponseFieldValueFullName struct {
+type ContactRetrieveResponseEntityFieldValueFullName struct {
 	// The contact's first name.
 	FirstName string `json:"firstName" api:"nullable"`
 	// The contact's last name.
@@ -2141,12 +2195,12 @@ type ContactRetrieveResponseFieldValueFullName struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseFieldValueFullName) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseFieldValueFullName) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityFieldValueFullName) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntityFieldValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type ContactRetrieveResponseRelationship struct {
+type ContactRetrieveResponseEntityRelationship struct {
 	// Whether the relationship is `has_one` or `has_many`.
 	Cardinality string `json:"cardinality" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
@@ -2156,7 +2210,7 @@ type ContactRetrieveResponseRelationship struct {
 	// Directional values for a self-referential relationship. List filters use the
 	// relationship key with `:asSource` or `:asDestination`; writes continue to use
 	// the bare key.
-	Directions ContactRetrieveResponseRelationshipDirections `json:"directions"`
+	Directions ContactRetrieveResponseEntityRelationshipDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Cardinality respjson.Field
@@ -2169,19 +2223,19 @@ type ContactRetrieveResponseRelationship struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationship) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseRelationship) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityRelationship) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntityRelationship) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // Directional values for a self-referential relationship. List filters use the
 // relationship key with `:asSource` or `:asDestination`; writes continue to use
 // the bare key.
-type ContactRetrieveResponseRelationshipDirections struct {
+type ContactRetrieveResponseEntityRelationshipDirections struct {
 	// The current record is the destination (incoming) endpoint.
-	AsDestination ContactRetrieveResponseRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
+	AsDestination ContactRetrieveResponseEntityRelationshipDirectionsAsDestination `json:"asDestination" api:"required"`
 	// The current record is the source (outgoing) endpoint.
-	AsSource ContactRetrieveResponseRelationshipDirectionsAsSource `json:"asSource" api:"required"`
+	AsSource ContactRetrieveResponseEntityRelationshipDirectionsAsSource `json:"asSource" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		AsDestination respjson.Field
@@ -2192,13 +2246,13 @@ type ContactRetrieveResponseRelationshipDirections struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationshipDirections) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseRelationshipDirections) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityRelationshipDirections) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseEntityRelationshipDirections) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // The current record is the destination (incoming) endpoint.
-type ContactRetrieveResponseRelationshipDirectionsAsDestination struct {
+type ContactRetrieveResponseEntityRelationshipDirectionsAsDestination struct {
 	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -2215,15 +2269,15 @@ type ContactRetrieveResponseRelationshipDirectionsAsDestination struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationshipDirectionsAsDestination) RawJSON() string {
+func (r ContactRetrieveResponseEntityRelationshipDirectionsAsDestination) RawJSON() string {
 	return r.JSON.raw
 }
-func (r *ContactRetrieveResponseRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+func (r *ContactRetrieveResponseEntityRelationshipDirectionsAsDestination) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
 // The current record is the source (outgoing) endpoint.
-type ContactRetrieveResponseRelationshipDirectionsAsSource struct {
+type ContactRetrieveResponseEntityRelationshipDirectionsAsSource struct {
 	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -2240,8 +2294,55 @@ type ContactRetrieveResponseRelationshipDirectionsAsSource struct {
 }
 
 // Returns the unmodified JSON received from the API
-func (r ContactRetrieveResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
-func (r *ContactRetrieveResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+func (r ContactRetrieveResponseEntityRelationshipDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactRetrieveResponseEntityRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactRetrieveResponseRestricted struct {
+	// Unique identifier for the record, the same ID a full response carries.
+	ID string `json:"id" api:"required"`
+	// Present only on a record the caller may see by name only. Check for it before
+	// reading `fields` or `relationships`, which a restricted record does not carry.
+	Restricted ContactRetrieveResponseRestrictedRestricted `json:"restricted" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Restricted  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactRetrieveResponseRestricted) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseRestricted) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Present only on a record the caller may see by name only. Check for it before
+// reading `fields` or `relationships`, which a restricted record does not carry.
+type ContactRetrieveResponseRestrictedRestricted struct {
+	// The record's display name, or its ID when it has none.
+	Name string `json:"name" api:"required"`
+	// Why the record is shown by name only.
+	//
+	// Any of "NO_ACCESS", "INHERITED".
+	Reason string `json:"reason" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Name        respjson.Field
+		Reason      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactRetrieveResponseRestrictedRestricted) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrieveResponseRestrictedRestricted) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
