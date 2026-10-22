@@ -134,7 +134,9 @@ type MemberListResponseDataFields struct {
 	Email MemberListResponseDataFieldsEmail `json:"$email" api:"required"`
 	// The member's full name.
 	Name MemberListResponseDataFieldsName `json:"$name" api:"required"`
-	// URL of the member's profile image, or null if unset.
+	// URL of the picture Lightfield shows for the member, or null if there is none. A
+	// picture Lightfield stores is a signed link that expires within an hour, so fetch
+	// the member again rather than saving the URL.
 	ProfileImage MemberListResponseDataFieldsProfileImage `json:"$profileImage" api:"required"`
 	// The member's workspace role.
 	Role MemberListResponseDataFieldsRole `json:"$role" api:"required"`
@@ -220,7 +222,9 @@ func (r *MemberListResponseDataFieldsNameValue) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// URL of the member's profile image, or null if unset.
+// URL of the picture Lightfield shows for the member, or null if there is none. A
+// picture Lightfield stores is a signed link that expires within an hour, so fetch
+// the member again rather than saving the URL.
 type MemberListResponseDataFieldsProfileImage struct {
 	// The field value, or null if unset.
 	Value string `json:"value" api:"required"`
@@ -350,7 +354,9 @@ type MemberRetrieveResponseFields struct {
 	Email MemberRetrieveResponseFieldsEmail `json:"$email" api:"required"`
 	// The member's full name.
 	Name MemberRetrieveResponseFieldsName `json:"$name" api:"required"`
-	// URL of the member's profile image, or null if unset.
+	// URL of the picture Lightfield shows for the member, or null if there is none. A
+	// picture Lightfield stores is a signed link that expires within an hour, so fetch
+	// the member again rather than saving the URL.
 	ProfileImage MemberRetrieveResponseFieldsProfileImage `json:"$profileImage" api:"required"`
 	// The member's workspace role.
 	Role MemberRetrieveResponseFieldsRole `json:"$role" api:"required"`
@@ -436,7 +442,9 @@ func (r *MemberRetrieveResponseFieldsNameValue) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// URL of the member's profile image, or null if unset.
+// URL of the picture Lightfield shows for the member, or null if there is none. A
+// picture Lightfield stores is a signed link that expires within an hour, so fetch
+// the member again rather than saving the URL.
 type MemberRetrieveResponseFieldsProfileImage struct {
 	// The field value, or null if unset.
 	Value string `json:"value" api:"required"`
