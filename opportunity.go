@@ -112,10 +112,15 @@ func (r *OpportunityService) Update(ctx context.Context, id string, body Opportu
 }
 
 // Returns a paginated list of opportunities. Results are sorted by when the record
-// was created in Lightfield (`createdAt`), newest first. Use `offset` and `limit`
-// to paginate through results, and `$field` query parameters to filter. To list
-// the opportunities on a given account, filter by the `$account` relationship —
-// e.g. `?$account=acc_123` (`?$account[-equal]=acc_123` excludes them instead).
+// was created in Lightfield (`createdAt`), newest first. Each page holds only the
+// records you can currently read, so a page can contain fewer records than
+// `limit`, or none, while more remain, and `totalCount` can include records you
+// can no longer read. To read every record, keep advancing `offset` by `limit`
+// until it reaches `totalCount`; do not stop at a short or empty page. Use
+// `offset` and `limit` to paginate through results, and `$field` query parameters
+// to filter. To list the opportunities on a given account, filter by the
+// `$account` relationship — e.g. `?$account=acc_123` (`?$account[-equal]=acc_123`
+// excludes them instead).
 //
 // Pass `status=trashed` to list opportunities currently in the trash instead of
 // live records. Listing trashed records additionally requires the

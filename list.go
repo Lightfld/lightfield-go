@@ -91,8 +91,9 @@ func (r *ListService) Update(ctx context.Context, id string, body ListUpdatePara
 }
 
 // Returns a paginated list of lists. Results are sorted by when the record was
-// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
-// paginate through results. See
+// created in Lightfield (`createdAt`), newest first. A list archived together with
+// its object definition is not returned, for any caller, including admins and
+// workspace API keys. Use `offset` and `limit` to paginate through results. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
@@ -129,7 +130,11 @@ func (r *ListService) Delete(ctx context.Context, id string, body ListDeletePara
 
 // Returns a paginated list of accounts that belong to the specified list. Results
 // are sorted by when the record was created in Lightfield (`createdAt`), newest
-// first.
+// first. Each page holds only the records you can currently read, so a page can
+// contain fewer records than `limit`, or none, while more remain, and `totalCount`
+// can include records you can no longer read. To read every record, keep advancing
+// `offset` by `limit` until it reaches `totalCount`; do not stop at a short or
+// empty page.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and `accounts:read`
 //
@@ -147,7 +152,11 @@ func (r *ListService) ListAccounts(ctx context.Context, listID string, query Lis
 
 // Returns a paginated list of contacts that belong to the specified list. Results
 // are sorted by when the record was created in Lightfield (`createdAt`), newest
-// first.
+// first. Each page holds only the records you can currently read, so a page can
+// contain fewer records than `limit`, or none, while more remain, and `totalCount`
+// can include records you can no longer read. To read every record, keep advancing
+// `offset` by `limit` until it reaches `totalCount`; do not stop at a short or
+// empty page.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and `contacts:read`
 //
@@ -165,7 +174,11 @@ func (r *ListService) ListContacts(ctx context.Context, listID string, query Lis
 
 // Returns a paginated list of opportunities that belong to the specified list.
 // Results are sorted by when the record was created in Lightfield (`createdAt`),
-// newest first.
+// newest first. Each page holds only the records you can currently read, so a page
+// can contain fewer records than `limit`, or none, while more remain, and
+// `totalCount` can include records you can no longer read. To read every record,
+// keep advancing `offset` by `limit` until it reaches `totalCount`; do not stop at
+// a short or empty page.
 //
 // **[Required scopes](/using-the-api/scopes/):** `lists:read` and
 // `opportunities:read`

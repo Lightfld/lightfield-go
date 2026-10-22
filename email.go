@@ -67,8 +67,11 @@ func (r *EmailService) Get(ctx context.Context, id string, opts ...option.Reques
 // results. Each email is privacy-filtered per caller, includes a read-only
 // `accessLevel`, and may redact the subject at metadata-only access.
 // `fields.$body` is not included on list items; use GET `/v1/emails/{id}` for
-// message body HTML. See <u>[List endpoints](/using-the-api/list-endpoints/)</u>
-// for more information about pagination.
+// message body HTML. As in the Lightfield app, an email is listed only when it is
+// linked to an account that is not trashed; this applies to every caller,
+// including admins and workspace API keys. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `emails:read`
 //

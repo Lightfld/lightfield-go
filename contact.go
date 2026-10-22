@@ -103,13 +103,18 @@ func (r *ContactService) Update(ctx context.Context, id string, body ContactUpda
 }
 
 // Returns a paginated list of contacts. Results are sorted by when the record was
-// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
-// paginate through results, and `$field` query parameters to filter. Pass
-// `status=trashed` to list contacts currently in the trash instead of live
-// records. Listing trashed records additionally requires the `contacts:restore`
-// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
-// information about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u>
-// and <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
+// created in Lightfield (`createdAt`), newest first. Each page holds only the
+// records you can currently read, so a page can contain fewer records than
+// `limit`, or none, while more remain, and `totalCount` can include records you
+// can no longer read. To read every record, keep advancing `offset` by `limit`
+// until it reaches `totalCount`; do not stop at a short or empty page. Use
+// `offset` and `limit` to paginate through results, and `$field` query parameters
+// to filter. Pass `status=trashed` to list contacts currently in the trash instead
+// of live records. Listing trashed records additionally requires the
+// `contacts:restore` scope. See
+// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
+// about <u>[pagination](/using-the-api/list-endpoints/#pagination)</u> and
+// <u>[filtering](/using-the-api/list-endpoints/#filtering)</u>.
 //
 // **[Required scope](/using-the-api/scopes/):** `contacts:read`
 //
