@@ -8490,22 +8490,23 @@ func init() {
 //
 // The properties Body, Subject are required.
 type SequenceNewParamsDefinitionStepObject3Template struct {
-	// Email body as Markdown; paragraphs, bold, italics, links and lists keep their
-	// formatting. Leave out the sign-off and signature, which are added when the
-	// message is written. A variable cannot be part of a link address. Write each
-	// variable as {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts
-	// missing the value. A variable reads a contact field as {attr:<id>}, the
-	// contact's first or last name as {col:firstName} or {col:lastName}, the contact's
-	// first account's field as {rel:account.<id>}, that account's name as
-	// {rel:account.col:name}, and the sender's name or email as {rel:sender.col:name}
-	// or {rel:sender.col:email}; a SINGLE*SELECT field reads its option's label, as
-	// {attr:<id>.label} or {rel:account.<id>.label}. <id> is the literal id of a
-	// CrmContact or CrmAccount field in the CRM schema whose type is one of TEXT,
-	// NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug,
-	// a name, or an id starting with \_\_synthetic*. Nothing else is a variable: leave
-	// such a value out rather than reading a different field. A {{ }} that is not a
-	// variable would send as written, so it is refused. A field's <id> may be the
-	// `ad_` ID the field-definitions endpoints list.
+	// Email body as Markdown using only paragraphs, bold, italics, underline (<u>),
+	// links and lists; any other formatting, such as a heading, quote, code, table,
+	// image or strikethrough, is refused. Leave out the sign-off and signature, which
+	// are added when the message is written. A variable cannot be part of a link
+	// address. Write each variable as {{ coalesce(<variable>, "fallback") }}, with a
+	// fallback for contacts missing the value. A variable reads a contact field as
+	// {attr:<id>}, the contact's first or last name as {col:firstName} or
+	// {col:lastName}, the contact's first account's field as {rel:account.<id>}, that
+	// account's name as {rel:account.col:name}, and the sender's name or email as
+	// {rel:sender.col:name} or {rel:sender.col:email}; a SINGLE*SELECT field reads its
+	// option's label, as {attr:<id>.label} or {rel:account.<id>.label}. <id> is the
+	// literal id of a CrmContact or CrmAccount field in the CRM schema whose type is
+	// one of TEXT, NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL;
+	// never a slug, a name, or an id starting with \_\_synthetic*. Nothing else is a
+	// variable: leave such a value out rather than reading a different field. A {{ }}
+	// that is not a variable would send as written, so it is refused. A field's <id>
+	// may be the `ad_` ID the field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	// Plain-text subject line. Write each variable as
 	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
@@ -9373,22 +9374,23 @@ func init() {
 //
 // The properties Body, Subject are required.
 type SequenceUpdateDraftParamsDefinitionStepObject3Template struct {
-	// Email body as Markdown; paragraphs, bold, italics, links and lists keep their
-	// formatting. Leave out the sign-off and signature, which are added when the
-	// message is written. A variable cannot be part of a link address. Write each
-	// variable as {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts
-	// missing the value. A variable reads a contact field as {attr:<id>}, the
-	// contact's first or last name as {col:firstName} or {col:lastName}, the contact's
-	// first account's field as {rel:account.<id>}, that account's name as
-	// {rel:account.col:name}, and the sender's name or email as {rel:sender.col:name}
-	// or {rel:sender.col:email}; a SINGLE*SELECT field reads its option's label, as
-	// {attr:<id>.label} or {rel:account.<id>.label}. <id> is the literal id of a
-	// CrmContact or CrmAccount field in the CRM schema whose type is one of TEXT,
-	// NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug,
-	// a name, or an id starting with \_\_synthetic*. Nothing else is a variable: leave
-	// such a value out rather than reading a different field. A {{ }} that is not a
-	// variable would send as written, so it is refused. A field's <id> may be the
-	// `ad_` ID the field-definitions endpoints list.
+	// Email body as Markdown using only paragraphs, bold, italics, underline (<u>),
+	// links and lists; any other formatting, such as a heading, quote, code, table,
+	// image or strikethrough, is refused. Leave out the sign-off and signature, which
+	// are added when the message is written. A variable cannot be part of a link
+	// address. Write each variable as {{ coalesce(<variable>, "fallback") }}, with a
+	// fallback for contacts missing the value. A variable reads a contact field as
+	// {attr:<id>}, the contact's first or last name as {col:firstName} or
+	// {col:lastName}, the contact's first account's field as {rel:account.<id>}, that
+	// account's name as {rel:account.col:name}, and the sender's name or email as
+	// {rel:sender.col:name} or {rel:sender.col:email}; a SINGLE*SELECT field reads its
+	// option's label, as {attr:<id>.label} or {rel:account.<id>.label}. <id> is the
+	// literal id of a CrmContact or CrmAccount field in the CRM schema whose type is
+	// one of TEXT, NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL;
+	// never a slug, a name, or an id starting with \_\_synthetic*. Nothing else is a
+	// variable: leave such a value out rather than reading a different field. A {{ }}
+	// that is not a variable would send as written, so it is refused. A field's <id>
+	// may be the `ad_` ID the field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	// Plain-text subject line. Write each variable as
 	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
