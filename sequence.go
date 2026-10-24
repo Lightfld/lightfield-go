@@ -7173,8 +7173,7 @@ type SequenceRetrieveTestResponse struct {
 	//
 	// Any of "RUNNING", "COMPLETED", "FAILED".
 	Status SequenceRetrieveTestResponseStatus `json:"status" api:"required"`
-	// Every step of the tested version that the Sequences API lists, in run order.
-	// Call steps are not part of the API yet, so a test reports nothing for them.
+	// Every step of the tested version, in run order.
 	Steps []SequenceRetrieveTestResponseStep `json:"steps" api:"required"`
 	// Which version was tested.
 	//

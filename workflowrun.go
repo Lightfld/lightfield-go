@@ -37,7 +37,9 @@ func NewWorkflowRunService(opts ...option.RequestOption) (r WorkflowRunService) 
 	return
 }
 
-// Returns the current status of a workflow run.
+// Returns the current status of a workflow run. This endpoint does not require
+// authentication: possession of the run ID grants access to its status, so keep
+// run IDs private. No run inputs, outputs or workspace details are returned.
 func (r *WorkflowRunService) Status(ctx context.Context, runID string, opts ...option.RequestOption) (res *WorkflowRunStatusResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	if runID == "" {
@@ -50,7 +52,8 @@ func (r *WorkflowRunService) Status(ctx context.Context, runID string, opts ...o
 }
 
 type WorkflowRunStatusResponse struct {
-	// Current status of the workflow run (e.g. `running`, `completed`, `failed`).
+	// Current status of the workflow run (for example, `STARTED`, `COMPLETED` or
+	// `FAILED`).
 	Status string `json:"status" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {

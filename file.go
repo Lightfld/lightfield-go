@@ -469,8 +469,9 @@ type FileNewParams struct {
 	// Optional validation hint. When provided, the server enforces purpose-specific
 	// MIME type and file size constraints. Use `meeting_transcript` for files that
 	// will be attached to a meeting as its transcript. Use `knowledge_user` or
-	// `knowledge_workspace` to add the file to the authenticated user's or workspace's
-	// Knowledge, making it available to the AI assistant. Not persisted or returned in
+	// `knowledge_workspace` to stage an upload for the authenticated user or
+	// workspace. Completing the upload does not add it to Knowledge; promote it
+	// separately through the agent or Knowledge workflow. Not persisted or returned in
 	// responses.
 	//
 	// Any of "meeting_transcript", "knowledge_user", "knowledge_workspace",
@@ -490,8 +491,9 @@ func (r *FileNewParams) UnmarshalJSON(data []byte) error {
 // Optional validation hint. When provided, the server enforces purpose-specific
 // MIME type and file size constraints. Use `meeting_transcript` for files that
 // will be attached to a meeting as its transcript. Use `knowledge_user` or
-// `knowledge_workspace` to add the file to the authenticated user's or workspace's
-// Knowledge, making it available to the AI assistant. Not persisted or returned in
+// `knowledge_workspace` to stage an upload for the authenticated user or
+// workspace. Completing the upload does not add it to Knowledge; promote it
+// separately through the agent or Knowledge workflow. Not persisted or returned in
 // responses.
 type FileNewParamsPurpose string
 

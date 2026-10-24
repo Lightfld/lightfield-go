@@ -89,20 +89,23 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // Updates an existing meeting by ID. Only included fields and relationships are
 // modified.
 //
-// Only `fields.$privacySetting`, `fields.$attendeeEmails` and
-// `relationships.$transcript.replace` are writable. `$attendeeEmails` replaces the
-// full attendee list and only works on meetings that have ended. Adding an address
-// on the workspace blocklist or a teammate's do-not-track list hides the meeting
-// after the next sync, and only an admin can bring it back by removing the
-// blocklist entry; the response lists manual changes in the read-only
-// `$manuallyAddedAttendeeEmails` and `$manuallyRemovedAttendeeEmails`.
-// `$transcript` is the file ID of the canonical transcript. `$transcripts` lists
-// the file ID of every transcript on the meeting. Use `$transcript.replace` to
-// make that file canonical. A file that is not already on the meeting is attached
-// first. Clearing or removing `$transcript` is not supported. The `$account` and
-// `$opportunity` relationships are read-only and are derived from the meeting's
-// `$contact` attendees and the accounts/opportunities those contacts belong to.
-// The response is privacy-aware and includes a read-only `accessLevel`. See
+// Only `fields.$privacySetting`, `fields.$attendeeEmails`, `fields.$meetingPrep`,
+// `fields.$postMeetingSummary` and `relationships.$transcript.replace` are
+// writable. Prep and summary accept Markdown. Regeneration as new activity arrives
+// replaces edits; null or an empty string clears the value until regeneration.
+// `$attendeeEmails` replaces the full attendee list and only works on meetings
+// that have ended. Adding an address on the workspace blocklist or a teammate's
+// do-not-track list hides the meeting after the next sync, and only an admin can
+// bring it back by removing the blocklist entry; the response lists manual changes
+// in the read-only `$manuallyAddedAttendeeEmails` and
+// `$manuallyRemovedAttendeeEmails`. `$transcript` is the file ID of the canonical
+// transcript. `$transcripts` lists the file ID of every transcript on the meeting.
+// Use `$transcript.replace` to make that file canonical. A file that is not
+// already on the meeting is attached first. Clearing or removing `$transcript` is
+// not supported. The `$account` and `$opportunity` relationships are read-only and
+// are derived from the meeting's `$contact` attendees and the
+// accounts/opportunities those contacts belong to. The response is privacy-aware
+// and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
