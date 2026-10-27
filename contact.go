@@ -253,9 +253,9 @@ type ContactCreateResponseField struct {
 	Value ContactCreateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -554,9 +554,9 @@ type ContactDefinitionsResponseFieldDefinition struct {
 	TypeConfiguration ContactDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
 	// Data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
@@ -806,9 +806,9 @@ type ContactDeleteResponseField struct {
 	Value ContactDeleteResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1112,9 +1112,9 @@ type ContactFieldHistoryResponseData struct {
 	Value ContactFieldHistoryResponseDataValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1354,9 +1354,9 @@ type ContactListResponseDataField struct {
 	Value ContactListResponseDataFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1669,9 +1669,9 @@ type ContactRestoreResponseField struct {
 	Value ContactRestoreResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2034,9 +2034,9 @@ type ContactRetrieveResponseEntityField struct {
 	Value ContactRetrieveResponseEntityFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2396,9 +2396,9 @@ type ContactUpdateResponseField struct {
 	Value ContactUpdateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {

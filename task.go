@@ -219,9 +219,9 @@ type TaskCreateResponseField struct {
 	Value TaskCreateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -519,9 +519,9 @@ type TaskDefinitionsResponseFieldDefinition struct {
 	TypeConfiguration TaskDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
 	// Data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
@@ -767,9 +767,9 @@ type TaskDeleteResponseField struct {
 	Value TaskDeleteResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1102,9 +1102,9 @@ type TaskListResponseDataField struct {
 	Value TaskListResponseDataFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1415,9 +1415,9 @@ type TaskRestoreResponseField struct {
 	Value TaskRestoreResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -1727,9 +1727,9 @@ type TaskRetrieveResponseField struct {
 	Value TaskRetrieveResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2040,9 +2040,9 @@ type TaskUpdateResponseField struct {
 	Value TaskUpdateResponseFieldValueUnion `json:"value" api:"required"`
 	// The data type of the field.
 	//
-	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATETIME", "EMAIL", "FULL_NAME",
-	// "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE",
-	// "TELEPHONE", "TEXT", "URL", "HTML".
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
 	ValueType string `json:"valueType" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
