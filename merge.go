@@ -56,6 +56,8 @@ func (r *MergeService) GetMerge(ctx context.Context, id string, opts ...option.R
 // Requires an `Idempotency-Key` header. Use a new key for each intended merge and
 // reuse it only when retrying the same merge; a missing header returns 400.
 //
+// Returns 403 when you may see either record by name only.
+//
 // Merges two accounts into one. The primary account retains its ID; the duplicate
 // is soft-deleted.
 //
@@ -73,6 +75,8 @@ func (r *MergeService) MergeAccounts(ctx context.Context, body MergeMergeAccount
 // Requires an `Idempotency-Key` header. Use a new key for each intended merge and
 // reuse it only when retrying the same merge; a missing header returns 400.
 //
+// Returns 403 when you may see either record by name only.
+//
 // Merges two contacts into one. The primary contact retains its ID; the duplicate
 // is soft-deleted.
 //
@@ -89,6 +93,8 @@ func (r *MergeService) MergeContacts(ctx context.Context, body MergeMergeContact
 
 // Requires an `Idempotency-Key` header. Use a new key for each intended merge and
 // reuse it only when retrying the same merge; a missing header returns 400.
+//
+// Returns 403 when you may see either record by name only.
 //
 // Merges two records of the specified custom object type into one. The primary
 // record retains its ID; the duplicate is soft-deleted. Both records must belong
@@ -111,6 +117,8 @@ func (r *MergeService) MergeObjectValues(ctx context.Context, entitySlug string,
 
 // Requires an `Idempotency-Key` header. Use a new key for each intended merge and
 // reuse it only when retrying the same merge; a missing header returns 400.
+//
+// Returns 403 when you may see either record by name only.
 //
 // Merges two opportunities into one. The primary opportunity retains its ID; the
 // duplicate is soft-deleted. Both opportunities must belong to the same account.
