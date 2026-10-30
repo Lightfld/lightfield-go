@@ -8501,11 +8501,11 @@ type SequenceNewParamsDefinitionStepObject3Template struct {
 	// {rel:sender.col:name} or {rel:sender.col:email}; a SINGLE*SELECT field reads its
 	// option's label, as {attr:<id>.label} or {rel:account.<id>.label}. <id> is the
 	// literal id of a CrmContact or CrmAccount field in the CRM schema whose type is
-	// one of TEXT, NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL;
-	// never a slug, a name, or an id starting with \_\_synthetic*. Nothing else is a
-	// variable: leave such a value out rather than reading a different field. A {{ }}
-	// that is not a variable would send as written, so it is refused. A field's <id>
-	// may be the `ad_` ID the field-definitions endpoints list.
+	// one of TEXT, NUMBER, CURRENCY, DATE, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL,
+	// URL; never a slug, a name, or an id starting with \_\_synthetic*. Nothing else
+	// is a variable: leave such a value out rather than reading a different field. A
+	// {{ }} that is not a variable would send as written, so it is refused. A field's
+	// <id> may be the `ad_` ID the field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	// Plain-text subject line. Write each variable as
 	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
@@ -8515,11 +8515,11 @@ type SequenceNewParamsDefinitionStepObject3Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Subject string `json:"subject" api:"required"`
 	paramObj
@@ -8595,11 +8595,11 @@ type SequenceNewParamsDefinitionStepObject4Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	paramObj
@@ -8677,11 +8677,11 @@ type SequenceNewParamsDefinitionStepObject5Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	paramObj
@@ -9385,11 +9385,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject3Template struct {
 	// {rel:sender.col:name} or {rel:sender.col:email}; a SINGLE*SELECT field reads its
 	// option's label, as {attr:<id>.label} or {rel:account.<id>.label}. <id> is the
 	// literal id of a CrmContact or CrmAccount field in the CRM schema whose type is
-	// one of TEXT, NUMBER, CURRENCY, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL;
-	// never a slug, a name, or an id starting with \_\_synthetic*. Nothing else is a
-	// variable: leave such a value out rather than reading a different field. A {{ }}
-	// that is not a variable would send as written, so it is refused. A field's <id>
-	// may be the `ad_` ID the field-definitions endpoints list.
+	// one of TEXT, NUMBER, CURRENCY, DATE, DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL,
+	// URL; never a slug, a name, or an id starting with \_\_synthetic*. Nothing else
+	// is a variable: leave such a value out rather than reading a different field. A
+	// {{ }} that is not a variable would send as written, so it is refused. A field's
+	// <id> may be the `ad_` ID the field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	// Plain-text subject line. Write each variable as
 	// {{ coalesce(<variable>, "fallback") }}, with a fallback for contacts missing the
@@ -9399,11 +9399,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject3Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Subject string `json:"subject" api:"required"`
 	paramObj
@@ -9482,11 +9482,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject4Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	paramObj
@@ -9568,11 +9568,11 @@ type SequenceUpdateDraftParamsDefinitionStepObject5Template struct {
 	// the sender's name or email as {rel:sender.col:name} or {rel:sender.col:email}; a
 	// SINGLE*SELECT field reads its option's label, as {attr:<id>.label} or
 	// {rel:account.<id>.label}. <id> is the literal id of a CrmContact or CrmAccount
-	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATETIME,
-	// SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id starting
-	// with \_\_synthetic*. Nothing else is a variable: leave such a value out rather
-	// than reading a different field. A {{ }} that is not a variable would send as
-	// written, so it is refused. A field's <id> may be the `ad_` ID the
+	// field in the CRM schema whose type is one of TEXT, NUMBER, CURRENCY, DATE,
+	// DATETIME, SINGLE_SELECT, FULL_NAME, EMAIL, URL; never a slug, a name, or an id
+	// starting with \_\_synthetic*. Nothing else is a variable: leave such a value out
+	// rather than reading a different field. A {{ }} that is not a variable would send
+	// as written, so it is refused. A field's <id> may be the `ad_` ID the
 	// field-definitions endpoints list.
 	Body string `json:"body" api:"required"`
 	paramObj

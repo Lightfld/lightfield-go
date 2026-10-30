@@ -471,11 +471,12 @@ type FileNewParams struct {
 	// will be attached to a meeting as its transcript. Use `knowledge_user` or
 	// `knowledge_workspace` to stage an upload for the authenticated user or
 	// workspace. Completing the upload does not add it to Knowledge; promote it
-	// separately through the agent or Knowledge workflow. Not persisted or returned in
-	// responses.
+	// separately through the agent or Knowledge workflow. Use `contact_avatar` for an
+	// image that will be set as a contact photo through the contact `$profilePhotoUrl`
+	// field. Not returned in responses.
 	//
 	// Any of "meeting_transcript", "knowledge_user", "knowledge_workspace",
-	// "email_attachment".
+	// "email_attachment", "contact_avatar".
 	Purpose FileNewParamsPurpose `json:"purpose,omitzero"`
 	paramObj
 }
@@ -493,8 +494,9 @@ func (r *FileNewParams) UnmarshalJSON(data []byte) error {
 // will be attached to a meeting as its transcript. Use `knowledge_user` or
 // `knowledge_workspace` to stage an upload for the authenticated user or
 // workspace. Completing the upload does not add it to Knowledge; promote it
-// separately through the agent or Knowledge workflow. Not persisted or returned in
-// responses.
+// separately through the agent or Knowledge workflow. Use `contact_avatar` for an
+// image that will be set as a contact photo through the contact `$profilePhotoUrl`
+// field. Not returned in responses.
 type FileNewParamsPurpose string
 
 const (
@@ -502,6 +504,7 @@ const (
 	FileNewParamsPurposeKnowledgeUser      FileNewParamsPurpose = "knowledge_user"
 	FileNewParamsPurposeKnowledgeWorkspace FileNewParamsPurpose = "knowledge_workspace"
 	FileNewParamsPurposeEmailAttachment    FileNewParamsPurpose = "email_attachment"
+	FileNewParamsPurposeContactAvatar      FileNewParamsPurpose = "contact_avatar"
 )
 
 type FileListParams struct {
