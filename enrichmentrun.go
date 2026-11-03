@@ -305,9 +305,7 @@ type EnrichmentRunEnrichParams struct {
 	// leaves nothing to search by and is rejected with
 	// `400 enrichment_fields_not_enrichable`, creating no run; refresh them one at a
 	// time. `phone` is turned off unless the workspace opts into it, so naming it is
-	// rejected with `400 enrichment_field_disabled`; where it is turned on, it is
-	// filled only when another field's lookup happens to return it, so requesting it
-	// on its own is rejected with `400 enrichment_fields_not_enrichable`.
+	// rejected with `400 enrichment_field_disabled`.
 	Fields []string `json:"fields,omitzero"`
 	paramObj
 }
