@@ -2281,9 +2281,9 @@ type ListNewParamsFields struct {
 	ObjectType string `json:"$objectType" api:"required"`
 	// Optional description of what this list is for.
 	Description param.Opt[string] `json:"$description,omitzero"`
-	// Product-level list purpose. Normally omit to create a regular list; reserve
-	// `target` for the single account-prioritization (APG) demand list per org, and
-	// only for account/contact lists.
+	// Product-level list purpose. Normally leave unset for a regular list; reserve
+	// `target` for target lists (a workspace can have several), and only for
+	// account/contact lists.
 	//
 	// Any of "target".
 	Kind string `json:"$kind,omitzero"`
@@ -2397,9 +2397,9 @@ type ListUpdateParamsFields struct {
 	Description param.Opt[string] `json:"$description,omitzero"`
 	// Display name of the list.
 	Name param.Opt[string] `json:"$name,omitzero"`
-	// Product-level list purpose. Normally leave unset; reserve `target` for the
-	// single account-prioritization (APG) demand list per org (account/contact lists
-	// only). Pass null to clear.
+	// Product-level list purpose. Normally leave unset for a regular list; reserve
+	// `target` for target lists (a workspace can have several), and only for
+	// account/contact lists. Pass null to clear.
 	//
 	// Any of "target".
 	Kind string `json:"$kind,omitzero"`
