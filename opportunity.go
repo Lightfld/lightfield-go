@@ -2332,8 +2332,9 @@ func (r *OpportunityRetrieveResponseEntityRelationshipDirectionsAsSource) Unmars
 type OpportunityRetrieveResponseRestricted struct {
 	// Unique identifier for the record, the same ID a full response carries.
 	ID string `json:"id" api:"required"`
-	// Present only on a record the caller may see by name only. Check for it before
-	// reading `fields` or `relationships`, which a restricted record does not carry.
+	// Present only on a record the caller may know exists but not read. Check for it
+	// before reading `fields` or `relationships`, which a restricted record does not
+	// carry.
 	Restricted OpportunityRetrieveResponseRestrictedRestricted `json:"restricted" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
@@ -2350,12 +2351,14 @@ func (r *OpportunityRetrieveResponseRestricted) UnmarshalJSON(data []byte) error
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Present only on a record the caller may see by name only. Check for it before
-// reading `fields` or `relationships`, which a restricted record does not carry.
+// Present only on a record the caller may know exists but not read. Check for it
+// before reading `fields` or `relationships`, which a restricted record does not
+// carry.
 type OpportunityRetrieveResponseRestrictedRestricted struct {
-	// The record's display name, or its ID when it has none.
+	// A label for the record's type, such as "Restricted opportunity". Never the
+	// record's name.
 	Name string `json:"name" api:"required"`
-	// Why the record is shown by name only.
+	// Why the record is restricted.
 	//
 	// Any of "NO_ACCESS", "INHERITED".
 	Reason string `json:"reason" api:"required"`
