@@ -50,8 +50,8 @@ func NewEnrichmentRunService(opts ...option.RequestOption) (r EnrichmentRunServi
 //
 // Which fields are enriched, and whether a provider answer overwrites an existing
 // value or is raised as a suggestion, come from the workspace's enrichment
-// settings. Naming fields explicitly overrides which fields are enriched, but not
-// the write policy.
+// settings. Naming fields explicitly also reaches fields set to enrich only on
+// request, under the suggestion write policy; it never reaches a field turned off.
 //
 // **[Required scopes](/using-the-api/scopes/):** `contacts:update` to enrich a
 // contact, `accounts:update` to enrich an account
@@ -88,13 +88,24 @@ func (r *EnrichmentRunService) GetEnrichmentRun(ctx context.Context, runID strin
 type EnrichmentRunEnrichResponse struct {
 	// The run, or null when the request was skipped.
 	EnrichmentRun EnrichmentRunEnrichResponseEnrichmentRun `json:"enrichmentRun" api:"required"`
+	// Under `manual_fields_unconfirmed`, the missing fields the workspace enriches
+	// only on request. Add them to `fields` to include them, as suggestions. Null
+	// otherwise.
+	ManualFields []string `json:"manualFields" api:"required"`
+	// Under `manual_fields_unconfirmed`, the fields a run would have filled. Name
+	// these in `fields` to enrich them without the fields enriched only on request.
+	// Null otherwise.
+	PlannedFields []string `json:"plannedFields" api:"required"`
 	// Why the request was skipped: `no_targets` when the workspace enriches nothing
 	// this record is missing, `no_operations` when no provider can be scheduled for
 	// the targeted fields — because none looks them up on request, or because the
-	// record lacks the inputs (such as an email or domain) a lookup would need. Null
+	// record lacks the inputs (such as an email or domain) a lookup would need.
+	// `manual_fields_unconfirmed` when `fields` was omitted and the record is missing
+	// fields the workspace enriches only on request: no run was started, and
+	// `plannedFields` and `manualFields` say what to name in a second request. Null
 	// otherwise.
 	//
-	// Any of "no_targets", "no_operations".
+	// Any of "no_targets", "no_operations", "manual_fields_unconfirmed".
 	Reason EnrichmentRunEnrichResponseReason `json:"reason" api:"required"`
 	// `started` when this request began a run, `already_running` when one was already
 	// enriching the record, `skipped` when there was nothing to enrich.
@@ -104,6 +115,8 @@ type EnrichmentRunEnrichResponse struct {
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		EnrichmentRun respjson.Field
+		ManualFields  respjson.Field
+		PlannedFields respjson.Field
 		Reason        respjson.Field
 		Status        respjson.Field
 		ExtraFields   map[string]respjson.Field
@@ -171,13 +184,17 @@ func (r *EnrichmentRunEnrichResponseEnrichmentRun) UnmarshalJSON(data []byte) er
 // Why the request was skipped: `no_targets` when the workspace enriches nothing
 // this record is missing, `no_operations` when no provider can be scheduled for
 // the targeted fields — because none looks them up on request, or because the
-// record lacks the inputs (such as an email or domain) a lookup would need. Null
+// record lacks the inputs (such as an email or domain) a lookup would need.
+// `manual_fields_unconfirmed` when `fields` was omitted and the record is missing
+// fields the workspace enriches only on request: no run was started, and
+// `plannedFields` and `manualFields` say what to name in a second request. Null
 // otherwise.
 type EnrichmentRunEnrichResponseReason string
 
 const (
-	EnrichmentRunEnrichResponseReasonNoTargets    EnrichmentRunEnrichResponseReason = "no_targets"
-	EnrichmentRunEnrichResponseReasonNoOperations EnrichmentRunEnrichResponseReason = "no_operations"
+	EnrichmentRunEnrichResponseReasonNoTargets               EnrichmentRunEnrichResponseReason = "no_targets"
+	EnrichmentRunEnrichResponseReasonNoOperations            EnrichmentRunEnrichResponseReason = "no_operations"
+	EnrichmentRunEnrichResponseReasonManualFieldsUnconfirmed EnrichmentRunEnrichResponseReason = "manual_fields_unconfirmed"
 )
 
 // `started` when this request began a run, `already_running` when one was already
@@ -277,16 +294,20 @@ type EnrichmentRunEnrichParams struct {
 	EntitySlug EnrichmentRunEnrichParamsEntitySlug `path:"entitySlug,omitzero" api:"required" json:"-"`
 	// Fields to enrich, e.g. `["email", "title"]`. Named fields are refreshed even
 	// when they already hold a value, so this is how a stale value is replaced. Omit
-	// to fill only the fields the record is missing. Naming a field the workspace's
-	// settings turn off enriches it anyway, and its answer is raised as a suggestion
-	// rather than written over a value the record already holds. `profilePhotoUrl` has
-	// no suggestion form, so it stays rejected while it is turned off. A named field
-	// is not used to look the record up — the run derives it fresh from the record's
-	// other identifiers — so naming every identifier (a contact's name and email
-	// together) leaves nothing to search by and is rejected with
+	// to fill only the fields the record is missing; if any of those the workspace
+	// enriches only on request, no run starts and the response names them
+	// (`manual_fields_unconfirmed`). Naming a field the workspace's settings enrich
+	// only on request enriches it, and its answer is raised as a suggestion rather
+	// than written over a value the record already holds. Naming a field the settings
+	// turn off is rejected with `400 enrichment_field_disabled`. A named field is not
+	// used to look the record up — the run derives it fresh from the record's other
+	// identifiers — so naming every identifier (a contact's name and email together)
+	// leaves nothing to search by and is rejected with
 	// `400 enrichment_fields_not_enrichable`, creating no run; refresh them one at a
-	// time. `phone` is filled only when another field's lookup happens to return it,
-	// so requesting it on its own is rejected the same way.
+	// time. `phone` is turned off unless the workspace opts into it, so naming it is
+	// rejected with `400 enrichment_field_disabled`; where it is turned on, it is
+	// filled only when another field's lookup happens to return it, so requesting it
+	// on its own is rejected with `400 enrichment_fields_not_enrichable`.
 	Fields []string `json:"fields,omitzero"`
 	paramObj
 }
