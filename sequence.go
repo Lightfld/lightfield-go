@@ -207,14 +207,19 @@ func (r *SequenceService) ListEnrollments(ctx context.Context, id string, query 
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
-// Supported filters: `contactId`, `enrollmentId`, `sequenceStepId`,
-// `sequenceStepType` (EMAIL, LINKEDIN_MESSAGE, LINKEDIN_INVITE), `channel` (EMAIL,
-// LINKEDIN), `direction` (OUTBOUND, INBOUND) and `status` (AWAITING_REVIEW,
-// SCHEDULED, QUEUED, SENT, SKIPPED, FAILED, CANCELLED), with `[equal]` or no
-// operator; and `sentAt`, `openedAt`, `readAt`, `repliedAt`, `bouncedAt`,
-// `acceptedAt` or `receivedAt` with `[greaterThan]`, `[greaterThanOrEqual]`,
-// `[lessThan]` or `[lessThanOrEqual]` (ISO 8601 timestamps with a timezone).
-// Filters are combined with AND; a `status` filter excludes incoming replies.
+// Supported filters: `contactId`, `enrollmentId`, `sequenceSenderId` (a sender ID
+// from the sequence’s `senders`), `sequenceStepId`, `sequenceStepType` (EMAIL,
+// LINKEDIN_MESSAGE, LINKEDIN_INVITE), `channel` (EMAIL, LINKEDIN), `direction`
+// (OUTBOUND, INBOUND) and `status` (AWAITING_REVIEW, SCHEDULED, QUEUED, SENT,
+// SKIPPED, FAILED, CANCELLED), with `[equal]` or no operator; `sentAt`,
+// `openedAt`, `readAt`, `repliedAt`, `bouncedAt`, `acceptedAt` or `receivedAt`
+// with `[greaterThan]`, `[greaterThanOrEqual]`, `[lessThan]` or
+// `[lessThanOrEqual]` (ISO 8601 timestamps with a timezone); and
+// `bouncedAt[isEmpty]=true` for messages that never bounced. Filters are combined
+// with AND; a `status` filter excludes incoming replies. To list the messages
+// behind a sequence performance count, combine `status[equal]=SENT` with its
+// `sentAt` range and sender, plus `bouncedAt[isEmpty]=true` for delivered, opened
+// and replied emails.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -2707,7 +2712,9 @@ type SequenceListEnrollmentsResponseData struct {
 	// `ACTIVE` is progressing; `AWAITING_REVIEW` has a message waiting for approval;
 	// `NEEDS_ATTENTION` is held by a failed step, a held draft or an unavailable
 	// sender; `PAUSED` is stopped because the sequence is deactivated or it was paused
-	// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final.
+	// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final. Null,
+	// as is `remainingSends`, while a change to the enrollment is being indexed,
+	// usually for a few seconds after enrolling, pausing or cancelling.
 	//
 	// Any of "ACTIVE", "AWAITING_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
 	// "PAUSED", "CANCELLED", "FAILED".
@@ -5449,7 +5456,9 @@ type SequenceRetrieveEnrollmentResponse struct {
 	// `ACTIVE` is progressing; `AWAITING_REVIEW` has a message waiting for approval;
 	// `NEEDS_ATTENTION` is held by a failed step, a held draft or an unavailable
 	// sender; `PAUSED` is stopped because the sequence is deactivated or it was paused
-	// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final.
+	// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final. Null,
+	// as is `remainingSends`, while a change to the enrollment is being indexed,
+	// usually for a few seconds after enrolling, pausing or cancelling.
 	//
 	// Any of "ACTIVE", "AWAITING_REVIEW", "NEEDS_ATTENTION", "REPLIED", "COMPLETED",
 	// "PAUSED", "CANCELLED", "FAILED".
@@ -5497,7 +5506,9 @@ const (
 // `ACTIVE` is progressing; `AWAITING_REVIEW` has a message waiting for approval;
 // `NEEDS_ATTENTION` is held by a failed step, a held draft or an unavailable
 // sender; `PAUSED` is stopped because the sequence is deactivated or it was paused
-// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final.
+// in Lightfield. `REPLIED`, `COMPLETED`, `CANCELLED` and `FAILED` are final. Null,
+// as is `remainingSends`, while a change to the enrollment is being indexed,
+// usually for a few seconds after enrolling, pausing or cancelling.
 type SequenceRetrieveEnrollmentResponseStatus string
 
 const (
