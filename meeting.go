@@ -90,22 +90,28 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // modified.
 //
 // Only `fields.$privacySetting`, `fields.$attendeeEmails`, `fields.$meetingPrep`,
-// `fields.$postMeetingSummary` and `relationships.$transcript.replace` are
-// writable. Prep and summary accept Markdown. Regeneration as new activity arrives
-// replaces edits; null or an empty string clears the value until regeneration.
-// `$attendeeEmails` replaces the full attendee list and only works on meetings
-// that have ended. Adding an address on the workspace blocklist or a teammate's
-// do-not-track list hides the meeting after the next sync, and only an admin can
-// bring it back by removing the blocklist entry; the response lists manual changes
-// in the read-only `$manuallyAddedAttendeeEmails` and
-// `$manuallyRemovedAttendeeEmails`. `$transcript` is the file ID of the canonical
-// transcript. `$transcripts` lists the file ID of every transcript on the meeting.
-// Use `$transcript.replace` to make that file canonical. A file that is not
-// already on the meeting is attached first. Clearing or removing `$transcript` is
-// not supported. The `$account` and `$opportunity` relationships are read-only and
-// are derived from the meeting's `$contact` attendees and the
-// accounts/opportunities those contacts belong to. The response is privacy-aware
-// and includes a read-only `accessLevel`. See
+// `fields.$postMeetingSummary`, `relationships.$transcript.replace` and
+// `relationships.$transcript.remove` are writable. Prep and summary accept
+// Markdown. Regeneration as new activity arrives replaces edits; null or an empty
+// string clears the value until regeneration. `$attendeeEmails` replaces the full
+// attendee list and only works on meetings that have ended. Adding an address on
+// the workspace blocklist or a teammate's do-not-track list hides the meeting
+// after the next sync, and only an admin can bring it back by removing the
+// blocklist entry; the response lists manual changes in the read-only
+// `$manuallyAddedAttendeeEmails` and `$manuallyRemovedAttendeeEmails`.
+// `$transcript` is the file ID of the canonical transcript. `$transcripts` lists
+// the file ID of every transcript on the meeting. Use `$transcript.replace` to
+// make that file canonical. A file that is not already on the meeting is attached
+// first. Use `$transcript.remove` with the file ID of an uploaded transcript to
+// delete it, with its file and its summary; this cannot be undone. If it was the
+// canonical transcript, the next transcript in `$transcripts` takes its place and
+// the meeting summary is regenerated; if it was the last one, the meeting summary
+// is cleared. Transcripts from a recorder or an integration such as Gong or
+// Granola cannot be removed. Clearing `$transcript` is not supported. The
+// `$account` and `$opportunity` relationships are read-only and are derived from
+// the meeting's `$contact` attendees and the accounts/opportunities those contacts
+// belong to. The response is privacy-aware and includes a read-only `accessLevel`.
+// See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -2592,8 +2598,8 @@ type MeetingUpdateParams struct {
 	// `$meetingPrep` and `$postMeetingSummary` are writable, and omitted fields are
 	// left unchanged.
 	Fields MeetingUpdateParamsFields `json:"fields,omitzero"`
-	// Relationship operations to apply. Only `$transcript.replace` is supported;
-	// removing or clearing `$transcript` is not supported.
+	// Relationship operations to apply. Only `$transcript`, with exactly one of
+	// `replace` or `remove`, is supported; clearing `$transcript` is not supported.
 	Relationships MeetingUpdateParamsRelationships `json:"relationships,omitzero"`
 	paramObj
 }
@@ -2640,8 +2646,8 @@ func init() {
 	)
 }
 
-// Relationship operations to apply. Only `$transcript.replace` is supported;
-// removing or clearing `$transcript` is not supported.
+// Relationship operations to apply. Only `$transcript`, with exactly one of
+// `replace` or `remove`, is supported; clearing `$transcript` is not supported.
 type MeetingUpdateParamsRelationships struct {
 	Transcript MeetingUpdateParamsRelationshipsTranscript `json:"$transcript,omitzero"`
 	paramObj
@@ -2655,11 +2661,14 @@ func (r *MeetingUpdateParamsRelationships) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// The property Replace is required.
 type MeetingUpdateParamsRelationshipsTranscript struct {
+	// The file ID of an uploaded transcript to delete from the meeting, with its file
+	// and its transcript summary. Transcripts from a recorder or an integration such
+	// as Gong or Granola cannot be removed.
+	Remove param.Opt[string] `json:"remove,omitzero"`
 	// The file ID to make the canonical transcript. A file that is not already a
 	// transcript on the meeting is attached first.
-	Replace string `json:"replace" api:"required"`
+	Replace param.Opt[string] `json:"replace,omitzero"`
 	paramObj
 }
 

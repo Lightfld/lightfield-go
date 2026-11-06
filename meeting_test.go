@@ -98,7 +98,8 @@ func TestMeetingUpdateWithOptionalParams(t *testing.T) {
 			},
 			Relationships: githubcomlightfldlightfieldgo.MeetingUpdateParamsRelationships{
 				Transcript: githubcomlightfldlightfieldgo.MeetingUpdateParamsRelationshipsTranscript{
-					Replace: "replace",
+					Remove:  githubcomlightfldlightfieldgo.String("remove"),
+					Replace: githubcomlightfldlightfieldgo.String("replace"),
 				},
 			},
 		},
