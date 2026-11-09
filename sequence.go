@@ -375,7 +375,12 @@ func (r *SequenceService) GetPerformance(ctx context.Context, id string, opts ..
 // Returns 404 for a test that does not exist, belongs to another sequence, or is a
 // live enrollment: use
 // [Retrieve a sequence enrollment](/api/resources/sequence/methods/retrieveEnrollment)
-// for those.
+// for those. Returns 403 `sequence_test_record_restricted` when you may not read
+// in full what the test was composed from, with `reason`: `RECORD_RESTRICTED` when
+// you may see its contact or an account its messages were composed from by name
+// only, `RECORD_MISSING` when one of them no longer exists, or `SOURCE_UNRECORDED`
+// for a test composed before tests recorded the account they read. Returns 503
+// when that could not be checked; retry shortly.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
@@ -411,11 +416,14 @@ func (r *SequenceService) GetTest(ctx context.Context, testID string, query Sequ
 // phone number), or with `issues` when the draft cannot run, 400
 // `permissions_not_granted` when the draft has agent steps whose permissions are
 // not granted (grant them in Lightfield), 400 `no_selectable_sender` when a
-// channel has no available sender, 409 when `expectedVersion` is not the open
-// draft’s `version`; retrieve the draft and retry, and 429 when a test limit is
+// channel has no available sender, 403 `sequence_test_record_restricted` with
+// `reason` `RECORD_RESTRICTED` when you may see the contact, or the account its
+// template fields read, by name only, 409 when `expectedVersion` is not the open
+// draft’s `version`; retrieve the draft and retry, 429 when a test limit is
 // reached, with a message naming it: the workspace already has 10 tests running
 // (retry once one is `COMPLETED` or `FAILED`), or it started more than 5 tests a
-// minute (retry after `Retry-After` seconds). See
+// minute (retry after `Retry-After` seconds), and 503 when access to the contact
+// could not be checked; retry shortly. See
 // <u>[Sequence errors](/using-the-api/errors/#sequence-errors)</u>.
 //
 // Each call creates a test enrollment and drafts, and agent steps use model
