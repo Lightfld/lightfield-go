@@ -182,7 +182,7 @@ func (r *MeetingService) Delete(ctx context.Context, id string, body MeetingDele
 // attach in one write, so a failed request attaches neither. Media can also be
 // added later by updating the recording. Sending a transcript file that is already
 // on the meeting returns that recording. Only meeting participants and workspace
-// admins may upload.
+// owners may upload.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
@@ -290,7 +290,7 @@ func (r *MeetingService) GetRecording(ctx context.Context, recordingID string, q
 // recording the meeting primary, for any provider. `mediaFileId` adds or replaces
 // the audio or video of an uploaded recording; a replaced file is deleted.
 // Notetaker, Gong and Granola recordings cannot be given media. Only meeting
-// participants and workspace admins may update.
+// participants and workspace owners may update.
 //
 // Supports idempotency via the `Idempotency-Key` header.
 //
