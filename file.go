@@ -468,15 +468,16 @@ type FileNewParams struct {
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
 	// Optional validation hint. When provided, the server enforces purpose-specific
 	// MIME type and file size constraints. Use `meeting_transcript` for files that
-	// will be attached to a meeting as its transcript. Use `knowledge_user` or
-	// `knowledge_workspace` to stage an upload for the authenticated user or
-	// workspace. Completing the upload does not add it to Knowledge; promote it
-	// separately through the agent or Knowledge workflow. Use `contact_avatar` for an
-	// image that will be set as a contact photo through the contact `$profilePhotoUrl`
-	// field. Not returned in responses.
+	// will be attached to a meeting as its transcript. Use `meeting_recording` for the
+	// audio or video of an uploaded meeting recording (MP4, WebM, QuickTime, MP3, M4A,
+	// WAV or OGG). Use `knowledge_user` or `knowledge_workspace` to stage an upload
+	// for the authenticated user or workspace. Completing the upload does not add it
+	// to Knowledge; promote it separately through the agent or Knowledge workflow. Use
+	// `contact_avatar` for an image that will be set as a contact photo through the
+	// contact `$profilePhotoUrl` field. Not returned in responses.
 	//
-	// Any of "meeting_transcript", "knowledge_user", "knowledge_workspace",
-	// "email_attachment", "contact_avatar".
+	// Any of "meeting_transcript", "meeting_recording", "knowledge_user",
+	// "knowledge_workspace", "email_attachment", "contact_avatar".
 	Purpose FileNewParamsPurpose `json:"purpose,omitzero"`
 	paramObj
 }
@@ -491,16 +492,18 @@ func (r *FileNewParams) UnmarshalJSON(data []byte) error {
 
 // Optional validation hint. When provided, the server enforces purpose-specific
 // MIME type and file size constraints. Use `meeting_transcript` for files that
-// will be attached to a meeting as its transcript. Use `knowledge_user` or
-// `knowledge_workspace` to stage an upload for the authenticated user or
-// workspace. Completing the upload does not add it to Knowledge; promote it
-// separately through the agent or Knowledge workflow. Use `contact_avatar` for an
-// image that will be set as a contact photo through the contact `$profilePhotoUrl`
-// field. Not returned in responses.
+// will be attached to a meeting as its transcript. Use `meeting_recording` for the
+// audio or video of an uploaded meeting recording (MP4, WebM, QuickTime, MP3, M4A,
+// WAV or OGG). Use `knowledge_user` or `knowledge_workspace` to stage an upload
+// for the authenticated user or workspace. Completing the upload does not add it
+// to Knowledge; promote it separately through the agent or Knowledge workflow. Use
+// `contact_avatar` for an image that will be set as a contact photo through the
+// contact `$profilePhotoUrl` field. Not returned in responses.
 type FileNewParamsPurpose string
 
 const (
 	FileNewParamsPurposeMeetingTranscript  FileNewParamsPurpose = "meeting_transcript"
+	FileNewParamsPurposeMeetingRecording   FileNewParamsPurpose = "meeting_recording"
 	FileNewParamsPurposeKnowledgeUser      FileNewParamsPurpose = "knowledge_user"
 	FileNewParamsPurposeKnowledgeWorkspace FileNewParamsPurpose = "knowledge_workspace"
 	FileNewParamsPurposeEmailAttachment    FileNewParamsPurpose = "email_attachment"

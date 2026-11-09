@@ -167,6 +167,36 @@ func TestMeetingDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
+func TestMeetingNewRecordingWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Meeting.NewRecording(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.MeetingNewRecordingParams{
+			TranscriptFileID: "transcriptFileId",
+			IsCanonical:      githubcomlightfldlightfieldgo.Bool(true),
+			MediaFileID:      githubcomlightfldlightfieldgo.String("mediaFileId"),
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestMeetingDefinitions(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -180,6 +210,28 @@ func TestMeetingDefinitions(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Meeting.Definitions(context.TODO())
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMeetingListRecordings(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Meeting.ListRecordings(context.TODO(), "id")
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
@@ -206,6 +258,64 @@ func TestMeetingRestoreWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.MeetingRestoreParams{
 			Body: githubcomlightfldlightfieldgo.MeetingRestoreParamsBody{},
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMeetingGetRecording(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Meeting.GetRecording(
+		context.TODO(),
+		"recordingId",
+		githubcomlightfldlightfieldgo.MeetingGetRecordingParams{
+			ID: "id",
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestMeetingUpdateRecordingWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Meeting.UpdateRecording(
+		context.TODO(),
+		"recordingId",
+		githubcomlightfldlightfieldgo.MeetingUpdateRecordingParams{
+			ID:          "id",
+			IsCanonical: githubcomlightfldlightfieldgo.Bool(true),
+			MediaFileID: githubcomlightfldlightfieldgo.String("mediaFileId"),
 		},
 	)
 	if err != nil {

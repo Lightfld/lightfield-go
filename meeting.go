@@ -173,6 +173,33 @@ func (r *MeetingService) Delete(ctx context.Context, id string, body MeetingDele
 	return res, err
 }
 
+// A recording is one session of the meeting: its transcript and, when there is
+// one, its audio or video. Recordings come from the Lightfield notetaker, Gong,
+// Granola, or an upload. Only uploaded recordings can be created or given media
+// through the API. Creates an uploaded recording from files already uploaded
+// through `POST /v1/files`: a transcript (purpose `meeting_transcript`, required)
+// and optionally its audio or video (purpose `meeting_recording`). Both files
+// attach in one write, so a failed request attaches neither. Media can also be
+// added later by updating the recording. Sending a transcript file that is already
+// on the meeting returns that recording. Only meeting participants and workspace
+// admins may upload.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `meetings:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *MeetingService) NewRecording(ctx context.Context, id string, body MeetingNewRecordingParams, opts ...option.RequestOption) (res *MeetingCreateRecordingResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/meetings/%s/recordings", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Returns the schema for the field and relationship definitions available on
 // meetings. Useful for understanding the shape of meeting data before creating or
 // updating records. See
@@ -185,6 +212,27 @@ func (r *MeetingService) Delete(ctx context.Context, id string, body MeetingDele
 func (r *MeetingService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *MeetingDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/meetings/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// A recording is one session of the meeting: its transcript and, when there is
+// one, its audio or video. Recordings come from the Lightfield notetaker, Gong,
+// Granola, or an upload. Only uploaded recordings can be created or given media
+// through the API. Returns every recording on the meeting without media URLs;
+// retrieve a single recording for its media. Requires full access to the meeting;
+// a caller who sees only its metadata gets a 403.
+//
+// **[Required scope](/using-the-api/scopes/):** `meetings:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *MeetingService) ListRecordings(ctx context.Context, id string, opts ...option.RequestOption) (res *MeetingListRecordingsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/meetings/%s/recordings", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
@@ -207,6 +255,156 @@ func (r *MeetingService) Restore(ctx context.Context, id string, body MeetingRes
 	path := fmt.Sprintf("v1/meetings/%s/restore", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
+}
+
+// A recording is one session of the meeting: its transcript and, when there is
+// one, its audio or video. Recordings come from the Lightfield notetaker, Gong,
+// Granola, or an upload. Only uploaded recordings can be created or given media
+// through the API. Returns the recording with a short-lived `media.url` for its
+// audio or video. For notetaker and Gong recordings the URL is fetched from the
+// provider on each call. Requires full access to the meeting; a caller who sees
+// only its metadata gets a 403.
+//
+// **[Required scope](/using-the-api/scopes/):** `meetings:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *MeetingService) GetRecording(ctx context.Context, recordingID string, query MeetingGetRecordingParams, opts ...option.RequestOption) (res *MeetingRetrieveRecordingResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if query.ID == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	if recordingID == "" {
+		err = errors.New("missing required recordingId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/meetings/%s/recordings/%s", url.PathEscape(query.ID), url.PathEscape(recordingID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// A recording is one session of the meeting: its transcript and, when there is
+// one, its audio or video. Recordings come from the Lightfield notetaker, Gong,
+// Granola, or an upload. Only uploaded recordings can be created or given media
+// through the API. Changes only what is sent. `isCanonical: true` makes the
+// recording the meeting primary, for any provider. `mediaFileId` adds or replaces
+// the audio or video of an uploaded recording; a replaced file is deleted.
+// Notetaker, Gong and Granola recordings cannot be given media. Only meeting
+// participants and workspace admins may update.
+//
+// Supports idempotency via the `Idempotency-Key` header.
+//
+// **[Required scope](/using-the-api/scopes/):** `meetings:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *MeetingService) UpdateRecording(ctx context.Context, recordingID string, params MeetingUpdateRecordingParams, opts ...option.RequestOption) (res *MeetingUpdateRecordingResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if params.ID == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	if recordingID == "" {
+		err = errors.New("missing required recordingId parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/meetings/%s/recordings/%s", url.PathEscape(params.ID), url.PathEscape(recordingID))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
+	return res, err
+}
+
+type MeetingCreateRecordingResponse struct {
+	// Unique identifier of the recording.
+	ID string `json:"id" api:"required"`
+	// Whether this is the meeting's primary recording, the one summaries and
+	// `$transcript` use.
+	IsCanonical bool `json:"isCanonical" api:"required"`
+	// Playable audio or video. Null when the recording has none, such as a Granola
+	// note, a private Gong call, a failed notetaker recording or an upload without
+	// media.
+	Media MeetingCreateRecordingResponseMedia `json:"media" api:"required"`
+	// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+	// `GRANOLA`, or `UPLOAD`.
+	//
+	// Any of "RECALL", "GONG", "GRANOLA", "UPLOAD".
+	Provider MeetingCreateRecordingResponseProvider `json:"provider" api:"required"`
+	// When the provider recorded it, in ISO 8601. Null if unknown.
+	RecordedAt string `json:"recordedAt" api:"required"`
+	// Display name of who recorded or uploaded it. Not a member reference.
+	RecordedBy string `json:"recordedBy" api:"required"`
+	// The transcript text file. Null for older notetaker recordings.
+	Transcript MeetingCreateRecordingResponseTranscript `json:"transcript" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		IsCanonical respjson.Field
+		Media       respjson.Field
+		Provider    respjson.Field
+		RecordedAt  respjson.Field
+		RecordedBy  respjson.Field
+		Transcript  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingCreateRecordingResponse) RawJSON() string { return r.JSON.raw }
+func (r *MeetingCreateRecordingResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Playable audio or video. Null when the recording has none, such as a Granola
+// note, a private Gong call, a failed notetaker recording or an upload without
+// media.
+type MeetingCreateRecordingResponseMedia struct {
+	// MIME type of the media, when known.
+	MimeType string `json:"mimeType" api:"required"`
+	// Short-lived download URL for the audio or video. Anyone with the URL can
+	// download it until it expires, so fetch it again when needed rather than storing
+	// it.
+	URL string `json:"url" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		MimeType    respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingCreateRecordingResponseMedia) RawJSON() string { return r.JSON.raw }
+func (r *MeetingCreateRecordingResponseMedia) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+// `GRANOLA`, or `UPLOAD`.
+type MeetingCreateRecordingResponseProvider string
+
+const (
+	MeetingCreateRecordingResponseProviderRecall  MeetingCreateRecordingResponseProvider = "RECALL"
+	MeetingCreateRecordingResponseProviderGong    MeetingCreateRecordingResponseProvider = "GONG"
+	MeetingCreateRecordingResponseProviderGranola MeetingCreateRecordingResponseProvider = "GRANOLA"
+	MeetingCreateRecordingResponseProviderUpload  MeetingCreateRecordingResponseProvider = "UPLOAD"
+)
+
+// The transcript text file. Null for older notetaker recordings.
+type MeetingCreateRecordingResponseTranscript struct {
+	// File ID of the transcript. Read its text through `GET /v1/files/{id}/url`.
+	FileID string `json:"fileId" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FileID      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingCreateRecordingResponseTranscript) RawJSON() string { return r.JSON.raw }
+func (r *MeetingCreateRecordingResponseTranscript) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type MeetingCreateResponse struct {
@@ -1125,6 +1323,80 @@ func (r *MeetingDeleteResponseRelationshipDirectionsAsSource) UnmarshalJSON(data
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type MeetingListRecordingsResponse struct {
+	// Every recording on the meeting. Media is not included.
+	Data []MeetingListRecordingsResponseData `json:"data" api:"required"`
+	// Always `list`.
+	Object string `json:"object" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		Object      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingListRecordingsResponse) RawJSON() string { return r.JSON.raw }
+func (r *MeetingListRecordingsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingListRecordingsResponseData struct {
+	// Unique identifier of the recording.
+	ID string `json:"id" api:"required"`
+	// Whether this is the meeting's primary recording, the one summaries and
+	// `$transcript` use.
+	IsCanonical bool `json:"isCanonical" api:"required"`
+	// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+	// `GRANOLA`, or `UPLOAD`.
+	//
+	// Any of "RECALL", "GONG", "GRANOLA", "UPLOAD".
+	Provider string `json:"provider" api:"required"`
+	// When the provider recorded it, in ISO 8601. Null if unknown.
+	RecordedAt string `json:"recordedAt" api:"required"`
+	// Display name of who recorded or uploaded it. Not a member reference.
+	RecordedBy string `json:"recordedBy" api:"required"`
+	// The transcript text file. Null for older notetaker recordings.
+	Transcript MeetingListRecordingsResponseDataTranscript `json:"transcript" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		IsCanonical respjson.Field
+		Provider    respjson.Field
+		RecordedAt  respjson.Field
+		RecordedBy  respjson.Field
+		Transcript  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingListRecordingsResponseData) RawJSON() string { return r.JSON.raw }
+func (r *MeetingListRecordingsResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The transcript text file. Null for older notetaker recordings.
+type MeetingListRecordingsResponseDataTranscript struct {
+	// File ID of the transcript. Read its text through `GET /v1/files/{id}/url`.
+	FileID string `json:"fileId" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FileID      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingListRecordingsResponseDataTranscript) RawJSON() string { return r.JSON.raw }
+func (r *MeetingListRecordingsResponseDataTranscript) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type MeetingListResponse struct {
 	// Array of meeting objects for the current page.
 	Data []MeetingListResponseData `json:"data" api:"required"`
@@ -1813,6 +2085,101 @@ func (r *MeetingRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(dat
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type MeetingRetrieveRecordingResponse struct {
+	// Unique identifier of the recording.
+	ID string `json:"id" api:"required"`
+	// Whether this is the meeting's primary recording, the one summaries and
+	// `$transcript` use.
+	IsCanonical bool `json:"isCanonical" api:"required"`
+	// Playable audio or video. Null when the recording has none, such as a Granola
+	// note, a private Gong call, a failed notetaker recording or an upload without
+	// media.
+	Media MeetingRetrieveRecordingResponseMedia `json:"media" api:"required"`
+	// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+	// `GRANOLA`, or `UPLOAD`.
+	//
+	// Any of "RECALL", "GONG", "GRANOLA", "UPLOAD".
+	Provider MeetingRetrieveRecordingResponseProvider `json:"provider" api:"required"`
+	// When the provider recorded it, in ISO 8601. Null if unknown.
+	RecordedAt string `json:"recordedAt" api:"required"`
+	// Display name of who recorded or uploaded it. Not a member reference.
+	RecordedBy string `json:"recordedBy" api:"required"`
+	// The transcript text file. Null for older notetaker recordings.
+	Transcript MeetingRetrieveRecordingResponseTranscript `json:"transcript" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		IsCanonical respjson.Field
+		Media       respjson.Field
+		Provider    respjson.Field
+		RecordedAt  respjson.Field
+		RecordedBy  respjson.Field
+		Transcript  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingRetrieveRecordingResponse) RawJSON() string { return r.JSON.raw }
+func (r *MeetingRetrieveRecordingResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Playable audio or video. Null when the recording has none, such as a Granola
+// note, a private Gong call, a failed notetaker recording or an upload without
+// media.
+type MeetingRetrieveRecordingResponseMedia struct {
+	// MIME type of the media, when known.
+	MimeType string `json:"mimeType" api:"required"`
+	// Short-lived download URL for the audio or video. Anyone with the URL can
+	// download it until it expires, so fetch it again when needed rather than storing
+	// it.
+	URL string `json:"url" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		MimeType    respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingRetrieveRecordingResponseMedia) RawJSON() string { return r.JSON.raw }
+func (r *MeetingRetrieveRecordingResponseMedia) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+// `GRANOLA`, or `UPLOAD`.
+type MeetingRetrieveRecordingResponseProvider string
+
+const (
+	MeetingRetrieveRecordingResponseProviderRecall  MeetingRetrieveRecordingResponseProvider = "RECALL"
+	MeetingRetrieveRecordingResponseProviderGong    MeetingRetrieveRecordingResponseProvider = "GONG"
+	MeetingRetrieveRecordingResponseProviderGranola MeetingRetrieveRecordingResponseProvider = "GRANOLA"
+	MeetingRetrieveRecordingResponseProviderUpload  MeetingRetrieveRecordingResponseProvider = "UPLOAD"
+)
+
+// The transcript text file. Null for older notetaker recordings.
+type MeetingRetrieveRecordingResponseTranscript struct {
+	// File ID of the transcript. Read its text through `GET /v1/files/{id}/url`.
+	FileID string `json:"fileId" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FileID      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingRetrieveRecordingResponseTranscript) RawJSON() string { return r.JSON.raw }
+func (r *MeetingRetrieveRecordingResponseTranscript) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type MeetingRetrieveResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
@@ -2150,6 +2517,101 @@ type MeetingRetrieveResponseRelationshipDirectionsAsSource struct {
 // Returns the unmodified JSON received from the API
 func (r MeetingRetrieveResponseRelationshipDirectionsAsSource) RawJSON() string { return r.JSON.raw }
 func (r *MeetingRetrieveResponseRelationshipDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingUpdateRecordingResponse struct {
+	// Unique identifier of the recording.
+	ID string `json:"id" api:"required"`
+	// Whether this is the meeting's primary recording, the one summaries and
+	// `$transcript` use.
+	IsCanonical bool `json:"isCanonical" api:"required"`
+	// Playable audio or video. Null when the recording has none, such as a Granola
+	// note, a private Gong call, a failed notetaker recording or an upload without
+	// media.
+	Media MeetingUpdateRecordingResponseMedia `json:"media" api:"required"`
+	// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+	// `GRANOLA`, or `UPLOAD`.
+	//
+	// Any of "RECALL", "GONG", "GRANOLA", "UPLOAD".
+	Provider MeetingUpdateRecordingResponseProvider `json:"provider" api:"required"`
+	// When the provider recorded it, in ISO 8601. Null if unknown.
+	RecordedAt string `json:"recordedAt" api:"required"`
+	// Display name of who recorded or uploaded it. Not a member reference.
+	RecordedBy string `json:"recordedBy" api:"required"`
+	// The transcript text file. Null for older notetaker recordings.
+	Transcript MeetingUpdateRecordingResponseTranscript `json:"transcript" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		IsCanonical respjson.Field
+		Media       respjson.Field
+		Provider    respjson.Field
+		RecordedAt  respjson.Field
+		RecordedBy  respjson.Field
+		Transcript  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingUpdateRecordingResponse) RawJSON() string { return r.JSON.raw }
+func (r *MeetingUpdateRecordingResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Playable audio or video. Null when the recording has none, such as a Granola
+// note, a private Gong call, a failed notetaker recording or an upload without
+// media.
+type MeetingUpdateRecordingResponseMedia struct {
+	// MIME type of the media, when known.
+	MimeType string `json:"mimeType" api:"required"`
+	// Short-lived download URL for the audio or video. Anyone with the URL can
+	// download it until it expires, so fetch it again when needed rather than storing
+	// it.
+	URL string `json:"url" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		MimeType    respjson.Field
+		URL         respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingUpdateRecordingResponseMedia) RawJSON() string { return r.JSON.raw }
+func (r *MeetingUpdateRecordingResponseMedia) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Where the recording came from: `RECALL` (Lightfield notetaker), `GONG`,
+// `GRANOLA`, or `UPLOAD`.
+type MeetingUpdateRecordingResponseProvider string
+
+const (
+	MeetingUpdateRecordingResponseProviderRecall  MeetingUpdateRecordingResponseProvider = "RECALL"
+	MeetingUpdateRecordingResponseProviderGong    MeetingUpdateRecordingResponseProvider = "GONG"
+	MeetingUpdateRecordingResponseProviderGranola MeetingUpdateRecordingResponseProvider = "GRANOLA"
+	MeetingUpdateRecordingResponseProviderUpload  MeetingUpdateRecordingResponseProvider = "UPLOAD"
+)
+
+// The transcript text file. Null for older notetaker recordings.
+type MeetingUpdateRecordingResponseTranscript struct {
+	// File ID of the transcript. Read its text through `GET /v1/files/{id}/url`.
+	FileID string `json:"fileId" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FileID      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r MeetingUpdateRecordingResponseTranscript) RawJSON() string { return r.JSON.raw }
+func (r *MeetingUpdateRecordingResponseTranscript) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -2736,6 +3198,28 @@ func (r *MeetingDeleteParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type MeetingNewRecordingParams struct {
+	// File ID of a completed upload with purpose `meeting_transcript`.
+	TranscriptFileID string `json:"transcriptFileId" api:"required"`
+	// Pin this as the meeting's primary recording. Defaults to `true`. `false`
+	// attaches it without pinning; on a meeting with no pinned recording, the primary
+	// is chosen by source (notetaker, Gong, Granola, then uploads) and then recency,
+	// so a newer upload can still become primary.
+	IsCanonical param.Opt[bool] `json:"isCanonical,omitzero"`
+	// File ID of a completed upload with purpose `meeting_recording`. Can also be
+	// added later by updating the recording.
+	MediaFileID param.Opt[string] `json:"mediaFileId,omitzero"`
+	paramObj
+}
+
+func (r MeetingNewRecordingParams) MarshalJSON() (data []byte, err error) {
+	type shadow MeetingNewRecordingParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *MeetingNewRecordingParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type MeetingRestoreParams struct {
 	Body MeetingRestoreParamsBody
 	paramObj
@@ -2757,5 +3241,32 @@ func (r MeetingRestoreParamsBody) MarshalJSON() (data []byte, err error) {
 	return param.MarshalObject(r, (*shadow)(&r))
 }
 func (r *MeetingRestoreParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingGetRecordingParams struct {
+	// Unique identifier of the meeting.
+	ID string `path:"id" api:"required" json:"-"`
+	paramObj
+}
+
+type MeetingUpdateRecordingParams struct {
+	// Unique identifier of the meeting.
+	ID string `path:"id" api:"required" json:"-"`
+	// `true` pins this as the meeting's primary recording. Works for every provider,
+	// but the recording needs a transcript file (`transcript` is not null). `false` is
+	// rejected: to move the primary, set it on another recording.
+	IsCanonical param.Opt[bool] `json:"isCanonical,omitzero"`
+	// File ID of a completed upload with purpose `meeting_recording`. Adds or replaces
+	// the media; a replaced file is deleted. Uploaded recordings only.
+	MediaFileID param.Opt[string] `json:"mediaFileId,omitzero"`
+	paramObj
+}
+
+func (r MeetingUpdateRecordingParams) MarshalJSON() (data []byte, err error) {
+	type shadow MeetingUpdateRecordingParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *MeetingUpdateRecordingParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
