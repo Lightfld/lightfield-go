@@ -254,15 +254,21 @@ func (r *SequenceService) ListTemplateVariables(ctx context.Context, opts ...opt
 }
 
 // Publishes the open draft at `expectedVersion` and returns the sequence. A first
-// publish leaves the sequence `DEACTIVATED`; activate it to start sending.
+// publish leaves the sequence `DEACTIVATED`; activate it to start sending. A
+// sequence that is not active publishes without senders; it needs an available
+// sender for each channel its steps use only to activate. LinkedIn steps still
+// need a plan that includes LinkedIn, whether or not the sequence is active.
 // Contacts already enrolled continue on the new version.
 //
 // A refused publish changes nothing. Returns 400 `invalid_configuration` with the
-// problems under `issues`, 400 `permissions_not_granted` or `no_selectable_sender`
-// when the steps cannot send yet, 404 `draft_not_found` when no draft is open, and
-// 409 when `expectedVersion` is not the open draft’s `version`; retrieve the draft
-// and retry. See <u>[Sequence errors](/using-the-api/errors/#sequence-errors)</u>
-// for what each code means and how to resolve it.
+// problems under `issues`, including `not_entitled` on `definition.steps` when the
+// plan does not include LinkedIn, 400 `permissions_not_granted` when the draft has
+// step permissions not yet granted, 400 `no_selectable_sender` when the sequence
+// is active and a channel its steps use has no available sender, 404
+// `draft_not_found` when no draft is open, and 409 when `expectedVersion` is not
+// the open draft’s `version`; retrieve the draft and retry. See
+// <u>[Sequence errors](/using-the-api/errors/#sequence-errors)</u> for what each
+// code means and how to resolve it.
 //
 // **[Required scope](/using-the-api/scopes/):** `sequences:update`
 //
