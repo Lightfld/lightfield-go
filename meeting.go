@@ -49,8 +49,9 @@ func NewMeetingService(opts ...option.RequestOption) (r MeetingService) {
 // Only the `$transcript` relationship is writable on create; all other meeting
 // relationships are system-managed. The `$account` and `$opportunity`
 // relationships are read-only and are derived from the meeting's `$contact`
-// attendees and the accounts/opportunities those contacts belong to. The response
-// is privacy-aware and includes a read-only `accessLevel`. See
+// attendees and the accounts/opportunities those contacts belong to. They are left
+// out when `accessLevel` is `METADATA`, as in the Lightfield app. The response is
+// privacy-aware and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -68,9 +69,13 @@ func (r *MeetingService) New(ctx context.Context, body MeetingNewParams, opts ..
 
 // Retrieves a single meeting by its ID. `$transcript` is the file ID of the
 // canonical transcript. `$transcripts` lists the file ID of every transcript on
-// the meeting. `$note` lists the note IDs attached to the meeting. Meeting fields
-// and transcript visibility are redacted based on the caller-specific privacy
-// resolution, and the response includes a read-only `accessLevel`.
+// the meeting. `$note` lists the note IDs attached to the meeting. The `$account`
+// and `$opportunity` relationships are read-only and are derived from the
+// meeting's `$contact` attendees and the accounts/opportunities those contacts
+// belong to. They are left out when `accessLevel` is `METADATA`, as in the
+// Lightfield app. Meeting fields and transcript visibility are redacted based on
+// the caller-specific privacy resolution, and the response includes a read-only
+// `accessLevel`.
 //
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //
@@ -110,8 +115,9 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // Granola cannot be removed. Clearing `$transcript` is not supported. The
 // `$account` and `$opportunity` relationships are read-only and are derived from
 // the meeting's `$contact` attendees and the accounts/opportunities those contacts
-// belong to. The response is privacy-aware and includes a read-only `accessLevel`.
-// See
+// belong to. They are left out when `accessLevel` is `METADATA`, as in the
+// Lightfield app. The response is privacy-aware and includes a read-only
+// `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -135,12 +141,15 @@ func (r *MeetingService) Update(ctx context.Context, id string, body MeetingUpda
 // created in Lightfield (`createdAt`), newest first. This is not the meeting start
 // time. Use `offset` and `limit` to paginate through results. Each meeting is
 // privacy-filtered per caller, includes a read-only `accessLevel`, and may redact
-// transcript or content fields based on the caller-specific privacy resolution. As
-// in the Lightfield app, a meeting is listed only when it is internal-only or
-// linked to an account or an active contact; this applies to every caller,
-// including admins and workspace API keys. Pass `status=trashed` to list meetings
-// currently in the trash instead of live records. Listing trashed records
-// additionally requires the `meetings:restore` scope. See
+// transcript or content fields based on the caller-specific privacy resolution.
+// The `$account` and `$opportunity` relationships are read-only and are derived
+// from the meeting's `$contact` attendees and the accounts/opportunities those
+// contacts belong to. They are left out when `accessLevel` is `METADATA`, as in
+// the Lightfield app. As in the Lightfield app, a meeting is listed only when it
+// is internal-only or linked to an account or an active contact; this applies to
+// every caller, including admins and workspace API keys. Pass `status=trashed` to
+// list meetings currently in the trash instead of live records. Listing trashed
+// records additionally requires the `meetings:restore` scope. See
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
