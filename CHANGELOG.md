@@ -1,5 +1,37 @@
 # Changelog
 
+## [0.13.0](https://github.com/Lightfld/lightfield-go/compare/v0.12.0...v0.13.0) (2026-11-10)
+
+
+### ⚠ BREAKING CHANGES
+
+* **api:** retrieve can return a restricted stub for records the caller may only name (LFD-28834)
+
+### Features
+
+* **api:** accept and expose includeInCrm on channels ([9dab770](https://github.com/Lightfld/lightfield-go/commit/9dab77052abf7f47649e15597869f68edede67c3))
+* **api:** read meeting recordings and upload them with audio or video ([140e2bc](https://github.com/Lightfld/lightfield-go/commit/140e2bcadf24f74c9105f4048c41416e30c7d3e3))
+* **api:** retrieve can return a restricted stub for records the caller may only name (LFD-28834) ([23210da](https://github.com/Lightfld/lightfield-go/commit/23210dae9061d5980132e61ec2cce2bee7323d54))
+
+
+### Bug Fixes
+
+* **api:** LFD-30462 refuse sequence tests and their messages for records the member can't read in full ([4d63b05](https://github.com/Lightfld/lightfield-go/commit/4d63b05104058a3706cd92c2ecd831be00a29c9f))
+* **api:** refuse a REST merge when the caller may see either record by name only (LFD-29658) ([67e2950](https://github.com/Lightfld/lightfield-go/commit/67e295043e5369e2cf8922d8ebff31bafb0cfaa3))
+* **api:** REST and MCP lists return only the records the reader may read (LFD-29130) ([5c525f8](https://github.com/Lightfld/lightfield-go/commit/5c525f8d58d00c100f3faf0c7d5d3577d9553d6f))
+* **files:** stop provider 502s from paging and tell clients when to stop retrying ([9d84b9b](https://github.com/Lightfld/lightfield-go/commit/9d84b9b2d88539916c1aa22cd630b75aef219ad0))
+
+
+### Chores
+
+* release 0.13.0 ([a8454c8](https://github.com/Lightfld/lightfield-go/commit/a8454c8596674ef4c12d1c21819436b65c89c8d8))
+
+
+### Documentation
+
+* **api:** align published contracts with current behavior ([d19ccfa](https://github.com/Lightfld/lightfield-go/commit/d19ccfac9ab0ab9819f06fe85e7ebacb91a0eb1e))
+* **api:** regenerate the contact photo description in openapi.json ([2de73b0](https://github.com/Lightfld/lightfield-go/commit/2de73b0a4c9073474597b629812d4a7cdca12e60))
+
 ## [0.12.0](https://github.com/Lightfld/lightfield-go/compare/v0.11.0...v0.12.0) (2026-10-16)
 
 
