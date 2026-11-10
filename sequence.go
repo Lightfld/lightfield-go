@@ -485,6 +485,10 @@ func (r *SequenceService) UpdateDraft(ctx context.Context, id string, body Seque
 // contact: `enrolled`, `already_enrolled`, `unenrolled`, or `no_active_enrollment`
 // for a removal with nothing open.
 //
+// In a sequence with both email and LinkedIn steps, a contact with only one of the
+// two is enrolled and `missingChannel` names the other: its steps on that channel
+// skip. A contact with neither cannot be enrolled.
+//
 // A contact already enrolled, paused included, is left as is; one whose earlier
 // enrollment ended is enrolled again. Cancelling stops the contact’s remaining
 // steps and leaves the enrollment readable with status `CANCELLED`. A paused
@@ -8180,12 +8184,16 @@ type SequenceUpdateEnrollmentsResponseResultUnion struct {
 	ContactID string `json:"contactId"`
 	// This field is a union of [string], [any]
 	EnrollmentID SequenceUpdateEnrollmentsResponseResultUnionEnrollmentID `json:"enrollmentId"`
-	Outcome      string                                                   `json:"outcome"`
-	JSON         struct {
-		ContactID    respjson.Field
-		EnrollmentID respjson.Field
-		Outcome      respjson.Field
-		raw          string
+	// This field is from variant
+	// [SequenceUpdateEnrollmentsResponseResultEnrollmentChanged].
+	MissingChannel string `json:"missingChannel"`
+	Outcome        string `json:"outcome"`
+	JSON           struct {
+		ContactID      respjson.Field
+		EnrollmentID   respjson.Field
+		MissingChannel respjson.Field
+		Outcome        respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
@@ -8238,6 +8246,12 @@ type SequenceUpdateEnrollmentsResponseResultEnrollmentChanged struct {
 	ContactID string `json:"contactId" api:"required"`
 	// ID of the enrollment the outcome applies to.
 	EnrollmentID string `json:"enrollmentId" api:"required"`
+	// Set on an `enrolled` contact that has no email address (`email`) or no LinkedIn
+	// URL (`linkedin`) in a sequence that sends on both: the contact is enrolled, and
+	// the steps on that channel skip for them. Null otherwise.
+	//
+	// Any of "email", "linkedin".
+	MissingChannel string `json:"missingChannel" api:"required"`
 	// `enrolled` created the enrollment, `already_enrolled` left an open one as is,
 	// `unenrolled` cancelled it.
 	//
@@ -8245,11 +8259,12 @@ type SequenceUpdateEnrollmentsResponseResultEnrollmentChanged struct {
 	Outcome string `json:"outcome" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ContactID    respjson.Field
-		EnrollmentID respjson.Field
-		Outcome      respjson.Field
-		ExtraFields  map[string]respjson.Field
-		raw          string
+		ContactID      respjson.Field
+		EnrollmentID   respjson.Field
+		MissingChannel respjson.Field
+		Outcome        respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
 	} `json:"-"`
 }
 
