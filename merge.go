@@ -53,8 +53,8 @@ func (r *MergeService) GetMerge(ctx context.Context, id string, opts ...option.R
 	return res, err
 }
 
-// Requires an `Idempotency-Key` header. Use a new key for each intended merge and
-// reuse it only when retrying the same merge; a missing header returns 400.
+// Supports idempotency via the `Idempotency-Key` header. Use a new key for each
+// intended merge and reuse it only when retrying the same merge.
 //
 // Returns 403 when you may see either record by name only.
 //
@@ -72,8 +72,8 @@ func (r *MergeService) MergeAccounts(ctx context.Context, body MergeMergeAccount
 	return res, err
 }
 
-// Requires an `Idempotency-Key` header. Use a new key for each intended merge and
-// reuse it only when retrying the same merge; a missing header returns 400.
+// Supports idempotency via the `Idempotency-Key` header. Use a new key for each
+// intended merge and reuse it only when retrying the same merge.
 //
 // Returns 403 when you may see either record by name only.
 //
@@ -91,8 +91,8 @@ func (r *MergeService) MergeContacts(ctx context.Context, body MergeMergeContact
 	return res, err
 }
 
-// Requires an `Idempotency-Key` header. Use a new key for each intended merge and
-// reuse it only when retrying the same merge; a missing header returns 400.
+// Supports idempotency via the `Idempotency-Key` header. Use a new key for each
+// intended merge and reuse it only when retrying the same merge.
 //
 // Returns 403 when you may see either record by name only.
 //
@@ -115,8 +115,8 @@ func (r *MergeService) MergeObjectValues(ctx context.Context, entitySlug string,
 	return res, err
 }
 
-// Requires an `Idempotency-Key` header. Use a new key for each intended merge and
-// reuse it only when retrying the same merge; a missing header returns 400.
+// Supports idempotency via the `Idempotency-Key` header. Use a new key for each
+// intended merge and reuse it only when retrying the same merge.
 //
 // Returns 403 when you may see either record by name only.
 //
