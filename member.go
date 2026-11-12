@@ -63,6 +63,11 @@ func (r *MemberService) Get(ctx context.Context, id string, opts ...option.Reque
 // <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
 // about pagination.
 //
+// Filter by email with `$email[equal]=address` or `$email=address`. Addresses are
+// normalized and matched case-insensitively against the email returned for the
+// member, including placeholder members. Only one filter is allowed per request;
+// repeating it returns a 400.
+//
 // **[Required scope](/using-the-api/scopes/):** `members:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Search
@@ -78,7 +83,7 @@ type MemberListResponse struct {
 	Data []MemberListResponseData `json:"data" api:"required"`
 	// The object type, always `"list"`.
 	Object string `json:"object" api:"required"`
-	// Total number of members in the workspace.
+	// Total number of members matching the filters in the workspace.
 	TotalCount int64 `json:"totalCount" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
