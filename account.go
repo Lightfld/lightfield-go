@@ -2682,9 +2682,12 @@ func (r *AccountUpdateResponseRelationshipDirectionsAsSource) UnmarshalJSON(data
 type AccountNewParams struct {
 	// Field values for the new account. System fields use a `$` prefix (e.g. `$name`,
 	// `$website`); custom attributes use their bare slug (e.g. `tier`, `renewalDate`).
-	// Required: `$name` (string). Fields of type `SINGLE_SELECT` or `MULTI_SELECT`
-	// accept either an option ID or label from the field's `typeConfiguration.options`
-	// — call the
+	// Required: `$name` (string). `$website` and `$industry` take a list of strings,
+	// even for one value: URLs for `$website` (`["https://acme.com"]`, not
+	// `"https://acme.com"`), option IDs or labels for `$industry`. `$primaryAddress`
+	// is an object `{ street, city, state, postalCode, country, … }`, not a plain
+	// string. Fields of type `SINGLE_SELECT` or `MULTI_SELECT` accept either an option
+	// ID or label from the field's `typeConfiguration.options` — call the
 	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> to
 	// discover available fields and options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
@@ -2805,8 +2808,12 @@ func (u *AccountNewParamsRelationshipUnion) UnmarshalJSON(data []byte) error {
 type AccountUpdateParams struct {
 	// Field values to update — only provided fields are modified; omitted fields are
 	// left unchanged. System fields use a `$` prefix (e.g. `$name`); custom attributes
-	// use their bare slug. `SINGLE_SELECT` and `MULTI_SELECT` fields accept an option
-	// ID or label — call the
+	// use their bare slug. `$website` and `$industry` take a list of strings, even for
+	// one value: URLs for `$website` (`["https://acme.com"]`, not
+	// `"https://acme.com"`), option IDs or labels for `$industry`. `$primaryAddress`
+	// is an object `{ street, city, state, postalCode, country, … }`, not a plain
+	// string. `SINGLE_SELECT` and `MULTI_SELECT` fields accept an option ID or label —
+	// call the
 	// <u>[definitions endpoint](/api/resources/account/methods/definitions)</u> for
 	// available options. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for

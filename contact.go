@@ -2670,8 +2670,9 @@ func (r *ContactUpdateResponseRelationshipDirectionsAsSource) UnmarshalJSON(data
 type ContactNewParams struct {
 	// Field values for the new contact. System fields use a `$` prefix (e.g. `$email`,
 	// `$name`); custom attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
+	// `{ firstName, lastName }`, not a plain string. `$email` and `$phone` are lists
+	// of strings, even for one value: `["jane@acme.com"]`, not `"jane@acme.com"`. Call
+	// the <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> to
 	// discover available fields and their types. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
@@ -2791,9 +2792,10 @@ type ContactUpdateParams struct {
 	// Field values to update — only provided fields are modified; omitted fields are
 	// left unchanged. System fields use a `$` prefix (e.g. `$email`); custom
 	// attributes use their bare slug. Note: `$name` is an object
-	// `{ firstName, lastName }`, not a plain string. Call the
-	// <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u> for
-	// available fields and types. See
+	// `{ firstName, lastName }`, not a plain string. `$email` and `$phone` are lists
+	// of strings, even for one value: `["jane@acme.com"]`, not `"jane@acme.com"`. Call
+	// the <u>[definitions endpoint](/api/resources/contact/methods/definitions)</u>
+	// for available fields and types. See
 	// <u>[Fields and relationships](/using-the-api/fields-and-relationships/)</u> for
 	// value type details.
 	//
