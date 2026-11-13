@@ -327,6 +327,12 @@ func (r *SequenceService) GetEnrollment(ctx context.Context, enrollmentID string
 // returned with `sequences:read` regardless of the email’s privacy; see
 // <u>[Sequence message access](/using-the-api/scopes/#sequence-message-access)</u>.
 //
+// Returns 403 `sequence_message_record_restricted` for an outbound message when
+// you may not read in full what it was written from, with `reason`:
+// `RECORD_RESTRICTED` when you may see its contact, or an account its enrollment’s
+// messages were written from, by name only, or `RECORD_MISSING` when one of them
+// no longer exists. Returns 503 when that could not be checked; retry shortly.
+//
 // **[Required scope](/using-the-api/scopes/):** `sequences:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
