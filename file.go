@@ -78,6 +78,10 @@ func (r *FileService) New(ctx context.Context, body FileNewParams, opts ...optio
 // which document classes are retrievable by id versus enumerable through
 // `GET /v1/files`.
 //
+// Google Drive items add `source`, `kind`, `parentId`, `webUrl`, and `modifiedAt`.
+// Those fields are null for every other file. A workspace API key receives
+// not-found for a Drive id.
+//
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
@@ -101,6 +105,15 @@ func (r *FileService) Get(ctx context.Context, id string, opts ...option.Request
 // Omits files uploaded through the app and synced chat attachments — both are
 // still retrievable by id. See <u>[File uploads](/using-the-api/file-uploads/)</u>
 // for which document classes are listable versus retrievable-only.
+//
+// Pass `recordId` to list that record’s Google Drive tree instead, folders
+// included, ordered by kind, then title, then id. The tree is capped at 1000 rows
+// and paged with `after` (the last id from the previous page), not `offset`. A
+// cut-off tree sets `truncated` to true, and `totalCount` is then 1000 rather than
+// the size of the tree. `after` must be an id from this tree. Pass `parentId` with
+// `recordId` to list one folder’s children; that listing uses `offset`. `parentId`
+// alone is rejected. Only a user can use these filters, and Drive items stay out
+// of the unfiltered list.
 //
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
@@ -151,6 +164,17 @@ func (r *FileService) Complete(ctx context.Context, id string, body FileComplete
 // `COMPLETED` status. Works for any retrievable file id, including files uploaded
 // through the app.
 //
+// A Google Drive file returns a presigned S3 URL for a temporary copy of that file
+// version. Google is asked whether the caller can still open the file, and whether
+// Drive allows them to download it, before the copy is served. A folder returns
+// `409` with code `file_is_folder`. A file whose owner has turned off downloading,
+// and a Google type that cannot be exported, return `409` with code
+// `file_not_downloadable`. A caller who has not connected Drive returns `409` with
+// code `drive_not_connected`. A file over 50 MB returns `400` with code
+// `file_too_large`. A Google failure returns `502` with code
+// `drive_download_provider_unavailable`. Anyone who is not a user, including a
+// workspace API key, receives not-found.
+//
 // Synced email attachments are fetched from the mail provider on first download.
 // If the provider fails, the call returns `502` with code
 // `mail_attachment_provider_unavailable`. Retry with backoff, and stop after a few
@@ -181,14 +205,33 @@ type FileCancelResponse struct {
 	ExpiresAt string `json:"expiresAt" api:"required"`
 	// Original filename.
 	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind FileCancelResponseKind `json:"kind" api:"required"`
 	// MIME type of the file.
 	MimeType string `json:"mimeType" api:"required"`
+	// When Google Drive last modified this item. Null for a non-Drive file, and for a
+	// Drive item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The Drive folder this item sits in, or null for a top-level item or a non-Drive
+	// file.
+	ParentID string `json:"parentId" api:"required"`
 	// File size in bytes.
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source FileCancelResponseSource `json:"source" api:"required"`
 	// Current upload status of the file.
 	//
 	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
 	Status FileCancelResponseStatus `json:"status" api:"required"`
+	// A link that opens this item in Google Drive. Null for a non-Drive file.
+	WebURL string `json:"webUrl" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -196,9 +239,14 @@ type FileCancelResponse struct {
 		CreatedAt   respjson.Field
 		ExpiresAt   respjson.Field
 		Filename    respjson.Field
+		Kind        respjson.Field
 		MimeType    respjson.Field
+		ModifiedAt  respjson.Field
+		ParentID    respjson.Field
 		SizeBytes   respjson.Field
+		Source      respjson.Field
 		Status      respjson.Field
+		WebURL      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -209,6 +257,25 @@ func (r FileCancelResponse) RawJSON() string { return r.JSON.raw }
 func (r *FileCancelResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Whether the item is a file or a folder. Null when the response was built without
+// that column.
+type FileCancelResponseKind string
+
+const (
+	FileCancelResponseKindFile   FileCancelResponseKind = "file"
+	FileCancelResponseKindFolder FileCancelResponseKind = "folder"
+)
+
+// Where the file came from. `googleDrive` for a linked Google Drive item,
+// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+// file.
+type FileCancelResponseSource string
+
+const (
+	FileCancelResponseSourceGoogleDrive    FileCancelResponseSource = "googleDrive"
+	FileCancelResponseSourceMicrosoftDrive FileCancelResponseSource = "microsoftDrive"
+)
 
 // Current upload status of the file.
 type FileCancelResponseStatus string
@@ -231,14 +298,33 @@ type FileCompleteResponse struct {
 	ExpiresAt string `json:"expiresAt" api:"required"`
 	// Original filename.
 	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind FileCompleteResponseKind `json:"kind" api:"required"`
 	// MIME type of the file.
 	MimeType string `json:"mimeType" api:"required"`
+	// When Google Drive last modified this item. Null for a non-Drive file, and for a
+	// Drive item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The Drive folder this item sits in, or null for a top-level item or a non-Drive
+	// file.
+	ParentID string `json:"parentId" api:"required"`
 	// File size in bytes.
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source FileCompleteResponseSource `json:"source" api:"required"`
 	// Current upload status of the file.
 	//
 	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
 	Status FileCompleteResponseStatus `json:"status" api:"required"`
+	// A link that opens this item in Google Drive. Null for a non-Drive file.
+	WebURL string `json:"webUrl" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -246,9 +332,14 @@ type FileCompleteResponse struct {
 		CreatedAt   respjson.Field
 		ExpiresAt   respjson.Field
 		Filename    respjson.Field
+		Kind        respjson.Field
 		MimeType    respjson.Field
+		ModifiedAt  respjson.Field
+		ParentID    respjson.Field
 		SizeBytes   respjson.Field
+		Source      respjson.Field
 		Status      respjson.Field
+		WebURL      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -259,6 +350,25 @@ func (r FileCompleteResponse) RawJSON() string { return r.JSON.raw }
 func (r *FileCompleteResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Whether the item is a file or a folder. Null when the response was built without
+// that column.
+type FileCompleteResponseKind string
+
+const (
+	FileCompleteResponseKindFile   FileCompleteResponseKind = "file"
+	FileCompleteResponseKindFolder FileCompleteResponseKind = "folder"
+)
+
+// Where the file came from. `googleDrive` for a linked Google Drive item,
+// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+// file.
+type FileCompleteResponseSource string
+
+const (
+	FileCompleteResponseSourceGoogleDrive    FileCompleteResponseSource = "googleDrive"
+	FileCompleteResponseSourceMicrosoftDrive FileCompleteResponseSource = "microsoftDrive"
+)
 
 // Current upload status of the file.
 type FileCompleteResponseStatus string
@@ -281,10 +391,27 @@ type FileCreateResponse struct {
 	ExpiresAt string `json:"expiresAt" api:"required"`
 	// Original filename.
 	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind FileCreateResponseKind `json:"kind" api:"required"`
 	// MIME type of the file.
 	MimeType string `json:"mimeType" api:"required"`
+	// When Google Drive last modified this item. Null for a non-Drive file, and for a
+	// Drive item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The Drive folder this item sits in, or null for a top-level item or a non-Drive
+	// file.
+	ParentID string `json:"parentId" api:"required"`
 	// File size in bytes.
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source FileCreateResponseSource `json:"source" api:"required"`
 	// Current upload status of the file.
 	//
 	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
@@ -293,6 +420,8 @@ type FileCreateResponse struct {
 	UploadHeaders map[string]string `json:"uploadHeaders" api:"required"`
 	// Upload URL. Upload the file bytes directly to this URL.
 	UploadURL string `json:"uploadUrl" api:"required"`
+	// A link that opens this item in Google Drive. Null for a non-Drive file.
+	WebURL string `json:"webUrl" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID            respjson.Field
@@ -300,11 +429,16 @@ type FileCreateResponse struct {
 		CreatedAt     respjson.Field
 		ExpiresAt     respjson.Field
 		Filename      respjson.Field
+		Kind          respjson.Field
 		MimeType      respjson.Field
+		ModifiedAt    respjson.Field
+		ParentID      respjson.Field
 		SizeBytes     respjson.Field
+		Source        respjson.Field
 		Status        respjson.Field
 		UploadHeaders respjson.Field
 		UploadURL     respjson.Field
+		WebURL        respjson.Field
 		ExtraFields   map[string]respjson.Field
 		raw           string
 	} `json:"-"`
@@ -315,6 +449,25 @@ func (r FileCreateResponse) RawJSON() string { return r.JSON.raw }
 func (r *FileCreateResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Whether the item is a file or a folder. Null when the response was built without
+// that column.
+type FileCreateResponseKind string
+
+const (
+	FileCreateResponseKindFile   FileCreateResponseKind = "file"
+	FileCreateResponseKindFolder FileCreateResponseKind = "folder"
+)
+
+// Where the file came from. `googleDrive` for a linked Google Drive item,
+// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+// file.
+type FileCreateResponseSource string
+
+const (
+	FileCreateResponseSourceGoogleDrive    FileCreateResponseSource = "googleDrive"
+	FileCreateResponseSourceMicrosoftDrive FileCreateResponseSource = "microsoftDrive"
+)
 
 // Current upload status of the file.
 type FileCreateResponseStatus string
@@ -333,11 +486,15 @@ type FileListResponse struct {
 	Object string `json:"object" api:"required"`
 	// Total number of matching files.
 	TotalCount int64 `json:"totalCount" api:"required"`
+	// Present and true when a Drive tree was cut off at 1000 rows. `totalCount` is
+	// then the cap, not the size of the tree.
+	Truncated bool `json:"truncated"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Data        respjson.Field
 		Object      respjson.Field
 		TotalCount  respjson.Field
+		Truncated   respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -360,14 +517,33 @@ type FileListResponseData struct {
 	ExpiresAt string `json:"expiresAt" api:"required"`
 	// Original filename.
 	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind string `json:"kind" api:"required"`
 	// MIME type of the file.
 	MimeType string `json:"mimeType" api:"required"`
+	// When Google Drive last modified this item. Null for a non-Drive file, and for a
+	// Drive item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The Drive folder this item sits in, or null for a top-level item or a non-Drive
+	// file.
+	ParentID string `json:"parentId" api:"required"`
 	// File size in bytes.
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source string `json:"source" api:"required"`
 	// Current upload status of the file.
 	//
 	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
 	Status string `json:"status" api:"required"`
+	// A link that opens this item in Google Drive. Null for a non-Drive file.
+	WebURL string `json:"webUrl" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -375,9 +551,14 @@ type FileListResponseData struct {
 		CreatedAt   respjson.Field
 		ExpiresAt   respjson.Field
 		Filename    respjson.Field
+		Kind        respjson.Field
 		MimeType    respjson.Field
+		ModifiedAt  respjson.Field
+		ParentID    respjson.Field
 		SizeBytes   respjson.Field
+		Source      respjson.Field
 		Status      respjson.Field
+		WebURL      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -400,14 +581,33 @@ type FileRetrieveResponse struct {
 	ExpiresAt string `json:"expiresAt" api:"required"`
 	// Original filename.
 	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind FileRetrieveResponseKind `json:"kind" api:"required"`
 	// MIME type of the file.
 	MimeType string `json:"mimeType" api:"required"`
+	// When Google Drive last modified this item. Null for a non-Drive file, and for a
+	// Drive item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The Drive folder this item sits in, or null for a top-level item or a non-Drive
+	// file.
+	ParentID string `json:"parentId" api:"required"`
 	// File size in bytes.
 	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source FileRetrieveResponseSource `json:"source" api:"required"`
 	// Current upload status of the file.
 	//
 	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
 	Status FileRetrieveResponseStatus `json:"status" api:"required"`
+	// A link that opens this item in Google Drive. Null for a non-Drive file.
+	WebURL string `json:"webUrl" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID          respjson.Field
@@ -415,9 +615,14 @@ type FileRetrieveResponse struct {
 		CreatedAt   respjson.Field
 		ExpiresAt   respjson.Field
 		Filename    respjson.Field
+		Kind        respjson.Field
 		MimeType    respjson.Field
+		ModifiedAt  respjson.Field
+		ParentID    respjson.Field
 		SizeBytes   respjson.Field
+		Source      respjson.Field
 		Status      respjson.Field
+		WebURL      respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -428,6 +633,25 @@ func (r FileRetrieveResponse) RawJSON() string { return r.JSON.raw }
 func (r *FileRetrieveResponse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+// Whether the item is a file or a folder. Null when the response was built without
+// that column.
+type FileRetrieveResponseKind string
+
+const (
+	FileRetrieveResponseKindFile   FileRetrieveResponseKind = "file"
+	FileRetrieveResponseKindFolder FileRetrieveResponseKind = "folder"
+)
+
+// Where the file came from. `googleDrive` for a linked Google Drive item,
+// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+// file.
+type FileRetrieveResponseSource string
+
+const (
+	FileRetrieveResponseSourceGoogleDrive    FileRetrieveResponseSource = "googleDrive"
+	FileRetrieveResponseSourceMicrosoftDrive FileRetrieveResponseSource = "microsoftDrive"
+)
 
 // Current upload status of the file.
 type FileRetrieveResponseStatus string
@@ -511,10 +735,19 @@ const (
 )
 
 type FileListParams struct {
+	// With `recordId` and no `parentId`, the file id of the last row on the previous
+	// page. The next page is the rows after that id in kind, title, id order.
+	After param.Opt[string] `query:"after,omitzero" json:"-"`
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// With `recordId`, the Drive folder whose children to list. Requires `recordId`.
+	ParentID param.Opt[string] `query:"parentId,omitzero" json:"-"`
+	// Public id of an account, contact, opportunity, or custom object (`acc_`, `con_`,
+	// `opp_`, or `obj_`). When set, the list is that record’s Google Drive tree
+	// instead of the workspace file list.
+	RecordID param.Opt[string] `query:"recordId,omitzero" json:"-"`
 	paramObj
 }
 

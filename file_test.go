@@ -75,8 +75,11 @@ func TestFileListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.File.List(context.TODO(), githubcomlightfldlightfieldgo.FileListParams{
-		Limit:  githubcomlightfldlightfieldgo.Int(1),
-		Offset: githubcomlightfldlightfieldgo.Int(0),
+		After:    githubcomlightfldlightfieldgo.String("after"),
+		Limit:    githubcomlightfldlightfieldgo.Int(1),
+		Offset:   githubcomlightfldlightfieldgo.Int(0),
+		ParentID: githubcomlightfldlightfieldgo.String("parentId"),
+		RecordID: githubcomlightfldlightfieldgo.String("recordId"),
 	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
