@@ -50,8 +50,12 @@ func NewMeetingService(opts ...option.RequestOption) (r MeetingService) {
 // relationships are system-managed. The `$account` and `$opportunity`
 // relationships are read-only and are derived from the meeting's `$contact`
 // attendees and the accounts/opportunities those contacts belong to. They are left
-// out when `accessLevel` is `METADATA`, as in the Lightfield app. The response is
-// privacy-aware and includes a read-only `accessLevel`. See
+// out when `accessLevel` is `METADATA`, as in the Lightfield app. At `METADATA`,
+// the response also names no attendee: `$title` is a neutral "Private meeting",
+// and `$attendeeEmails`, `$organizerEmail`, `$manuallyAddedAttendeeEmails`,
+// `$manuallyRemovedAttendeeEmails` and the `$contact` and `$member` relationships
+// are left out. The response is privacy-aware and includes a read-only
+// `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -73,9 +77,12 @@ func (r *MeetingService) New(ctx context.Context, body MeetingNewParams, opts ..
 // and `$opportunity` relationships are read-only and are derived from the
 // meeting's `$contact` attendees and the accounts/opportunities those contacts
 // belong to. They are left out when `accessLevel` is `METADATA`, as in the
-// Lightfield app. Meeting fields and transcript visibility are redacted based on
-// the caller-specific privacy resolution, and the response includes a read-only
-// `accessLevel`.
+// Lightfield app. At `METADATA`, the response also names no attendee: `$title` is
+// a neutral "Private meeting", and `$attendeeEmails`, `$organizerEmail`,
+// `$manuallyAddedAttendeeEmails`, `$manuallyRemovedAttendeeEmails` and the
+// `$contact` and `$member` relationships are left out. Meeting fields and
+// transcript visibility are redacted based on the caller-specific privacy
+// resolution, and the response includes a read-only `accessLevel`.
 //
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //
@@ -116,8 +123,11 @@ func (r *MeetingService) Get(ctx context.Context, id string, opts ...option.Requ
 // `$account` and `$opportunity` relationships are read-only and are derived from
 // the meeting's `$contact` attendees and the accounts/opportunities those contacts
 // belong to. They are left out when `accessLevel` is `METADATA`, as in the
-// Lightfield app. The response is privacy-aware and includes a read-only
-// `accessLevel`. See
+// Lightfield app. At `METADATA`, the response also names no attendee: `$title` is
+// a neutral "Private meeting", and `$attendeeEmails`, `$organizerEmail`,
+// `$manuallyAddedAttendeeEmails`, `$manuallyRemovedAttendeeEmails` and the
+// `$contact` and `$member` relationships are left out. The response is
+// privacy-aware and includes a read-only `accessLevel`. See
 // <u>[Uploading meeting transcripts](/using-the-api/uploading-meeting-transcripts/)</u>
 // for the full file upload and transcript attachment flow.
 //
@@ -145,13 +155,18 @@ func (r *MeetingService) Update(ctx context.Context, id string, body MeetingUpda
 // The `$account` and `$opportunity` relationships are read-only and are derived
 // from the meeting's `$contact` attendees and the accounts/opportunities those
 // contacts belong to. They are left out when `accessLevel` is `METADATA`, as in
-// the Lightfield app. As in the Lightfield app, a meeting is listed only when it
-// is internal-only or linked to an account or an active contact; this applies to
-// every caller, including admins and workspace API keys. Pass `status=trashed` to
-// list meetings currently in the trash instead of live records. Listing trashed
-// records additionally requires the `meetings:restore` scope. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about pagination.
+// the Lightfield app. At `METADATA`, the response also names no attendee: `$title`
+// is a neutral "Private meeting", and `$attendeeEmails`, `$organizerEmail`,
+// `$manuallyAddedAttendeeEmails`, `$manuallyRemovedAttendeeEmails` and the
+// `$contact` and `$member` relationships are left out. A filter on
+// `$attendeeEmails` matches only meetings the caller can read in full, so it never
+// lists a `METADATA` meeting. As in the Lightfield app, a meeting is listed only
+// when it is internal-only or linked to an account or an active contact; this
+// applies to every caller, including admins and workspace API keys. Pass
+// `status=trashed` to list meetings currently in the trash instead of live
+// records. Listing trashed records additionally requires the `meetings:restore`
+// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //
