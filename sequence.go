@@ -768,6 +768,7 @@ type SequenceActivateResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceActivateResponseDefinitionStepObject3Template],
@@ -785,6 +786,7 @@ type SequenceActivateResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -875,6 +877,12 @@ type SequenceActivateResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -883,6 +891,7 @@ type SequenceActivateResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -961,6 +970,12 @@ type SequenceActivateResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -969,6 +984,7 @@ type SequenceActivateResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -1469,6 +1485,7 @@ type SequenceCreateResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of [SequenceCreateResponseDefinitionStepObject3Template],
 	// [SequenceCreateResponseDefinitionStepObject4Template],
@@ -1485,6 +1502,7 @@ type SequenceCreateResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -1575,6 +1593,12 @@ type SequenceCreateResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -1583,6 +1607,7 @@ type SequenceCreateResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -1661,6 +1686,12 @@ type SequenceCreateResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -1669,6 +1700,7 @@ type SequenceCreateResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -2199,6 +2231,7 @@ type SequenceDeactivateResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceDeactivateResponseDefinitionStepObject3Template],
@@ -2216,6 +2249,7 @@ type SequenceDeactivateResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -2306,6 +2340,12 @@ type SequenceDeactivateResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -2314,6 +2354,7 @@ type SequenceDeactivateResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -2392,6 +2433,12 @@ type SequenceDeactivateResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -2400,6 +2447,7 @@ type SequenceDeactivateResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -3462,6 +3510,7 @@ type SequenceListResponseDataDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceListResponseDataDefinitionStepObject3Template],
@@ -3479,6 +3528,7 @@ type SequenceListResponseDataDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -3569,6 +3619,12 @@ type SequenceListResponseDataDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -3577,6 +3633,7 @@ type SequenceListResponseDataDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -3655,6 +3712,12 @@ type SequenceListResponseDataDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -3663,6 +3726,7 @@ type SequenceListResponseDataDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -4247,6 +4311,7 @@ type SequencePublishDraftResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequencePublishDraftResponseDefinitionStepObject3Template],
@@ -4264,6 +4329,7 @@ type SequencePublishDraftResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -4354,6 +4420,12 @@ type SequencePublishDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -4362,6 +4434,7 @@ type SequencePublishDraftResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -4440,6 +4513,12 @@ type SequencePublishDraftResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -4448,6 +4527,7 @@ type SequencePublishDraftResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -4958,6 +5038,7 @@ type SequenceRetrieveDraftResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceRetrieveDraftResponseDefinitionStepObject3Template],
@@ -4975,6 +5056,7 @@ type SequenceRetrieveDraftResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -5065,6 +5147,12 @@ type SequenceRetrieveDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -5073,6 +5161,7 @@ type SequenceRetrieveDraftResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -5151,6 +5240,12 @@ type SequenceRetrieveDraftResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -5159,6 +5254,7 @@ type SequenceRetrieveDraftResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -6738,6 +6834,7 @@ type SequenceRetrieveResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceRetrieveResponseDefinitionStepObject3Template],
@@ -6755,6 +6852,7 @@ type SequenceRetrieveResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -6845,6 +6943,12 @@ type SequenceRetrieveResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -6853,6 +6957,7 @@ type SequenceRetrieveResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -6931,6 +7036,12 @@ type SequenceRetrieveResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -6939,6 +7050,7 @@ type SequenceRetrieveResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -7683,6 +7795,7 @@ type SequenceUpdateDraftResponseDefinitionStepUnion struct {
 	Name         string `json:"name"`
 	Prompt       string `json:"prompt"`
 	Type         string `json:"type"`
+	Threading    string `json:"threading"`
 	IncludeNote  bool   `json:"includeNote"`
 	// This field is a union of
 	// [SequenceUpdateDraftResponseDefinitionStepObject3Template],
@@ -7700,6 +7813,7 @@ type SequenceUpdateDraftResponseDefinitionStepUnion struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		IncludeNote  respjson.Field
 		Template     respjson.Field
 		Duration     respjson.Field
@@ -7790,6 +7904,12 @@ type SequenceUpdateDraftResponseDefinitionStepObject struct {
 	//
 	// Any of "EMAIL", "LINKEDIN_MESSAGE".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -7798,6 +7918,7 @@ type SequenceUpdateDraftResponseDefinitionStepObject struct {
 		Name         respjson.Field
 		Prompt       respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -7876,6 +7997,12 @@ type SequenceUpdateDraftResponseDefinitionStepObject3 struct {
 	//
 	// Any of "EMAIL".
 	Type string `json:"type" api:"required"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID           respjson.Field
@@ -7884,6 +8011,7 @@ type SequenceUpdateDraftResponseDefinitionStepObject3 struct {
 		Name         respjson.Field
 		Template     respjson.Field
 		Type         respjson.Field
+		Threading    respjson.Field
 		ExtraFields  map[string]respjson.Field
 		raw          string
 	} `json:"-"`
@@ -8414,6 +8542,14 @@ type SequenceNewParamsDefinitionStepObject struct {
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread. Omit to keep
+	// the current setting; a new step replies. A `NEW_THREAD` step's subject is its
+	// template's, or one the agent writes.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading,omitzero"`
 	paramObj
 }
 
@@ -8434,6 +8570,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
 		"mode", "AGENT",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject](
+		"threading", "REPLY", "NEW_THREAD",
 	)
 }
 
@@ -8508,6 +8647,14 @@ type SequenceNewParamsDefinitionStepObject3 struct {
 	//
 	// Any of "TEMPLATE".
 	Mode string `json:"mode,omitzero"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread. Omit to keep
+	// the current setting; a new step replies. A `NEW_THREAD` step's subject is its
+	// template's, or one the agent writes.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading,omitzero"`
 	paramObj
 }
 
@@ -8528,6 +8675,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
 		"mode", "TEMPLATE",
+	)
+	apijson.RegisterFieldValidator[SequenceNewParamsDefinitionStepObject3](
+		"threading", "REPLY", "NEW_THREAD",
 	)
 }
 
@@ -9291,6 +9441,14 @@ type SequenceUpdateDraftParamsDefinitionStepObject struct {
 	//
 	// Any of "AGENT".
 	Mode string `json:"mode,omitzero"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread. Omit to keep
+	// the current setting; a new step replies. A `NEW_THREAD` step's subject is its
+	// template's, or one the agent writes.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading,omitzero"`
 	paramObj
 }
 
@@ -9311,6 +9469,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
 		"mode", "AGENT",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject](
+		"threading", "REPLY", "NEW_THREAD",
 	)
 }
 
@@ -9392,6 +9553,14 @@ type SequenceUpdateDraftParamsDefinitionStepObject3 struct {
 	//
 	// Any of "TEMPLATE".
 	Mode string `json:"mode,omitzero"`
+	// Email steps only. `REPLY` sends the email as a reply in the thread of the email
+	// sent just before it, under that thread's subject; `NEW_THREAD` sends it as a new
+	// email with its own subject. The first email always starts a thread. Omit to keep
+	// the current setting; a new step replies. A `NEW_THREAD` step's subject is its
+	// template's, or one the agent writes.
+	//
+	// Any of "REPLY", "NEW_THREAD".
+	Threading string `json:"threading,omitzero"`
 	paramObj
 }
 
@@ -9412,6 +9581,9 @@ func init() {
 	)
 	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
 		"mode", "TEMPLATE",
+	)
+	apijson.RegisterFieldValidator[SequenceUpdateDraftParamsDefinitionStepObject3](
+		"threading", "REPLY", "NEW_THREAD",
 	)
 }
 

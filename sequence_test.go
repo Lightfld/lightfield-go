@@ -35,6 +35,7 @@ func TestSequenceNewWithOptionalParams(t *testing.T) {
 					Prompt:       "x",
 					Type:         "EMAIL",
 					Mode:         "AGENT",
+					Threading:    "REPLY",
 				},
 			}},
 			Messaging: githubcomlightfldlightfieldgo.SequenceNewParamsDefinitionMessaging{
@@ -521,6 +522,7 @@ func TestSequenceUpdateDraftWithOptionalParams(t *testing.T) {
 						Type:         "EMAIL",
 						ID:           githubcomlightfldlightfieldgo.String("x"),
 						Mode:         "AGENT",
+						Threading:    "REPLY",
 					},
 				}},
 			},
