@@ -165,7 +165,7 @@ func TestOpportunityDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestOpportunityDefinitions(t *testing.T) {
+func TestOpportunityDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -177,7 +177,9 @@ func TestOpportunityDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Opportunity.Definitions(context.TODO())
+	_, err := client.Opportunity.Definitions(context.TODO(), githubcomlightfldlightfieldgo.OpportunityDefinitionsParams{
+		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

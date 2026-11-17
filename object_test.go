@@ -180,7 +180,7 @@ func TestObjectDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestObjectDefinitions(t *testing.T) {
+func TestObjectDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -192,7 +192,13 @@ func TestObjectDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Object.Definitions(context.TODO(), "entitySlug")
+	_, err := client.Object.Definitions(
+		context.TODO(),
+		"entitySlug",
+		githubcomlightfldlightfieldgo.ObjectDefinitionsParams{
+			IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+		},
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

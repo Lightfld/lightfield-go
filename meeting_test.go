@@ -197,7 +197,7 @@ func TestMeetingNewRecordingWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestMeetingDefinitions(t *testing.T) {
+func TestMeetingDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -209,7 +209,9 @@ func TestMeetingDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Meeting.Definitions(context.TODO())
+	_, err := client.Meeting.Definitions(context.TODO(), githubcomlightfldlightfieldgo.MeetingDefinitionsParams{
+		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

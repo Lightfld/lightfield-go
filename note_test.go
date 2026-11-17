@@ -163,7 +163,7 @@ func TestNoteDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestNoteDefinitions(t *testing.T) {
+func TestNoteDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -175,7 +175,9 @@ func TestNoteDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Note.Definitions(context.TODO())
+	_, err := client.Note.Definitions(context.TODO(), githubcomlightfldlightfieldgo.NoteDefinitionsParams{
+		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

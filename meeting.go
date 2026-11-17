@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"time"
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
@@ -233,10 +234,10 @@ func (r *MeetingService) NewRecording(ctx context.Context, id string, body Meeti
 // **[Required scope](/using-the-api/scopes/):** `meetings:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *MeetingService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *MeetingDefinitionsResponse, err error) {
+func (r *MeetingService) Definitions(ctx context.Context, query MeetingDefinitionsParams, opts ...option.RequestOption) (res *MeetingDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/meetings/definitions"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
@@ -794,6 +795,10 @@ func (r *MeetingDefinitionsResponse) UnmarshalJSON(data []byte) error {
 }
 
 type MeetingDefinitionsResponseFieldDefinition struct {
+	// Whether the field definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the field definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
 	// Description of the field, or null.
 	Description string `json:"description" api:"required"`
 	// Human-readable display name of the field.
@@ -813,6 +818,8 @@ type MeetingDefinitionsResponseFieldDefinition struct {
 	ReadOnly bool `json:"readOnly"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Archived          respjson.Field
+		ArchivedAt        respjson.Field
 		Description       respjson.Field
 		Label             respjson.Field
 		TypeConfiguration respjson.Field
@@ -899,6 +906,10 @@ func (r *MeetingDefinitionsResponseFieldDefinitionTypeConfigurationOption) Unmar
 }
 
 type MeetingDefinitionsResponseRelationshipDefinition struct {
+	// Whether the relationship definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
 	// Whether this is a `has_one` or `has_many` relationship.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -917,6 +928,8 @@ type MeetingDefinitionsResponseRelationshipDefinition struct {
 	Directions MeetingDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
 		Cardinality respjson.Field
 		Description respjson.Field
 		Label       respjson.Field
@@ -3242,6 +3255,21 @@ func (r MeetingNewRecordingParams) MarshalJSON() (data []byte, err error) {
 }
 func (r *MeetingNewRecordingParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type MeetingDefinitionsParams struct {
+	// Include archived field and relationship definitions. Defaults to false.
+	IncludeArchived param.Opt[bool] `query:"includeArchived,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [MeetingDefinitionsParams]'s query parameters as
+// `url.Values`.
+func (r MeetingDefinitionsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type MeetingRestoreParams struct {

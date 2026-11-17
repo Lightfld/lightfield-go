@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"time"
 
 	"github.com/Lightfld/lightfield-go/internal/apijson"
 	"github.com/Lightfld/lightfield-go/internal/apiquery"
@@ -169,10 +170,10 @@ func (r *OpportunityService) Delete(ctx context.Context, id string, body Opportu
 // **[Required scope](/using-the-api/scopes/):** `opportunities:read`
 //
 // **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *OpportunityService) Definitions(ctx context.Context, opts ...option.RequestOption) (res *OpportunityDefinitionsResponse, err error) {
+func (r *OpportunityService) Definitions(ctx context.Context, query OpportunityDefinitionsParams, opts ...option.RequestOption) (res *OpportunityDefinitionsResponse, err error) {
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/opportunities/definitions"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
 	return res, err
 }
 
@@ -562,6 +563,10 @@ func (r *OpportunityDefinitionsResponse) UnmarshalJSON(data []byte) error {
 }
 
 type OpportunityDefinitionsResponseFieldDefinition struct {
+	// Whether the field definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the field definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
 	// Description of the field, or null.
 	Description string `json:"description" api:"required"`
 	// Human-readable display name of the field.
@@ -581,6 +586,8 @@ type OpportunityDefinitionsResponseFieldDefinition struct {
 	ReadOnly bool `json:"readOnly"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Archived          respjson.Field
+		ArchivedAt        respjson.Field
 		Description       respjson.Field
 		Label             respjson.Field
 		TypeConfiguration respjson.Field
@@ -667,6 +674,10 @@ func (r *OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption) U
 }
 
 type OpportunityDefinitionsResponseRelationshipDefinition struct {
+	// Whether the relationship definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
 	// Whether this is a `has_one` or `has_many` relationship.
 	//
 	// Any of "HAS_ONE", "HAS_MANY".
@@ -685,6 +696,8 @@ type OpportunityDefinitionsResponseRelationshipDefinition struct {
 	Directions OpportunityDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
 		Cardinality respjson.Field
 		Description respjson.Field
 		Label       respjson.Field
@@ -3017,6 +3030,21 @@ func (r OpportunityDeleteParamsBody) MarshalJSON() (data []byte, err error) {
 }
 func (r *OpportunityDeleteParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type OpportunityDefinitionsParams struct {
+	// Include archived field and relationship definitions. Defaults to false.
+	IncludeArchived param.Opt[bool] `query:"includeArchived,omitzero" json:"-"`
+	paramObj
+}
+
+// URLQuery serializes [OpportunityDefinitionsParams]'s query parameters as
+// `url.Values`.
+func (r OpportunityDefinitionsParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
 }
 
 type OpportunityFieldHistoryParams struct {

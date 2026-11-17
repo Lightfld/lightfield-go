@@ -166,7 +166,7 @@ func TestAccountDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestAccountDefinitions(t *testing.T) {
+func TestAccountDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -178,7 +178,9 @@ func TestAccountDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Account.Definitions(context.TODO())
+	_, err := client.Account.Definitions(context.TODO(), githubcomlightfldlightfieldgo.AccountDefinitionsParams{
+		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {

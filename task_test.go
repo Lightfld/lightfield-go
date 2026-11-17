@@ -167,7 +167,7 @@ func TestTaskDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
-func TestTaskDefinitions(t *testing.T) {
+func TestTaskDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
 		baseURL = envURL
@@ -179,7 +179,9 @@ func TestTaskDefinitions(t *testing.T) {
 		option.WithBaseURL(baseURL),
 		option.WithAPIKey("My API Key"),
 	)
-	_, err := client.Task.Definitions(context.TODO())
+	_, err := client.Task.Definitions(context.TODO(), githubcomlightfldlightfieldgo.TaskDefinitionsParams{
+		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
+	})
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
