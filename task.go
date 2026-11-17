@@ -495,13 +495,18 @@ type TaskDefinitionsResponse struct {
 	// Map of relationship keys to their definitions. Self-referential relationships
 	// include optional directional metadata on the bare definition.
 	RelationshipDefinitions map[string]TaskDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// Map of relationship group keys to their definitions. A group collects
+	// relationships between the same two object types, such as the roles a contact can
+	// hold on an opportunity. Relationships name their group with `groupKey`.
+	RelationshipGroupDefinitions map[string]TaskDefinitionsResponseRelationshipGroupDefinition `json:"relationshipGroupDefinitions" api:"required"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		FieldDefinitions        respjson.Field
-		ObjectType              respjson.Field
-		RelationshipDefinitions respjson.Field
-		ExtraFields             map[string]respjson.Field
-		raw                     string
+		FieldDefinitions             respjson.Field
+		ObjectType                   respjson.Field
+		RelationshipDefinitions      respjson.Field
+		RelationshipGroupDefinitions respjson.Field
+		ExtraFields                  map[string]respjson.Field
+		raw                          string
 	} `json:"-"`
 }
 
@@ -520,7 +525,8 @@ type TaskDefinitionsResponseFieldDefinition struct {
 	Description string `json:"description" api:"required"`
 	// Human-readable display name of the field.
 	Label string `json:"label" api:"required"`
-	// Type-specific configuration (e.g. select options, currency code).
+	// Type-specific configuration (e.g. select options, currency code). A key the
+	// field type does not support is absent; a supported key with nothing set is null.
 	TypeConfiguration TaskDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
 	// Data type of the field.
 	//
@@ -530,9 +536,27 @@ type TaskDefinitionsResponseFieldDefinition struct {
 	ValueType string `json:"valueType" api:"required"`
 	// Unique identifier of the field definition.
 	ID string `json:"id"`
+	// Whether AI fills this field automatically (`ON`), only suggests values
+	// (`SUGGEST`), or leaves it alone (`OFF`). Absent on built-in fields that have no
+	// `id`.
+	//
+	// Any of "ON", "OFF", "SUGGEST".
+	AIFillable string `json:"aiFillable"`
+	// Instructions AI follows when filling this field, or null when none are set.
+	// Absent on built-in fields that have no `id`.
+	AIFillablePrompt string `json:"aiFillablePrompt" api:"nullable"`
+	// Formula a calculated field evaluates, with fields and relationships referenced
+	// by key. Null for fields that are not calculated. Absent on built-in fields that
+	// have no `id`.
+	Formula string `json:"formula" api:"nullable"`
 	// `true` for fields that are not writable via the API (e.g. AI-generated
-	// summaries). `false` or absent for writable fields.
+	// summaries, calculated fields). `false` or absent for writable fields.
 	ReadOnly bool `json:"readOnly"`
+	// Whether values are entered (`MANUAL`) or calculated from a formula (`COMPUTED`).
+	// Absent on built-in fields that have no `id`.
+	//
+	// Any of "MANUAL", "COMPUTED".
+	ValueSource string `json:"valueSource"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Archived          respjson.Field
@@ -542,7 +566,11 @@ type TaskDefinitionsResponseFieldDefinition struct {
 		TypeConfiguration respjson.Field
 		ValueType         respjson.Field
 		ID                respjson.Field
+		AIFillable        respjson.Field
+		AIFillablePrompt  respjson.Field
+		Formula           respjson.Field
 		ReadOnly          respjson.Field
+		ValueSource       respjson.Field
 		ExtraFields       map[string]respjson.Field
 		raw               string
 	} `json:"-"`
@@ -554,26 +582,37 @@ func (r *TaskDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) erro
 	return apijson.UnmarshalRoot(data, r)
 }
 
-// Type-specific configuration (e.g. select options, currency code).
+// Type-specific configuration (e.g. select options, currency code). A key the
+// field type does not support is absent; a supported key with nothing set is null.
 type TaskDefinitionsResponseFieldDefinitionTypeConfiguration struct {
-	// ISO 4217 3-letter currency code.
+	// ISO 4217 3-letter currency code. Present on `CURRENCY` fields, absent on every
+	// other type.
 	Currency string `json:"currency"`
-	// Social platform associated with this handle field.
+	// Number of decimal places values carry, or null when none is set. Present on
+	// `NUMBER` and `CURRENCY` fields, absent on every other type.
+	DecimalPlaces int64 `json:"decimalPlaces" api:"nullable"`
+	// Social platform associated with this handle field, or null when none is set.
+	// Present on `SOCIAL_HANDLE` fields, absent on every other type.
 	//
 	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
-	HandleService string `json:"handleService"`
-	// Whether this field accepts multiple values.
+	HandleService string `json:"handleService" api:"nullable"`
+	// Whether this field accepts multiple values. Present on `EMAIL`, `TELEPHONE` and
+	// `URL` fields, absent on every other type.
 	MultipleValues bool `json:"multipleValues"`
-	// Available options for select fields.
+	// Available options. Always present on `SINGLE_SELECT` and `MULTI_SELECT` fields,
+	// as an empty list when there are none. Absent on every other type.
 	Options []TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
 	// For a dependent select, the field key whose selected option determines which of
 	// this field's options apply. Absent for ordinary selects.
 	ParentFieldKey string `json:"parentFieldKey"`
-	// Whether values for this field must be unique.
-	Unique bool `json:"unique"`
+	// Whether values for this field must be unique, or null when not set. Present on
+	// `EMAIL`, `TELEPHONE`, `URL` and `SOCIAL_HANDLE` fields, absent on every other
+	// type.
+	Unique bool `json:"unique" api:"nullable"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Currency       respjson.Field
+		DecimalPlaces  respjson.Field
 		HandleService  respjson.Field
 		MultipleValues respjson.Field
 		Options        respjson.Field
@@ -595,20 +634,44 @@ type TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	ID string `json:"id" api:"required"`
 	// Human-readable display name of the option.
 	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`), or
+	// null when none is set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category" api:"nullable"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
 	// Description of the option, or null.
 	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, or null when none is set. Present only on
+	// $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon" api:"nullable"`
 	// For a dependent select, the ID of the option in the parent field named by
 	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
 	// selects.
 	ParentID string `json:"parentId"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
-		ID          respjson.Field
-		Label       respjson.Field
-		Description respjson.Field
-		ParentID    respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ParentID           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
 	} `json:"-"`
 }
 
@@ -631,7 +694,8 @@ type TaskDefinitionsResponseRelationshipDefinition struct {
 	Cardinality string `json:"cardinality" api:"required"`
 	// Description of the relationship, or null.
 	Description string `json:"description" api:"required"`
-	// Human-readable display name of the relationship.
+	// Human-readable display name of the relationship, as it reads from this object
+	// type.
 	Label string `json:"label" api:"required"`
 	// The type of the related object (e.g. `account`, `contact`).
 	ObjectType string `json:"objectType" api:"required"`
@@ -641,6 +705,11 @@ type TaskDefinitionsResponseRelationshipDefinition struct {
 	// relationship key with `:asSource` or `:asDestination`; writes continue to use
 	// the bare key.
 	Directions TaskDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
+	// Key of the relationship group this relationship belongs to, as listed under
+	// `relationshipGroupDefinitions`. Absent when the relationship is not in a group.
+	GroupKey string `json:"groupKey"`
+	// How the same relationship reads from the related object type.
+	Inverse TaskDefinitionsResponseRelationshipDefinitionInverse `json:"inverse"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		Archived    respjson.Field
@@ -651,6 +720,8 @@ type TaskDefinitionsResponseRelationshipDefinition struct {
 		ObjectType  respjson.Field
 		ID          respjson.Field
 		Directions  respjson.Field
+		GroupKey    respjson.Field
+		Inverse     respjson.Field
 		ExtraFields map[string]respjson.Field
 		raw         string
 	} `json:"-"`
@@ -732,6 +803,82 @@ func (r TaskDefinitionsResponseRelationshipDefinitionDirectionsAsSource) RawJSON
 	return r.JSON.raw
 }
 func (r *TaskDefinitionsResponseRelationshipDefinitionDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same relationship reads from the related object type.
+type TaskDefinitionsResponseRelationshipDefinitionInverse struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDefinitionsResponseRelationshipDefinitionInverse) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponseRelationshipDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type TaskDefinitionsResponseRelationshipGroupDefinition struct {
+	// Unique identifier of the relationship group.
+	ID string `json:"id" api:"required"`
+	// Whether the relationship group is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship group was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// How the same group reads from the related object type.
+	Inverse TaskDefinitionsResponseRelationshipGroupDefinitionInverse `json:"inverse" api:"required"`
+	// Human-readable display name of the group, as it reads from this object type.
+	Label string `json:"label" api:"required"`
+	// The type of the related object every relationship in the group points to.
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
+		Inverse     respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDefinitionsResponseRelationshipGroupDefinition) RawJSON() string { return r.JSON.raw }
+func (r *TaskDefinitionsResponseRelationshipGroupDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same group reads from the related object type.
+type TaskDefinitionsResponseRelationshipGroupDefinitionInverse struct {
+	// Human-readable display name of the group, as it reads from the related object
+	// type.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r TaskDefinitionsResponseRelationshipGroupDefinitionInverse) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *TaskDefinitionsResponseRelationshipGroupDefinitionInverse) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
