@@ -3146,7 +3146,9 @@ type MeetingNewParams struct {
 	// value type details.
 	Fields MeetingNewParamsFields `json:"fields,omitzero" api:"required"`
 	// When true, the initial post-create meeting sync may auto-create account and
-	// contact records for external attendees.
+	// contact records for external attendees. Returns 403 `object_api.write.forbidden`
+	// when the caller may not create accounts or contacts; send it as false to create
+	// the meeting without creating records.
 	AutoCreateRecords param.Opt[bool] `json:"autoCreateRecords,omitzero"`
 	// Relationships to set on the new meeting. Only `$transcript` is writable on
 	// create; all other meeting relationships are system-managed.

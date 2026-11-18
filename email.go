@@ -2017,7 +2017,9 @@ type EmailLogParams struct {
 	// `$bcc`.
 	Fields EmailLogParamsFields `json:"fields,omitzero" api:"required"`
 	// When true, the post-create sync may create account and contact records for
-	// unknown external participants.
+	// unknown external participants. Returns 403 `object_api.write.forbidden` when the
+	// caller may not create accounts or contacts; send it as false to log the email
+	// without creating records.
 	AutoCreateRecords param.Opt[bool] `json:"autoCreateRecords,omitzero"`
 	// Raw RFC 5322 headers, passed through as read (any key case). Only `Message-ID`,
 	// `In-Reply-To`, and `References` are used. At most 64 KB.
