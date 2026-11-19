@@ -3158,7 +3158,8 @@ func (r *ContactDeleteParamsBody) UnmarshalJSON(data []byte) error {
 }
 
 type ContactDefinitionsParams struct {
-	// Include archived field and relationship definitions. Defaults to false.
+	// Include archived field and relationship definitions, and those of an archived
+	// custom object type or whose other end is one. Defaults to false.
 	IncludeArchived param.Opt[bool] `query:"includeArchived,omitzero" json:"-"`
 	paramObj
 }
