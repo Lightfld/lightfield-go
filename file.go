@@ -211,8 +211,10 @@ func (r *FileService) NewFromStorage(ctx context.Context, body FileNewFromStorag
 //
 // Synced email attachments are fetched from the mail provider on first download.
 // If the provider fails, the call returns `502` with code
-// `mail_attachment_provider_unavailable`. Retry with backoff, and stop after a few
-// attempts: some attachments fail on every request.
+// `mail_attachment_provider_unavailable`. Retry once at most, then skip the
+// attachment: some attachments fail on every request. After repeated provider
+// failures for one attachment, Lightfield stops asking the provider for it for up
+// to an hour and returns the same error immediately.
 //
 // **[Required scope](/using-the-api/scopes/):** `files:read`
 //
