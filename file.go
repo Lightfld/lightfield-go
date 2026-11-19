@@ -160,6 +160,40 @@ func (r *FileService) Complete(ctx context.Context, id string, body FileComplete
 	return res, err
 }
 
+// Copies a file from the caller’s connected Google Drive, OneDrive or SharePoint
+// into a new file, without sending its bytes through the caller. Use it for files
+// too large to download and re-upload, such as meeting recordings, up to 512 MB.
+//
+// The file is checked before the call returns: a folder returns `409` with code
+// `file_is_folder`, a Google Drive file whose owner has turned off downloading
+// returns `409` with code `file_not_downloadable` (OneDrive and SharePoint report
+// a blocked download only during the copy, which then ends as `CANCELLED`), a link
+// that is not a Google Drive, OneDrive or SharePoint file returns `409` with code
+// `file_not_downloadable`, and a caller who has not connected that storage returns
+// `409` with code `drive_not_connected`. A file whose MIME type or size does not
+// fit `purpose` returns `400`. Google Docs, Sheets and Slides cannot be imported.
+//
+// The copy runs in the background. The response is the new file with status
+// `PENDING`. Poll `GET /v1/files/{id}` until it is `COMPLETED`, then use its id
+// like any uploaded file, for example as `mediaFileId` in
+// `POST /v1/meetings/{id}/recordings`. A copy that fails ends as `CANCELLED` or
+// `EXPIRED`; import the file again to retry. Imports read from the caller’s own
+// storage connection, so a workspace API key or an automation run gets `403`.
+//
+// Supports idempotency via the `Idempotency-Key` header: within 72 hours, a repeat
+// with the same key returns the same file while it is `PENDING` or `COMPLETED`,
+// and a repeat sent while the first call is still running returns `409`.
+//
+// **[Required scope](/using-the-api/scopes/):** `files:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *FileService) NewFromStorage(ctx context.Context, body FileNewFromStorageParams, opts ...option.RequestOption) (res *FileCreateFromStorageResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/files/import"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Returns a temporary download URL for the file. Only available for files in
 // `COMPLETED` status. Works for any retrievable file id, including files uploaded
 // through the app.
@@ -380,6 +414,100 @@ const (
 	FileCompleteResponseStatusCompleted FileCompleteResponseStatus = "COMPLETED"
 	FileCompleteResponseStatusCancelled FileCompleteResponseStatus = "CANCELLED"
 	FileCompleteResponseStatusExpired   FileCompleteResponseStatus = "EXPIRED"
+)
+
+type FileCreateFromStorageResponse struct {
+	// Unique identifier for the file.
+	ID string `json:"id" api:"required"`
+	// When the file upload was completed.
+	CompletedAt string `json:"completedAt" api:"required"`
+	// When the file upload session was created.
+	CreatedAt string `json:"createdAt" api:"required"`
+	// When the upload session expires. Null once completed, cancelled, or expired.
+	ExpiresAt string `json:"expiresAt" api:"required"`
+	// Original filename.
+	Filename string `json:"filename" api:"required"`
+	// Whether the item is a file or a folder. Null when the response was built without
+	// that column.
+	//
+	// Any of "file", "folder".
+	Kind FileCreateFromStorageResponseKind `json:"kind" api:"required"`
+	// MIME type of the file.
+	MimeType string `json:"mimeType" api:"required"`
+	// When the storage last modified this item. Null for a non-storage file, and for a
+	// storage item whose modified time has not been stored.
+	ModifiedAt string `json:"modifiedAt" api:"required"`
+	// The storage folder this item sits in, or null for a top-level item or a
+	// non-storage file.
+	ParentID string `json:"parentId" api:"required"`
+	// File size in bytes.
+	SizeBytes int64 `json:"sizeBytes" api:"required"`
+	// Where the file came from. `googleDrive` for a linked Google Drive item,
+	// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+	// file.
+	//
+	// Any of "googleDrive", "microsoftDrive".
+	Source FileCreateFromStorageResponseSource `json:"source" api:"required"`
+	// Current upload status of the file.
+	//
+	// Any of "PENDING", "COMPLETED", "CANCELLED", "EXPIRED".
+	Status FileCreateFromStorageResponseStatus `json:"status" api:"required"`
+	// A link that opens this item in Google Drive, OneDrive or SharePoint. Null for a
+	// non-storage file.
+	WebURL string `json:"webUrl" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		CompletedAt respjson.Field
+		CreatedAt   respjson.Field
+		ExpiresAt   respjson.Field
+		Filename    respjson.Field
+		Kind        respjson.Field
+		MimeType    respjson.Field
+		ModifiedAt  respjson.Field
+		ParentID    respjson.Field
+		SizeBytes   respjson.Field
+		Source      respjson.Field
+		Status      respjson.Field
+		WebURL      respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r FileCreateFromStorageResponse) RawJSON() string { return r.JSON.raw }
+func (r *FileCreateFromStorageResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Whether the item is a file or a folder. Null when the response was built without
+// that column.
+type FileCreateFromStorageResponseKind string
+
+const (
+	FileCreateFromStorageResponseKindFile   FileCreateFromStorageResponseKind = "file"
+	FileCreateFromStorageResponseKindFolder FileCreateFromStorageResponseKind = "folder"
+)
+
+// Where the file came from. `googleDrive` for a linked Google Drive item,
+// `microsoftDrive` for a linked OneDrive or SharePoint item. Null for every other
+// file.
+type FileCreateFromStorageResponseSource string
+
+const (
+	FileCreateFromStorageResponseSourceGoogleDrive    FileCreateFromStorageResponseSource = "googleDrive"
+	FileCreateFromStorageResponseSourceMicrosoftDrive FileCreateFromStorageResponseSource = "microsoftDrive"
+)
+
+// Current upload status of the file.
+type FileCreateFromStorageResponseStatus string
+
+const (
+	FileCreateFromStorageResponseStatusPending   FileCreateFromStorageResponseStatus = "PENDING"
+	FileCreateFromStorageResponseStatusCompleted FileCreateFromStorageResponseStatus = "COMPLETED"
+	FileCreateFromStorageResponseStatusCancelled FileCreateFromStorageResponseStatus = "CANCELLED"
+	FileCreateFromStorageResponseStatusExpired   FileCreateFromStorageResponseStatus = "EXPIRED"
 )
 
 type FileCreateResponse struct {
@@ -801,3 +929,34 @@ func (r FileCompleteParams) MarshalJSON() (data []byte, err error) {
 func (r *FileCompleteParams) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type FileNewFromStorageParams struct {
+	// What the file is for. `meeting_recording` for the audio or video of a meeting
+	// recording (MP4, WebM, QuickTime, MP3, M4A, WAV or OGG). `meeting_transcript` for
+	// a plain text or markdown transcript.
+	//
+	// Any of "meeting_recording", "meeting_transcript".
+	Purpose FileNewFromStorageParamsPurpose `json:"purpose,omitzero" api:"required"`
+	// Link to the file in Google Drive, OneDrive or SharePoint, as the storage shows
+	// it or shares it.
+	URL string `json:"url" api:"required"`
+	paramObj
+}
+
+func (r FileNewFromStorageParams) MarshalJSON() (data []byte, err error) {
+	type shadow FileNewFromStorageParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *FileNewFromStorageParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// What the file is for. `meeting_recording` for the audio or video of a meeting
+// recording (MP4, WebM, QuickTime, MP3, M4A, WAV or OGG). `meeting_transcript` for
+// a plain text or markdown transcript.
+type FileNewFromStorageParamsPurpose string
+
+const (
+	FileNewFromStorageParamsPurposeMeetingRecording  FileNewFromStorageParamsPurpose = "meeting_recording"
+	FileNewFromStorageParamsPurposeMeetingTranscript FileNewFromStorageParamsPurpose = "meeting_transcript"
+)
