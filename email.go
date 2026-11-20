@@ -2017,9 +2017,13 @@ type EmailLogParams struct {
 	// `$bcc`.
 	Fields EmailLogParamsFields `json:"fields,omitzero" api:"required"`
 	// When true, the post-create sync may create account and contact records for
-	// unknown external participants. Returns 403 `object_api.write.forbidden` when the
-	// caller may not create accounts or contacts; send it as false to log the email
-	// without creating records.
+	// unknown external participants. The email is logged either way, and only the
+	// record types the caller may create are created. Accounts are created from
+	// contacts: when contacts are restricted, an account is created only for a
+	// participant who already has one. When the caller's current permissions restrict
+	// either type, the response carries the header
+	// `Lightfield-Warning: auto_create_records.restricted; types=account,contact`,
+	// listing the restricted types.
 	AutoCreateRecords param.Opt[bool] `json:"autoCreateRecords,omitzero"`
 	// Raw RFC 5322 headers, passed through as read (any key case). Only `Message-ID`,
 	// `In-Reply-To`, and `References` are used. At most 64 KB.

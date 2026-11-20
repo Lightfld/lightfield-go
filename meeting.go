@@ -3146,9 +3146,13 @@ type MeetingNewParams struct {
 	// value type details.
 	Fields MeetingNewParamsFields `json:"fields,omitzero" api:"required"`
 	// When true, the initial post-create meeting sync may auto-create account and
-	// contact records for external attendees. Returns 403 `object_api.write.forbidden`
-	// when the caller may not create accounts or contacts; send it as false to create
-	// the meeting without creating records.
+	// contact records for external attendees. The meeting is created either way, and
+	// only the record types the caller may create are created. Accounts are created
+	// from contacts: when contacts are restricted, an account is created only for an
+	// attendee who already has one. When the caller's current permissions restrict
+	// either type, the response carries the header
+	// `Lightfield-Warning: auto_create_records.restricted; types=account,contact`,
+	// listing the restricted types.
 	AutoCreateRecords param.Opt[bool] `json:"autoCreateRecords,omitzero"`
 	// Relationships to set on the new meeting. Only `$transcript` is writable on
 	// create; all other meeting relationships are system-managed.
