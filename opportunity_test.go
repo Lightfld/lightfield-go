@@ -124,8 +124,11 @@ func TestOpportunityListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Opportunity.List(context.TODO(), githubcomlightfldlightfieldgo.OpportunityListParams{
+		Fields: githubcomlightfldlightfieldgo.String("fields"),
+		Filter: githubcomlightfldlightfieldgo.String("filter"),
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Sort:   githubcomlightfldlightfieldgo.OpportunityListParamsSortCreatedAt,
 		Status: githubcomlightfldlightfieldgo.OpportunityListParamsStatusActive,
 	})
 	if err != nil {

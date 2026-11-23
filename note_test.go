@@ -122,8 +122,11 @@ func TestNoteListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Note.List(context.TODO(), githubcomlightfldlightfieldgo.NoteListParams{
+		Fields: githubcomlightfldlightfieldgo.String("fields"),
+		Filter: githubcomlightfldlightfieldgo.String("filter"),
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Sort:   githubcomlightfldlightfieldgo.NoteListParamsSortCreatedAt,
 		Status: githubcomlightfldlightfieldgo.NoteListParamsStatusActive,
 	})
 	if err != nil {

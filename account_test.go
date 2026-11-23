@@ -125,8 +125,11 @@ func TestAccountListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Account.List(context.TODO(), githubcomlightfldlightfieldgo.AccountListParams{
+		Fields: githubcomlightfldlightfieldgo.String("fields"),
+		Filter: githubcomlightfldlightfieldgo.String("filter"),
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Sort:   githubcomlightfldlightfieldgo.AccountListParamsSortCreatedAt,
 		Status: githubcomlightfldlightfieldgo.AccountListParamsStatusActive,
 	})
 	if err != nil {

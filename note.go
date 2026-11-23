@@ -99,12 +99,15 @@ func (r *NoteService) Update(ctx context.Context, id string, body NoteUpdatePara
 }
 
 // Returns a paginated list of notes. Results are sorted by when the record was
-// created in Lightfield (`createdAt`), newest first. Use `offset` and `limit` to
-// paginate through results. Pass `status=trashed` to list notes currently in the
-// trash instead of live records. Listing trashed records additionally requires the
-// `notes:restore` scope. See
-// <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more information
-// about pagination.
+// created in Lightfield (`createdAt`), newest first, unless you set `sort`; sort
+// by `$updatedAt` to poll for changes. Filter with `field[operator]=value`
+// parameters, which must all match, or with a JSON `filter` for `or` logic and
+// nested groups. Use `fields` to return only the fields you need, which makes
+// large pulls much smaller. Use `offset` and `limit` to paginate through results.
+// Pass `status=trashed` to list notes currently in the trash instead of live
+// records. Listing trashed records additionally requires the `notes:restore`
+// scope. See <u>[List endpoints](/using-the-api/list-endpoints/)</u> for more
+// information about pagination.
 //
 // **[Required scope](/using-the-api/scopes/):** `notes:read`
 //
@@ -2618,10 +2621,29 @@ func (u *NoteUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []byte) err
 }
 
 type NoteListParams struct {
+	// Comma-separated field and relationship keys to return, keyed as in the record
+	// (`$name,$stage,region`). Each record then holds only these in `fields` and
+	// `relationships`; `id`, timestamps and `httpLink` are always returned. Omit to
+	// return every field. Selecting fewer fields makes large pulls much smaller.
+	Fields param.Opt[string] `query:"fields,omitzero" json:"-"`
+	// A JSON filter tree, for `or` logic or nested groups: one condition
+	// `{"field": "$stage", "operator": "equal", "value": "Proposal"}`, or an `and` /
+	// `or` group whose items are conditions or one more level of groups, e.g.
+	// `{"or": [{"field": "$stage", "value": "Proposal"}, {"field": "$stage", "value": "Negotiation"}]}`.
+	// `operator` defaults to `equal`, or `contains` for a field that holds several
+	// values; prefix it with `-` to negate. At most 25 conditions. URL-encode the
+	// JSON. It is ANDed with any `field[operator]=value` parameters.
+	Filter param.Opt[string] `query:"filter,omitzero" json:"-"`
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Result order: `$createdAt` or `$updatedAt`, oldest first, or prefixed with `-`
+	// for newest first. Defaults to `-$createdAt`. Use `$updatedAt` to process changes
+	// oldest first.
+	//
+	// Any of "$createdAt", "-$createdAt", "$updatedAt", "-$updatedAt".
+	Sort NoteListParamsSort `query:"sort,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
 	// list records currently in the trash; this additionally requires this resource's
 	// `restore` scope.
@@ -2638,6 +2660,18 @@ func (r NoteListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Result order: `$createdAt` or `$updatedAt`, oldest first, or prefixed with `-`
+// for newest first. Defaults to `-$createdAt`. Use `$updatedAt` to process changes
+// oldest first.
+type NoteListParamsSort string
+
+const (
+	NoteListParamsSortCreatedAt      NoteListParamsSort = "$createdAt"
+	NoteListParamsSortMinusCreatedAt NoteListParamsSort = "-$createdAt"
+	NoteListParamsSortUpdatedAt      NoteListParamsSort = "$updatedAt"
+	NoteListParamsSortMinusUpdatedAt NoteListParamsSort = "-$updatedAt"
+)
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
 // list records currently in the trash; this additionally requires this resource's

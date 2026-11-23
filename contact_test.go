@@ -125,8 +125,11 @@ func TestContactListWithOptionalParams(t *testing.T) {
 		option.WithAPIKey("My API Key"),
 	)
 	_, err := client.Contact.List(context.TODO(), githubcomlightfldlightfieldgo.ContactListParams{
+		Fields: githubcomlightfldlightfieldgo.String("fields"),
+		Filter: githubcomlightfldlightfieldgo.String("filter"),
 		Limit:  githubcomlightfldlightfieldgo.Int(1),
 		Offset: githubcomlightfldlightfieldgo.Int(0),
+		Sort:   githubcomlightfldlightfieldgo.ContactListParamsSortCreatedAt,
 		Status: githubcomlightfldlightfieldgo.ContactListParamsStatusActive,
 	})
 	if err != nil {

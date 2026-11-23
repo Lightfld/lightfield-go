@@ -113,15 +113,18 @@ func (r *OpportunityService) Update(ctx context.Context, id string, body Opportu
 }
 
 // Returns a paginated list of opportunities. Results are sorted by when the record
-// was created in Lightfield (`createdAt`), newest first. Each page holds only the
-// records you can currently read, so a page can contain fewer records than
-// `limit`, or none, while more remain, and `totalCount` can include records you
-// can no longer read. To read every record, keep advancing `offset` by `limit`
-// until it reaches `totalCount`; do not stop at a short or empty page. Use
-// `offset` and `limit` to paginate through results, and `$field` query parameters
-// to filter. To list the opportunities on a given account, filter by the
-// `$account` relationship — e.g. `?$account=acc_123` (`?$account[-equal]=acc_123`
-// excludes them instead).
+// was created in Lightfield (`createdAt`), newest first, unless you set `sort`;
+// sort by `$updatedAt` to poll for changes. Filter with `field[operator]=value`
+// parameters, which must all match, or with a JSON `filter` for `or` logic and
+// nested groups. Use `fields` to return only the fields you need, which makes
+// large pulls much smaller. Each page holds only the records you can currently
+// read, so a page can contain fewer records than `limit`, or none, while more
+// remain, and `totalCount` can include records you can no longer read. To read
+// every record, keep advancing `offset` by `limit` until it reaches `totalCount`;
+// do not stop at a short or empty page. Use `offset` and `limit` to paginate
+// through results, and `$field` query parameters to filter. To list the
+// opportunities on a given account, filter by the `$account` relationship — e.g.
+// `?$account=acc_123` (`?$account[-equal]=acc_123` excludes them instead).
 //
 // Pass `status=trashed` to list opportunities currently in the trash instead of
 // live records. Listing trashed records additionally requires the
@@ -3128,10 +3131,29 @@ func (u *OpportunityUpdateParamsRelationshipRemoveUnion) UnmarshalJSON(data []by
 }
 
 type OpportunityListParams struct {
+	// Comma-separated field and relationship keys to return, keyed as in the record
+	// (`$name,$stage,region`). Each record then holds only these in `fields` and
+	// `relationships`; `id`, timestamps and `httpLink` are always returned. Omit to
+	// return every field. Selecting fewer fields makes large pulls much smaller.
+	Fields param.Opt[string] `query:"fields,omitzero" json:"-"`
+	// A JSON filter tree, for `or` logic or nested groups: one condition
+	// `{"field": "$stage", "operator": "equal", "value": "Proposal"}`, or an `and` /
+	// `or` group whose items are conditions or one more level of groups, e.g.
+	// `{"or": [{"field": "$stage", "value": "Proposal"}, {"field": "$stage", "value": "Negotiation"}]}`.
+	// `operator` defaults to `equal`, or `contains` for a field that holds several
+	// values; prefix it with `-` to negate. At most 25 conditions. URL-encode the
+	// JSON. It is ANDed with any `field[operator]=value` parameters.
+	Filter param.Opt[string] `query:"filter,omitzero" json:"-"`
 	// Maximum number of records to return. Defaults to 25, maximum 25.
 	Limit param.Opt[int64] `query:"limit,omitzero" json:"-"`
 	// Number of records to skip for pagination. Defaults to 0.
 	Offset param.Opt[int64] `query:"offset,omitzero" json:"-"`
+	// Result order: `$createdAt` or `$updatedAt`, oldest first, or prefixed with `-`
+	// for newest first. Defaults to `-$createdAt`. Use `$updatedAt` to process changes
+	// oldest first.
+	//
+	// Any of "$createdAt", "-$createdAt", "$updatedAt", "-$updatedAt".
+	Sort OpportunityListParamsSort `query:"sort,omitzero" json:"-"`
 	// Which records to return by trash state. Defaults to "active". Use "trashed" to
 	// list records currently in the trash; this additionally requires this resource's
 	// `restore` scope.
@@ -3148,6 +3170,18 @@ func (r OpportunityListParams) URLQuery() (v url.Values, err error) {
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
 }
+
+// Result order: `$createdAt` or `$updatedAt`, oldest first, or prefixed with `-`
+// for newest first. Defaults to `-$createdAt`. Use `$updatedAt` to process changes
+// oldest first.
+type OpportunityListParamsSort string
+
+const (
+	OpportunityListParamsSortCreatedAt      OpportunityListParamsSort = "$createdAt"
+	OpportunityListParamsSortMinusCreatedAt OpportunityListParamsSort = "-$createdAt"
+	OpportunityListParamsSortUpdatedAt      OpportunityListParamsSort = "$updatedAt"
+	OpportunityListParamsSortMinusUpdatedAt OpportunityListParamsSort = "-$updatedAt"
+)
 
 // Which records to return by trash state. Defaults to "active". Use "trashed" to
 // list records currently in the trash; this additionally requires this resource's

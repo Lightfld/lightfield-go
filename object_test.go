@@ -138,8 +138,11 @@ func TestObjectListWithOptionalParams(t *testing.T) {
 		context.TODO(),
 		"entitySlug",
 		githubcomlightfldlightfieldgo.ObjectListParams{
+			Fields: githubcomlightfldlightfieldgo.String("fields"),
+			Filter: githubcomlightfldlightfieldgo.String("filter"),
 			Limit:  githubcomlightfldlightfieldgo.Int(1),
 			Offset: githubcomlightfldlightfieldgo.Int(0),
+			Sort:   githubcomlightfldlightfieldgo.ObjectListParamsSortCreatedAt,
 		},
 	)
 	if err != nil {
