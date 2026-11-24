@@ -650,6 +650,9 @@ type TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	Color string `json:"color"`
 	// Description of the option, or null.
 	Description string `json:"description" api:"nullable"`
+	// Whether the pipeline's stages carry a `forecastPercentage`. Present only on
+	// $pipeline.
+	ForecastEnabled bool `json:"forecastEnabled"`
 	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
 	// on selects whose options take no forecast.
 	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
@@ -663,6 +666,10 @@ type TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
 	// selects.
 	ParentID string `json:"parentId"`
+	// Key of the pipeline, unique on the object type. Pipelines provisioned by
+	// Lightfield use a `$` prefix (e.g. `$default-pipeline`). Present only on
+	// $pipeline.
+	Slug string `json:"slug"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                 respjson.Field
@@ -670,9 +677,11 @@ type TaskDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 		Category           respjson.Field
 		Color              respjson.Field
 		Description        respjson.Field
+		ForecastEnabled    respjson.Field
 		ForecastPercentage respjson.Field
 		Icon               respjson.Field
 		ParentID           respjson.Field
+		Slug               respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
 	} `json:"-"`

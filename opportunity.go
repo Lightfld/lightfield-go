@@ -263,23 +263,6 @@ func (r *OpportunityService) FieldHistory(ctx context.Context, fieldKey string, 
 	return res, err
 }
 
-// > [!WARNING] This endpoint is in beta and isn't available to every workspace
-// > yet. Its parameters and response schemas may change, including breaking
-// > changes.
-//
-// Returns every pipeline on the object type, oldest first, each with its stages in
-// display order. Empty when the object type has none.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *OpportunityService) ListPipelines(ctx context.Context, opts ...option.RequestOption) (res *OpportunityListPipelinesResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	path := "v1/opportunities/pipelines"
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
-	return res, err
-}
-
 // Restores a trashed opportunity, bringing it back to active. Find trashed
 // opportunities via `GET /v1/opportunities?status=trashed`.
 //
@@ -297,26 +280,6 @@ func (r *OpportunityService) Restore(ctx context.Context, id string, body Opport
 	}
 	path := fmt.Sprintf("v1/opportunities/%s/restore", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
-	return res, err
-}
-
-// > [!WARNING] This endpoint is in beta and isn't available to every workspace
-// > yet. Its parameters and response schemas may change, including breaking
-// > changes.
-//
-// Returns one pipeline on the object type, with its stages in display order.
-//
-// **[Required scope](/using-the-api/scopes/):** `opportunities:read`
-//
-// **[Rate limit category](/using-the-api/rate-limits/):** Read
-func (r *OpportunityService) GetPipeline(ctx context.Context, id string, opts ...option.RequestOption) (res *OpportunityRetrievePipelineResponse, err error) {
-	opts = slices.Concat(r.Options, opts)
-	if id == "" {
-		err = errors.New("missing required id parameter")
-		return nil, err
-	}
-	path := fmt.Sprintf("v1/opportunities/pipelines/%s", url.PathEscape(id))
-	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
 	return res, err
 }
 
@@ -952,6 +915,9 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption struct
 	Color string `json:"color"`
 	// Description of the option, or null.
 	Description string `json:"description" api:"nullable"`
+	// Whether the pipeline's stages carry a `forecastPercentage`. Present only on
+	// $pipeline.
+	ForecastEnabled bool `json:"forecastEnabled"`
 	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
 	// on selects whose options take no forecast.
 	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
@@ -965,6 +931,10 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption struct
 	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
 	// selects.
 	ParentID string `json:"parentId"`
+	// Key of the pipeline, unique on the object type. Pipelines provisioned by
+	// Lightfield use a `$` prefix (e.g. `$default-pipeline`). Present only on
+	// $pipeline.
+	Slug string `json:"slug"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                 respjson.Field
@@ -972,9 +942,11 @@ type OpportunityDefinitionsResponseFieldDefinitionTypeConfigurationOption struct
 		Category           respjson.Field
 		Color              respjson.Field
 		Description        respjson.Field
+		ForecastEnabled    respjson.Field
 		ForecastPercentage respjson.Field
 		Icon               respjson.Field
 		ParentID           respjson.Field
+		Slug               respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
 	} `json:"-"`
@@ -1737,116 +1709,6 @@ func (r *OpportunityFieldHistoryResponseDataValueFullName) UnmarshalJSON(data []
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityListPipelinesResponse struct {
-	Data []OpportunityListPipelinesResponseData `json:"data" api:"required"`
-	// Any of "list".
-	Object OpportunityListPipelinesResponseObject `json:"object" api:"required"`
-	// Number of pipelines on the object type.
-	TotalCount int64 `json:"totalCount" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		Data        respjson.Field
-		Object      respjson.Field
-		TotalCount  respjson.Field
-		ExtraFields map[string]respjson.Field
-		raw         string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r OpportunityListPipelinesResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListPipelinesResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type OpportunityListPipelinesResponseData struct {
-	// Unique identifier of the pipeline.
-	ID string `json:"id" api:"required"`
-	// Description of the pipeline, or null.
-	Description string `json:"description" api:"required"`
-	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
-	// forecast.
-	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
-	// Display name of the pipeline.
-	Name string `json:"name" api:"required"`
-	// Key derived from the name when the pipeline was created, unique on the object
-	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
-	// `$default-pipeline`).
-	Slug string `json:"slug" api:"required"`
-	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
-	Stages []OpportunityListPipelinesResponseDataStage `json:"stages" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID              respjson.Field
-		Description     respjson.Field
-		ForecastEnabled respjson.Field
-		Name            respjson.Field
-		Slug            respjson.Field
-		Stages          respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r OpportunityListPipelinesResponseData) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListPipelinesResponseData) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type OpportunityListPipelinesResponseDataStage struct {
-	// Unique identifier of the select option.
-	ID string `json:"id" api:"required"`
-	// Human-readable display name of the option.
-	Label string `json:"label" api:"required"`
-	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
-	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
-	//
-	// Any of "ACTIVE", "COMPLETED".
-	Category string `json:"category"`
-	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
-	// whose options take no color.
-	//
-	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
-	// "COPPER", "GRAY".
-	Color string `json:"color"`
-	// Description of the option, or null.
-	Description string `json:"description" api:"nullable"`
-	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
-	// on selects whose options take no forecast.
-	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
-	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
-	// on $stage.
-	//
-	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
-	// "CLOSED_WON", "CLOSED_LOST".
-	Icon string `json:"icon"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID                 respjson.Field
-		Label              respjson.Field
-		Category           respjson.Field
-		Color              respjson.Field
-		Description        respjson.Field
-		ForecastPercentage respjson.Field
-		Icon               respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r OpportunityListPipelinesResponseDataStage) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityListPipelinesResponseDataStage) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type OpportunityListPipelinesResponseObject string
-
-const (
-	OpportunityListPipelinesResponseObjectList OpportunityListPipelinesResponseObject = "list"
-)
-
 type OpportunityListResponse struct {
 	// Array of entity objects for the current page.
 	Data []OpportunityListResponseData `json:"data" api:"required"`
@@ -2502,88 +2364,6 @@ func (r *OpportunityRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON
 	return apijson.UnmarshalRoot(data, r)
 }
 
-type OpportunityRetrievePipelineResponse struct {
-	// Unique identifier of the pipeline.
-	ID string `json:"id" api:"required"`
-	// Description of the pipeline, or null.
-	Description string `json:"description" api:"required"`
-	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
-	// forecast.
-	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
-	// Display name of the pipeline.
-	Name string `json:"name" api:"required"`
-	// Key derived from the name when the pipeline was created, unique on the object
-	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
-	// `$default-pipeline`).
-	Slug string `json:"slug" api:"required"`
-	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
-	Stages []OpportunityRetrievePipelineResponseStage `json:"stages" api:"required"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID              respjson.Field
-		Description     respjson.Field
-		ForecastEnabled respjson.Field
-		Name            respjson.Field
-		Slug            respjson.Field
-		Stages          respjson.Field
-		ExtraFields     map[string]respjson.Field
-		raw             string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r OpportunityRetrievePipelineResponse) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrievePipelineResponse) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
-type OpportunityRetrievePipelineResponseStage struct {
-	// Unique identifier of the select option.
-	ID string `json:"id" api:"required"`
-	// Human-readable display name of the option.
-	Label string `json:"label" api:"required"`
-	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
-	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
-	//
-	// Any of "ACTIVE", "COMPLETED".
-	Category string `json:"category"`
-	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
-	// whose options take no color.
-	//
-	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
-	// "COPPER", "GRAY".
-	Color string `json:"color"`
-	// Description of the option, or null.
-	Description string `json:"description" api:"nullable"`
-	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
-	// on selects whose options take no forecast.
-	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
-	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
-	// on $stage.
-	//
-	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
-	// "CLOSED_WON", "CLOSED_LOST".
-	Icon string `json:"icon"`
-	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
-	JSON struct {
-		ID                 respjson.Field
-		Label              respjson.Field
-		Category           respjson.Field
-		Color              respjson.Field
-		Description        respjson.Field
-		ForecastPercentage respjson.Field
-		Icon               respjson.Field
-		ExtraFields        map[string]respjson.Field
-		raw                string
-	} `json:"-"`
-}
-
-// Returns the unmodified JSON received from the API
-func (r OpportunityRetrievePipelineResponseStage) RawJSON() string { return r.JSON.raw }
-func (r *OpportunityRetrievePipelineResponseStage) UnmarshalJSON(data []byte) error {
-	return apijson.UnmarshalRoot(data, r)
-}
-
 // OpportunityRetrieveResponseUnion contains all possible properties and values
 // from [OpportunityRetrieveResponseEntity],
 // [OpportunityRetrieveResponseRestricted].
@@ -3164,6 +2944,9 @@ type OpportunityUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption 
 	Color string `json:"color"`
 	// Description of the option, or null.
 	Description string `json:"description" api:"nullable"`
+	// Whether the pipeline's stages carry a `forecastPercentage`. Present only on
+	// $pipeline.
+	ForecastEnabled bool `json:"forecastEnabled"`
 	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
 	// on selects whose options take no forecast.
 	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
@@ -3177,6 +2960,10 @@ type OpportunityUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption 
 	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
 	// selects.
 	ParentID string `json:"parentId"`
+	// Key of the pipeline, unique on the object type. Pipelines provisioned by
+	// Lightfield use a `$` prefix (e.g. `$default-pipeline`). Present only on
+	// $pipeline.
+	Slug string `json:"slug"`
 	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
 	JSON struct {
 		ID                 respjson.Field
@@ -3184,9 +2971,11 @@ type OpportunityUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption 
 		Category           respjson.Field
 		Color              respjson.Field
 		Description        respjson.Field
+		ForecastEnabled    respjson.Field
 		ForecastPercentage respjson.Field
 		Icon               respjson.Field
 		ParentID           respjson.Field
+		Slug               respjson.Field
 		ExtraFields        map[string]respjson.Field
 		raw                string
 	} `json:"-"`

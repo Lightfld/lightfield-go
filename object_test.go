@@ -390,28 +390,6 @@ func TestObjectListDefinitions(t *testing.T) {
 	}
 }
 
-func TestObjectListPipelines(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Object.ListPipelines(context.TODO(), "entitySlug")
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
 func TestObjectRestoreWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -430,34 +408,6 @@ func TestObjectRestoreWithOptionalParams(t *testing.T) {
 		githubcomlightfldlightfieldgo.ObjectRestoreParams{
 			EntitySlug: "entitySlug",
 			Body:       githubcomlightfldlightfieldgo.ObjectRestoreParamsBody{},
-		},
-	)
-	if err != nil {
-		var apierr *githubcomlightfldlightfieldgo.Error
-		if errors.As(err, &apierr) {
-			t.Log(string(apierr.DumpRequest(true)))
-		}
-		t.Fatalf("err should be nil: %s", err.Error())
-	}
-}
-
-func TestObjectGetPipeline(t *testing.T) {
-	baseURL := "http://localhost:4010"
-	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
-		baseURL = envURL
-	}
-	if !testutil.CheckTestServer(t, baseURL) {
-		return
-	}
-	client := githubcomlightfldlightfieldgo.NewClient(
-		option.WithBaseURL(baseURL),
-		option.WithAPIKey("My API Key"),
-	)
-	_, err := client.Object.GetPipeline(
-		context.TODO(),
-		"id",
-		githubcomlightfldlightfieldgo.ObjectGetPipelineParams{
-			EntitySlug: "entitySlug",
 		},
 	)
 	if err != nil {
