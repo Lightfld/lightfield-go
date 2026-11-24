@@ -98,6 +98,14 @@ type Client struct {
 	// Senders are the email mailboxes and LinkedIn accounts sequences send from.
 	// Creating, connecting and archiving a sender happen in the Lightfield app.
 	Sender SenderService
+	// > [!WARNING] The Automations API is in beta and isn't available to every
+	// > workspace yet. Endpoints, parameters, and response schemas may change,
+	// > including breaking changes.
+	//
+	// Automations run their steps whenever one of their triggers fires. An automation
+	// created or updated through the API goes live immediately; pause it to stop new
+	// runs.
+	Automation AutomationService
 }
 
 // DefaultClientOptions read from the environment (LIGHTFIELD_BASE_URL). This
@@ -146,6 +154,7 @@ func NewClient(opts ...option.RequestOption) (r Client) {
 	r.EnrichmentRun = NewEnrichmentRunService(opts...)
 	r.Sequence = NewSequenceService(opts...)
 	r.Sender = NewSenderService(opts...)
+	r.Automation = NewAutomationService(opts...)
 
 	return
 }

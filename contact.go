@@ -150,6 +150,36 @@ func (r *ContactService) Delete(ctx context.Context, id string, body ContactDele
 	return res, err
 }
 
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Creates a pipeline on the object type. Each stage receives a UUIDv4 unless the
+// caller supplies its ID.
+//
+// A name, slug or stage ID that another pipeline on the object type has is refused
+// with 409 and a `code` of `crm.pipeline.name_taken`, `crm.pipeline.slug_taken` or
+// `crm.pipeline.stage_id_taken`. Stage IDs on an object type must also be distinct
+// after ignoring case, hyphens, and underscores. A new collision returns 409
+// `crm.pipeline.stage_id_taken`. A stage ID that newly conflicts with another
+// stage’s label, in either its stored or published spelling, is refused with 409
+// `crm.pipeline.stage_id_taken`. A name or stage ID can be taken once the other
+// pipeline gives it up, so the request can be sent again then. A workspace without
+// multiple pipelines is refused with 403 `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `contacts:read` and
+// `config:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *ContactService) NewPipeline(ctx context.Context, body ContactNewPipelineParams, opts ...option.RequestOption) (res *ContactCreatePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/contacts/pipelines"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Returns the schema for all field and relationship definitions available on
 // contacts, including both system-defined and custom fields. Useful for
 // understanding the shape of contact data before creating or updating records. See
@@ -163,6 +193,33 @@ func (r *ContactService) Definitions(ctx context.Context, query ContactDefinitio
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/contacts/definitions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Deletes the pipeline and its stages, clearing the stage of every record in one.
+// Automations and saved filters that reference it are left as they are. With
+// `dryRun=true`, runs every check and returns the count without deleting anything.
+// A workspace without multiple pipelines is refused with 403
+// `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `contacts:read` and
+// `config:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *ContactService) DeletePipeline(ctx context.Context, id string, params ContactDeletePipelineParams, opts ...option.RequestOption) (res *ContactDeletePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/contacts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, params, &res, opts...)
 	return res, err
 }
 
@@ -192,6 +249,23 @@ func (r *ContactService) FieldHistory(ctx context.Context, fieldKey string, para
 	return res, err
 }
 
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Returns every pipeline on the object type, oldest first, each with its stages in
+// display order. Empty when the object type has none.
+//
+// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *ContactService) ListPipelines(ctx context.Context, opts ...option.RequestOption) (res *ContactListPipelinesResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/contacts/pipelines"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Restores a trashed contact, bringing it back to active. Find trashed contacts
 // via `GET /v1/contacts?status=trashed`.
 //
@@ -210,6 +284,181 @@ func (r *ContactService) Restore(ctx context.Context, id string, body ContactRes
 	path := fmt.Sprintf("v1/contacts/%s/restore", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Returns one pipeline on the object type, with its stages in display order.
+//
+// **[Required scope](/using-the-api/scopes/):** `contacts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *ContactService) GetPipeline(ctx context.Context, id string, opts ...option.RequestOption) (res *ContactRetrievePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/contacts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Requires a workspace owner or admin. Creates, changes, archives and restores
+// definitions, keyed the way `GET` returns them. A key that names no definition
+// creates one; a key that names one changes only the properties sent, and restores
+// it first if it is archived. Sending the same request again changes nothing.
+//
+// Every definition is checked before any is written. If any check fails, nothing
+// is changed and the response is 422, or 409 when a definition that already exists
+// disagrees with the request, with every problem listed under `issues`. The writes
+// themselves are independent: in the rare case one fails after the checks pass,
+// the others are still written, and the response is 409 with the written
+// definitions listed under `applied`. If another request is writing definitions at
+// the same time, the response can be 429 with nothing changed; send the request
+// again.
+//
+// Pipeline and stage fields cannot be changed through this endpoint. Labels are
+// stored without leading or trailing whitespace. Labels, new keys and new option
+// IDs can be at most 255 characters.
+//
+// **[Required scopes](/using-the-api/scopes/):** `contacts:read`, plus
+// `config:create` to create, `config:update` to change or restore, `config:delete`
+// to archive
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *ContactService) UpdateDefinitions(ctx context.Context, body ContactUpdateDefinitionsParams, opts ...option.RequestOption) (res *ContactUpdateDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/contacts/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Changes only the properties sent. A stage entry without an ID creates a new
+// stage on each request. Use the returned IDs on subsequent updates to keep those
+// stages and their record assignments. If the list omits an existing stage, the
+// update returns 409 and lists the stages it would delete. Repeat with
+// `force=true` to confirm. With `dryRun=true`, runs every check and returns
+// `{ affectedRecordCount }`, the records whose stage the update would clear,
+// without changing anything.
+//
+// A name, slug or stage ID that another pipeline on the object type has is refused
+// with 409 and a `code` of `crm.pipeline.name_taken`, `crm.pipeline.slug_taken` or
+// `crm.pipeline.stage_id_taken`. Stage IDs on an object type must also be distinct
+// after ignoring case, hyphens, and underscores. A new collision returns 409
+// `crm.pipeline.stage_id_taken`. A stage ID that newly conflicts with another
+// stage’s label, in either its stored or published spelling, is refused with 409
+// `crm.pipeline.stage_id_taken`. A name or stage ID can be taken once the other
+// pipeline gives it up, so the request can be sent again then. A workspace without
+// multiple pipelines is refused with 403 `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `contacts:read` and
+// `config:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *ContactService) UpdatePipeline(ctx context.Context, id string, params ContactUpdatePipelineParams, opts ...option.RequestOption) (res *ContactUpdatePipelineResponseUnion, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/contacts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
+	return res, err
+}
+
+type ContactCreatePipelineResponse struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []ContactCreatePipelineResponseStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactCreatePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactCreatePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactCreatePipelineResponseStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactCreatePipelineResponseStage) RawJSON() string { return r.JSON.raw }
+func (r *ContactCreatePipelineResponseStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type ContactCreateResponse struct {
@@ -924,6 +1173,23 @@ func (r *ContactDefinitionsResponseRelationshipGroupDefinitionInverse) Unmarshal
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type ContactDeletePipelineResponse struct {
+	// Number of records whose stage is, or would be, cleared.
+	AffectedRecordCount int64 `json:"affectedRecordCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AffectedRecordCount respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactDeletePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactDeletePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type ContactDeleteResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
@@ -1448,6 +1714,116 @@ func (r ContactFieldHistoryResponseDataValueFullName) RawJSON() string { return 
 func (r *ContactFieldHistoryResponseDataValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type ContactListPipelinesResponse struct {
+	Data []ContactListPipelinesResponseData `json:"data" api:"required"`
+	// Any of "list".
+	Object ContactListPipelinesResponseObject `json:"object" api:"required"`
+	// Number of pipelines on the object type.
+	TotalCount int64 `json:"totalCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		Object      respjson.Field
+		TotalCount  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactListPipelinesResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactListPipelinesResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactListPipelinesResponseData struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []ContactListPipelinesResponseDataStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactListPipelinesResponseData) RawJSON() string { return r.JSON.raw }
+func (r *ContactListPipelinesResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactListPipelinesResponseDataStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactListPipelinesResponseDataStage) RawJSON() string { return r.JSON.raw }
+func (r *ContactListPipelinesResponseDataStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactListPipelinesResponseObject string
+
+const (
+	ContactListPipelinesResponseObjectList ContactListPipelinesResponseObject = "list"
+)
 
 type ContactListResponse struct {
 	// Array of entity objects for the current page.
@@ -2102,6 +2478,88 @@ func (r *ContactRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(dat
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type ContactRetrievePipelineResponse struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []ContactRetrievePipelineResponseStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactRetrievePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrievePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactRetrievePipelineResponseStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactRetrievePipelineResponseStage) RawJSON() string { return r.JSON.raw }
+func (r *ContactRetrievePipelineResponseStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // ContactRetrieveResponseUnion contains all possible properties and values from
 // [ContactRetrieveResponseEntity], [ContactRetrieveResponseRestricted].
 //
@@ -2514,6 +2972,557 @@ type ContactRetrieveResponseRestrictedRestricted struct {
 // Returns the unmodified JSON received from the API
 func (r ContactRetrieveResponseRestrictedRestricted) RawJSON() string { return r.JSON.raw }
 func (r *ContactRetrieveResponseRestrictedRestricted) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsResponse struct {
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]ContactUpdateDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions. Self-referential relationships
+	// include optional directional metadata on the bare definition.
+	RelationshipDefinitions map[string]ContactUpdateDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// Map of relationship group keys to their definitions. A group collects
+	// relationships between the same two object types, such as the roles a contact can
+	// hold on an opportunity. Relationships name their group with `groupKey`.
+	RelationshipGroupDefinitions map[string]ContactUpdateDefinitionsResponseRelationshipGroupDefinition `json:"relationshipGroupDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions             respjson.Field
+		ObjectType                   respjson.Field
+		RelationshipDefinitions      respjson.Field
+		RelationshipGroupDefinitions respjson.Field
+		ExtraFields                  map[string]respjson.Field
+		raw                          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdateDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsResponseFieldDefinition struct {
+	// Whether the field definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the field definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code). A key the
+	// field type does not support is absent; a supported key with nothing set is null.
+	TypeConfiguration ContactUpdateDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
+	// Whether AI fills this field automatically (`ON`), only suggests values
+	// (`SUGGEST`), or leaves it alone (`OFF`). Absent on built-in fields that have no
+	// `id`.
+	//
+	// Any of "ON", "OFF", "SUGGEST".
+	AIFillable string `json:"aiFillable"`
+	// Instructions AI follows when filling this field, or null when none are set.
+	// Absent on built-in fields that have no `id`.
+	AIFillablePrompt string `json:"aiFillablePrompt" api:"nullable"`
+	// Formula a calculated field evaluates, with fields and relationships referenced
+	// by key. Null for fields that are not calculated. Absent on built-in fields that
+	// have no `id`.
+	Formula string `json:"formula" api:"nullable"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries, calculated fields). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
+	// Whether values are entered (`MANUAL`) or calculated from a formula (`COMPUTED`).
+	// Absent on built-in fields that have no `id`.
+	//
+	// Any of "MANUAL", "COMPUTED".
+	ValueSource string `json:"valueSource"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Archived          respjson.Field
+		ArchivedAt        respjson.Field
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		AIFillable        respjson.Field
+		AIFillablePrompt  respjson.Field
+		Formula           respjson.Field
+		ReadOnly          respjson.Field
+		ValueSource       respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdateDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Type-specific configuration (e.g. select options, currency code). A key the
+// field type does not support is absent; a supported key with nothing set is null.
+type ContactUpdateDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+	// ISO 4217 3-letter currency code. Present on `CURRENCY` fields, absent on every
+	// other type.
+	Currency string `json:"currency"`
+	// Number of decimal places values carry, or null when none is set. Present on
+	// `NUMBER` and `CURRENCY` fields, absent on every other type.
+	DecimalPlaces int64 `json:"decimalPlaces" api:"nullable"`
+	// Social platform associated with this handle field, or null when none is set.
+	// Present on `SOCIAL_HANDLE` fields, absent on every other type.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService" api:"nullable"`
+	// Whether this field accepts multiple values. Present on `EMAIL`, `TELEPHONE` and
+	// `URL` fields, absent on every other type.
+	MultipleValues bool `json:"multipleValues"`
+	// Available options. Always present on `SINGLE_SELECT` and `MULTI_SELECT` fields,
+	// as an empty list when there are none. Absent on every other type.
+	Options []ContactUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	// For a dependent select, the field key whose selected option determines which of
+	// this field's options apply. Absent for ordinary selects.
+	ParentFieldKey string `json:"parentFieldKey"`
+	// Whether values for this field must be unique, or null when not set. Present on
+	// `EMAIL`, `TELEPHONE`, `URL` and `SOCIAL_HANDLE` fields, absent on every other
+	// type.
+	Unique bool `json:"unique" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Currency       respjson.Field
+		DecimalPlaces  respjson.Field
+		HandleService  respjson.Field
+		MultipleValues respjson.Field
+		Options        respjson.Field
+		ParentFieldKey respjson.Field
+		Unique         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// For a dependent select, the ID of the option in the parent field named by
+	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
+	// selects.
+	ParentID string `json:"parentId"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ParentID           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsResponseRelationshipDefinition struct {
+	// Whether the relationship definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the relationship, as it reads from this object
+	// type.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
+	// Directional metadata for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions ContactUpdateDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
+	// Key of the relationship group this relationship belongs to, as listed under
+	// `relationshipGroupDefinitions`. Absent when the relationship is not in a group.
+	GroupKey string `json:"groupKey"`
+	// How the same relationship reads from the related object type.
+	Inverse ContactUpdateDefinitionsResponseRelationshipDefinitionInverse `json:"inverse"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		Directions  respjson.Field
+		GroupKey    respjson.Field
+		Inverse     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdateDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional metadata for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type ContactUpdateDefinitionsResponseRelationshipDefinitionDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipDefinitionDirections) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipDefinitionDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same relationship reads from the related object type.
+type ContactUpdateDefinitionsResponseRelationshipDefinitionInverse struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipDefinitionInverse) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsResponseRelationshipGroupDefinition struct {
+	// Unique identifier of the relationship group.
+	ID string `json:"id" api:"required"`
+	// Whether the relationship group is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship group was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// How the same group reads from the related object type.
+	Inverse ContactUpdateDefinitionsResponseRelationshipGroupDefinitionInverse `json:"inverse" api:"required"`
+	// Human-readable display name of the group, as it reads from this object type.
+	Label string `json:"label" api:"required"`
+	// The type of the related object every relationship in the group points to.
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
+		Inverse     respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipGroupDefinition) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipGroupDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same group reads from the related object type.
+type ContactUpdateDefinitionsResponseRelationshipGroupDefinitionInverse struct {
+	// Human-readable display name of the group, as it reads from the related object
+	// type.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdateDefinitionsResponseRelationshipGroupDefinitionInverse) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *ContactUpdateDefinitionsResponseRelationshipGroupDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// ContactUpdatePipelineResponseUnion contains all possible properties and values
+// from [ContactUpdatePipelineResponseObject],
+// [ContactUpdatePipelineResponseAffectedRecordCount].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type ContactUpdatePipelineResponseUnion struct {
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	ID string `json:"id"`
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	Description string `json:"description"`
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	ForecastEnabled bool `json:"forecastEnabled"`
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	Name string `json:"name"`
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	Slug string `json:"slug"`
+	// This field is from variant [ContactUpdatePipelineResponseObject].
+	Stages []ContactUpdatePipelineResponseObjectStage `json:"stages"`
+	// This field is from variant [ContactUpdatePipelineResponseAffectedRecordCount].
+	AffectedRecordCount int64 `json:"affectedRecordCount"`
+	JSON                struct {
+		ID                  respjson.Field
+		Description         respjson.Field
+		ForecastEnabled     respjson.Field
+		Name                respjson.Field
+		Slug                respjson.Field
+		Stages              respjson.Field
+		AffectedRecordCount respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+func (u ContactUpdatePipelineResponseUnion) AsContactUpdatePipelineResponseObject() (v ContactUpdatePipelineResponseObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u ContactUpdatePipelineResponseUnion) AsContactUpdatePipelineResponseAffectedRecordCount() (v ContactUpdatePipelineResponseAffectedRecordCount) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u ContactUpdatePipelineResponseUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *ContactUpdatePipelineResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdatePipelineResponseObject struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []ContactUpdatePipelineResponseObjectStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdatePipelineResponseObject) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdatePipelineResponseObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdatePipelineResponseObjectStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdatePipelineResponseObjectStage) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdatePipelineResponseObjectStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdatePipelineResponseAffectedRecordCount struct {
+	// Number of records whose stage is, or would be, cleared.
+	AffectedRecordCount int64 `json:"affectedRecordCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AffectedRecordCount respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r ContactUpdatePipelineResponseAffectedRecordCount) RawJSON() string { return r.JSON.raw }
+func (r *ContactUpdatePipelineResponseAffectedRecordCount) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3191,6 +4200,83 @@ func (r *ContactDeleteParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type ContactNewPipelineParams struct {
+	// Display name of the pipeline, unique among pipelines on the object type.
+	Name string `json:"name" api:"required"`
+	// Description of the pipeline. Send null to clear it; an empty or whitespace-only
+	// string returns 422.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Whether stages carry a forecast. Defaults to false.
+	ForecastEnabled param.Opt[bool] `json:"forecastEnabled,omitzero"`
+	// Key of the pipeline, fixed once created. A slug another pipeline on the object
+	// type already has is refused with 409 `crm.pipeline.slug_taken`, so a create sent
+	// again after a lost response is recognized. Derived from `name` when left out.
+	Slug param.Opt[string] `json:"slug,omitzero"`
+	// Stages in display order. Defaults to none.
+	Stages []ContactNewPipelineParamsStage `json:"stages,omitzero"`
+	paramObj
+}
+
+func (r ContactNewPipelineParams) MarshalJSON() (data []byte, err error) {
+	type shadow ContactNewPipelineParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactNewPipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Category, Color, Icon, Label are required.
+type ContactNewPipelineParamsStage struct {
+	// Lifecycle group of the stage, in-progress (`ACTIVE`) or done (`COMPLETED`).
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category,omitzero" api:"required"`
+	// Color the stage is displayed in.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero" api:"required"`
+	// Icon the stage is displayed with.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon,omitzero" api:"required"`
+	// Display name of the stage.
+	Label string `json:"label" api:"required"`
+	// Description of the stage. Null clears it.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Forecast weighting from 0 to 100. Only allowed when `forecastEnabled`. Null
+	// clears it.
+	ForecastPercentage param.Opt[float64] `json:"forecastPercentage,omitzero"`
+	// Omit the ID to create a new stage with a random UUIDv4. To keep or edit a stage,
+	// send its published ID. A caller-chosen ID starts with `opt_` followed by either
+	// a UUID in any letter case or groups of lowercase letters and digits separated by
+	// single hyphens or underscores. The ID must be unique on the object type,
+	// ignoring case, hyphens, and underscores.
+	ID param.Opt[string] `json:"id,omitzero"`
+	paramObj
+}
+
+func (r ContactNewPipelineParamsStage) MarshalJSON() (data []byte, err error) {
+	type shadow ContactNewPipelineParamsStage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactNewPipelineParamsStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactNewPipelineParamsStage](
+		"category", "ACTIVE", "COMPLETED",
+	)
+	apijson.RegisterFieldValidator[ContactNewPipelineParamsStage](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+	apijson.RegisterFieldValidator[ContactNewPipelineParamsStage](
+		"icon", "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST",
+	)
+}
+
 type ContactDefinitionsParams struct {
 	// Include archived field and relationship definitions, and those of an archived
 	// custom object type or whose other end is one. Defaults to false.
@@ -3205,6 +4291,42 @@ func (r ContactDefinitionsParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type ContactDeletePipelineParams struct {
+	// Check the request and count the records it would clear, without changing
+	// anything. Defaults to false.
+	DryRun param.Opt[bool] `query:"dryRun,omitzero" json:"-"`
+	Body   ContactDeletePipelineParamsBody
+	paramObj
+}
+
+func (r ContactDeletePipelineParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *ContactDeletePipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// URLQuery serializes [ContactDeletePipelineParams]'s query parameters as
+// `url.Values`.
+func (r ContactDeletePipelineParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type ContactDeletePipelineParamsBody struct {
+	paramObj
+}
+
+func (r ContactDeletePipelineParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow ContactDeletePipelineParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactDeletePipelineParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type ContactFieldHistoryParams struct {
@@ -3248,4 +4370,333 @@ func (r ContactRestoreParamsBody) MarshalJSON() (data []byte, err error) {
 }
 func (r *ContactRestoreParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsParams struct {
+	// Field definitions to create or change, keyed by field key. A key that names no
+	// field creates one with that key, and needs `label` and `valueType`. `filter`,
+	// `fields` and `sort` can't be new keys, since list endpoints use them as query
+	// params. A key that names a field changes only the properties sent. `archived`
+	// archives or restores it. At most 10 definitions per request.
+	FieldDefinitions map[string]ContactUpdateDefinitionsParamsFieldDefinition `json:"fieldDefinitions,omitzero"`
+	// Relationship definitions to create or change, keyed by relationship key.
+	// Creating one needs `label`, `cardinality`, `objectType` and
+	// `inverse.cardinality`.
+	RelationshipDefinitions map[string]ContactUpdateDefinitionsParamsRelationshipDefinition `json:"relationshipDefinitions,omitzero"`
+	// Relationship group definitions to create or change, keyed by group key. Creating
+	// one needs `label` and `objectType`. Groups are written before relationships, so
+	// a relationship in the same request can name a new group.
+	RelationshipGroupDefinitions map[string]ContactUpdateDefinitionsParamsRelationshipGroupDefinition `json:"relationshipGroupDefinitions,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParams) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsParamsFieldDefinition struct {
+	// Instructions AI follows when filling this field, or null when none are set.
+	// Absent on built-in fields that have no `id`.
+	AIFillablePrompt param.Opt[string] `json:"aiFillablePrompt,omitzero"`
+	// Description of the field, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Formula a calculated field evaluates, with fields and relationships referenced
+	// by key. Null for fields that are not calculated. Absent on built-in fields that
+	// have no `id`.
+	Formula param.Opt[string] `json:"formula,omitzero"`
+	// Whether the field definition is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the field.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Whether AI fills this field automatically (`ON`), only suggests values
+	// (`SUGGEST`), or leaves it alone (`OFF`). Absent on built-in fields that have no
+	// `id`.
+	//
+	// Any of "ON", "OFF", "SUGGEST".
+	AIFillable        string                                                         `json:"aiFillable,omitzero"`
+	TypeConfiguration ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration `json:"typeConfiguration,omitzero"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsFieldDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsFieldDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsFieldDefinition](
+		"aiFillable", "ON", "OFF", "SUGGEST",
+	)
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsFieldDefinition](
+		"valueType", "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL", "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML",
+	)
+}
+
+type ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration struct {
+	// Number of decimal places values carry, or null when none is set. Present on
+	// `NUMBER` and `CURRENCY` fields, absent on every other type.
+	DecimalPlaces param.Opt[int64] `json:"decimalPlaces,omitzero"`
+	// ISO 4217 3-letter currency code. Present on `CURRENCY` fields, absent on every
+	// other type.
+	Currency param.Opt[string] `json:"currency,omitzero"`
+	// Whether this field accepts multiple values. Present on `EMAIL`, `TELEPHONE` and
+	// `URL` fields, absent on every other type.
+	MultipleValues param.Opt[bool] `json:"multipleValues,omitzero"`
+	// For a dependent select, the field key whose selected option determines which of
+	// this field's options apply. Absent for ordinary selects.
+	ParentFieldKey param.Opt[string] `json:"parentFieldKey,omitzero"`
+	// Social platform associated with this handle field, or null when none is set.
+	// Present on `SOCIAL_HANDLE` fields, absent on every other type.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService,omitzero"`
+	// The full option list of a `SINGLE_SELECT` or `MULTI_SELECT` field, matched to
+	// the options the field has by `id`. An `id` the field does not have creates an
+	// option with that `id`, which must be `opt_` followed by lowercase letters and
+	// digits separated by single hyphens or underscores. A new option cannot take the
+	// label of an existing one unless the same request relabels that one. A
+	// `description` sent as null is cleared; a property left out is kept. Options left
+	// out are removed. `SINGLE_SELECT` options are displayed in the order sent.
+	Options []ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption `json:"options,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsFieldDefinitionTypeConfiguration](
+		"handleService", "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM",
+	)
+}
+
+// The properties ID, Label are required.
+type ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Description of the option, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+}
+
+type ContactUpdateDefinitionsParamsRelationshipDefinition struct {
+	// Description of the relationship, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Key of the relationship group to create this relationship in: one that exists,
+	// or one created by the same request. Fixed once the relationship exists.
+	GroupKey param.Opt[string] `json:"groupKey,omitzero"`
+	// Whether the relationship definition is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the relationship, as it reads from this object
+	// type.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType param.Opt[string] `json:"objectType,omitzero"`
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string                                                      `json:"cardinality,omitzero"`
+	Inverse     ContactUpdateDefinitionsParamsRelationshipDefinitionInverse `json:"inverse,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsRelationshipDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsRelationshipDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsRelationshipDefinition](
+		"cardinality", "HAS_ONE", "HAS_MANY",
+	)
+}
+
+type ContactUpdateDefinitionsParamsRelationshipDefinitionInverse struct {
+	// Display name of the relationship as it reads from the related object type.
+	// Defaults to `label`.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Whether the related object type reads this relationship as `HAS_ONE` or
+	// `HAS_MANY`. Required to create a relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsRelationshipDefinitionInverse) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsRelationshipDefinitionInverse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsRelationshipDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdateDefinitionsParamsRelationshipDefinitionInverse](
+		"cardinality", "HAS_ONE", "HAS_MANY",
+	)
+}
+
+type ContactUpdateDefinitionsParamsRelationshipGroupDefinition struct {
+	// Whether the relationship group is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the group, as it reads from this object type.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// The type of the related object every relationship in the group points to.
+	ObjectType param.Opt[string]                                                `json:"objectType,omitzero"`
+	Inverse    ContactUpdateDefinitionsParamsRelationshipGroupDefinitionInverse `json:"inverse,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsRelationshipGroupDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsRelationshipGroupDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsRelationshipGroupDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdateDefinitionsParamsRelationshipGroupDefinitionInverse struct {
+	// Display name of the group as it reads from the related object type. Defaults to
+	// `label`.
+	Label param.Opt[string] `json:"label,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdateDefinitionsParamsRelationshipGroupDefinitionInverse) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdateDefinitionsParamsRelationshipGroupDefinitionInverse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdateDefinitionsParamsRelationshipGroupDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type ContactUpdatePipelineParams struct {
+	// Description of the pipeline. Send null to clear it; an empty or whitespace-only
+	// string returns 422.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Check the request and count the records it would clear, without changing
+	// anything. Defaults to false.
+	DryRun param.Opt[bool] `query:"dryRun,omitzero" json:"-"`
+	// Confirm deletion of existing stages omitted from the stage list.
+	Force param.Opt[bool] `query:"force,omitzero" json:"-"`
+	// Whether stages carry a forecast. Turning it off clears every stage forecast.
+	ForecastEnabled param.Opt[bool]   `json:"forecastEnabled,omitzero"`
+	Name            param.Opt[string] `json:"name,omitzero"`
+	// The full stage list, in display order. Stages are matched by `id`. Omitted
+	// properties on a retained stage are preserved. Omitting an existing stage
+	// requires `force=true` to delete it and clear it from records.
+	Stages []ContactUpdatePipelineParamsStage `json:"stages,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdatePipelineParams) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdatePipelineParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdatePipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// URLQuery serializes [ContactUpdatePipelineParams]'s query parameters as
+// `url.Values`.
+func (r ContactUpdatePipelineParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type ContactUpdatePipelineParamsStage struct {
+	// Description of the stage. Null clears it.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Forecast weighting from 0 to 100. Only allowed when `forecastEnabled`. Null
+	// clears it.
+	ForecastPercentage param.Opt[float64] `json:"forecastPercentage,omitzero"`
+	// Omit the ID to create a new stage with a random UUIDv4. To keep or edit a stage,
+	// send its published ID. A caller-chosen ID starts with `opt_` followed by either
+	// a UUID in any letter case or groups of lowercase letters and digits separated by
+	// single hyphens or underscores. The ID must be unique on the object type,
+	// ignoring case, hyphens, and underscores.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Display name of the stage.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Lifecycle group of the stage, in-progress (`ACTIVE`) or done (`COMPLETED`).
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category,omitzero"`
+	// Color the stage is displayed in.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero"`
+	// Icon the stage is displayed with.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon,omitzero"`
+	paramObj
+}
+
+func (r ContactUpdatePipelineParamsStage) MarshalJSON() (data []byte, err error) {
+	type shadow ContactUpdatePipelineParamsStage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *ContactUpdatePipelineParamsStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[ContactUpdatePipelineParamsStage](
+		"category", "ACTIVE", "COMPLETED",
+	)
+	apijson.RegisterFieldValidator[ContactUpdatePipelineParamsStage](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+	apijson.RegisterFieldValidator[ContactUpdatePipelineParamsStage](
+		"icon", "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST",
+	)
 }

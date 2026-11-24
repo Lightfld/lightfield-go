@@ -162,6 +162,36 @@ func (r *AccountService) Delete(ctx context.Context, id string, body AccountDele
 	return res, err
 }
 
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Creates a pipeline on the object type. Each stage receives a UUIDv4 unless the
+// caller supplies its ID.
+//
+// A name, slug or stage ID that another pipeline on the object type has is refused
+// with 409 and a `code` of `crm.pipeline.name_taken`, `crm.pipeline.slug_taken` or
+// `crm.pipeline.stage_id_taken`. Stage IDs on an object type must also be distinct
+// after ignoring case, hyphens, and underscores. A new collision returns 409
+// `crm.pipeline.stage_id_taken`. A stage ID that newly conflicts with another
+// stage’s label, in either its stored or published spelling, is refused with 409
+// `crm.pipeline.stage_id_taken`. A name or stage ID can be taken once the other
+// pipeline gives it up, so the request can be sent again then. A workspace without
+// multiple pipelines is refused with 403 `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `accounts:read` and
+// `config:create`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *AccountService) NewPipeline(ctx context.Context, body AccountNewPipelineParams, opts ...option.RequestOption) (res *AccountCreatePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/accounts/pipelines"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
 // Returns the schema for all field and relationship definitions available on
 // accounts, including both system-defined and custom fields. Useful for
 // understanding the shape of account data before creating or updating records. See
@@ -175,6 +205,33 @@ func (r *AccountService) Definitions(ctx context.Context, query AccountDefinitio
 	opts = slices.Concat(r.Options, opts)
 	path := "v1/accounts/definitions"
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, query, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Deletes the pipeline and its stages, clearing the stage of every record in one.
+// Automations and saved filters that reference it are left as they are. With
+// `dryRun=true`, runs every check and returns the count without deleting anything.
+// A workspace without multiple pipelines is refused with 403
+// `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `accounts:read` and
+// `config:delete`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *AccountService) DeletePipeline(ctx context.Context, id string, params AccountDeletePipelineParams, opts ...option.RequestOption) (res *AccountDeletePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/accounts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodDelete, path, params, &res, opts...)
 	return res, err
 }
 
@@ -204,6 +261,23 @@ func (r *AccountService) FieldHistory(ctx context.Context, fieldKey string, para
 	return res, err
 }
 
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Returns every pipeline on the object type, oldest first, each with its stages in
+// display order. Empty when the object type has none.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *AccountService) ListPipelines(ctx context.Context, opts ...option.RequestOption) (res *AccountListPipelinesResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/accounts/pipelines"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
 // Restores a trashed account, bringing it back to active. Find trashed accounts
 // via `GET /v1/accounts?status=trashed`.
 //
@@ -222,6 +296,181 @@ func (r *AccountService) Restore(ctx context.Context, id string, body AccountRes
 	path := fmt.Sprintf("v1/accounts/%s/restore", url.PathEscape(id))
 	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
 	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Returns one pipeline on the object type, with its stages in display order.
+//
+// **[Required scope](/using-the-api/scopes/):** `accounts:read`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Read
+func (r *AccountService) GetPipeline(ctx context.Context, id string, opts ...option.RequestOption) (res *AccountRetrievePipelineResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/accounts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodGet, path, nil, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Requires a workspace owner or admin. Creates, changes, archives and restores
+// definitions, keyed the way `GET` returns them. A key that names no definition
+// creates one; a key that names one changes only the properties sent, and restores
+// it first if it is archived. Sending the same request again changes nothing.
+//
+// Every definition is checked before any is written. If any check fails, nothing
+// is changed and the response is 422, or 409 when a definition that already exists
+// disagrees with the request, with every problem listed under `issues`. The writes
+// themselves are independent: in the rare case one fails after the checks pass,
+// the others are still written, and the response is 409 with the written
+// definitions listed under `applied`. If another request is writing definitions at
+// the same time, the response can be 429 with nothing changed; send the request
+// again.
+//
+// Pipeline and stage fields cannot be changed through this endpoint. Labels are
+// stored without leading or trailing whitespace. Labels, new keys and new option
+// IDs can be at most 255 characters.
+//
+// **[Required scopes](/using-the-api/scopes/):** `accounts:read`, plus
+// `config:create` to create, `config:update` to change or restore, `config:delete`
+// to archive
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *AccountService) UpdateDefinitions(ctx context.Context, body AccountUpdateDefinitionsParams, opts ...option.RequestOption) (res *AccountUpdateDefinitionsResponse, err error) {
+	opts = slices.Concat(r.Options, opts)
+	path := "v1/accounts/definitions"
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, body, &res, opts...)
+	return res, err
+}
+
+// > [!WARNING] This endpoint is in beta and isn't available to every workspace
+// > yet. Its parameters and response schemas may change, including breaking
+// > changes.
+//
+// Changes only the properties sent. A stage entry without an ID creates a new
+// stage on each request. Use the returned IDs on subsequent updates to keep those
+// stages and their record assignments. If the list omits an existing stage, the
+// update returns 409 and lists the stages it would delete. Repeat with
+// `force=true` to confirm. With `dryRun=true`, runs every check and returns
+// `{ affectedRecordCount }`, the records whose stage the update would clear,
+// without changing anything.
+//
+// A name, slug or stage ID that another pipeline on the object type has is refused
+// with 409 and a `code` of `crm.pipeline.name_taken`, `crm.pipeline.slug_taken` or
+// `crm.pipeline.stage_id_taken`. Stage IDs on an object type must also be distinct
+// after ignoring case, hyphens, and underscores. A new collision returns 409
+// `crm.pipeline.stage_id_taken`. A stage ID that newly conflicts with another
+// stage’s label, in either its stored or published spelling, is refused with 409
+// `crm.pipeline.stage_id_taken`. A name or stage ID can be taken once the other
+// pipeline gives it up, so the request can be sent again then. A workspace without
+// multiple pipelines is refused with 403 `crm.pipeline.configuration_disabled`.
+//
+// Requires a workspace owner or admin.
+//
+// **[Required scopes](/using-the-api/scopes/):** `accounts:read` and
+// `config:update`
+//
+// **[Rate limit category](/using-the-api/rate-limits/):** Write
+func (r *AccountService) UpdatePipeline(ctx context.Context, id string, params AccountUpdatePipelineParams, opts ...option.RequestOption) (res *AccountUpdatePipelineResponseUnion, err error) {
+	opts = slices.Concat(r.Options, opts)
+	if id == "" {
+		err = errors.New("missing required id parameter")
+		return nil, err
+	}
+	path := fmt.Sprintf("v1/accounts/pipelines/%s", url.PathEscape(id))
+	err = requestconfig.ExecuteNewRequest(ctx, http.MethodPost, path, params, &res, opts...)
+	return res, err
+}
+
+type AccountCreatePipelineResponse struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []AccountCreatePipelineResponseStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountCreatePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountCreatePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountCreatePipelineResponseStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountCreatePipelineResponseStage) RawJSON() string { return r.JSON.raw }
+func (r *AccountCreatePipelineResponseStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type AccountCreateResponse struct {
@@ -936,6 +1185,23 @@ func (r *AccountDefinitionsResponseRelationshipGroupDefinitionInverse) Unmarshal
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type AccountDeletePipelineResponse struct {
+	// Number of records whose stage is, or would be, cleared.
+	AffectedRecordCount int64 `json:"affectedRecordCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AffectedRecordCount respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountDeletePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountDeletePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 type AccountDeleteResponse struct {
 	// Unique identifier for the entity.
 	ID string `json:"id" api:"required"`
@@ -1460,6 +1726,116 @@ func (r AccountFieldHistoryResponseDataValueFullName) RawJSON() string { return 
 func (r *AccountFieldHistoryResponseDataValueFullName) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
+
+type AccountListPipelinesResponse struct {
+	Data []AccountListPipelinesResponseData `json:"data" api:"required"`
+	// Any of "list".
+	Object AccountListPipelinesResponseObject `json:"object" api:"required"`
+	// Number of pipelines on the object type.
+	TotalCount int64 `json:"totalCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Data        respjson.Field
+		Object      respjson.Field
+		TotalCount  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListPipelinesResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountListPipelinesResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountListPipelinesResponseData struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []AccountListPipelinesResponseDataStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListPipelinesResponseData) RawJSON() string { return r.JSON.raw }
+func (r *AccountListPipelinesResponseData) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountListPipelinesResponseDataStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountListPipelinesResponseDataStage) RawJSON() string { return r.JSON.raw }
+func (r *AccountListPipelinesResponseDataStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountListPipelinesResponseObject string
+
+const (
+	AccountListPipelinesResponseObjectList AccountListPipelinesResponseObject = "list"
+)
 
 type AccountListResponse struct {
 	// Array of entity objects for the current page.
@@ -2114,6 +2490,88 @@ func (r *AccountRestoreResponseRelationshipDirectionsAsSource) UnmarshalJSON(dat
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type AccountRetrievePipelineResponse struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []AccountRetrievePipelineResponseStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRetrievePipelineResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountRetrievePipelineResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountRetrievePipelineResponseStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountRetrievePipelineResponseStage) RawJSON() string { return r.JSON.raw }
+func (r *AccountRetrievePipelineResponseStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
 // AccountRetrieveResponseUnion contains all possible properties and values from
 // [AccountRetrieveResponseEntity], [AccountRetrieveResponseRestricted].
 //
@@ -2526,6 +2984,557 @@ type AccountRetrieveResponseRestrictedRestricted struct {
 // Returns the unmodified JSON received from the API
 func (r AccountRetrieveResponseRestrictedRestricted) RawJSON() string { return r.JSON.raw }
 func (r *AccountRetrieveResponseRestrictedRestricted) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsResponse struct {
+	// Map of field keys to their definitions, including both system and custom fields.
+	FieldDefinitions map[string]AccountUpdateDefinitionsResponseFieldDefinition `json:"fieldDefinitions" api:"required"`
+	// The object type these definitions belong to (e.g. `account`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Map of relationship keys to their definitions. Self-referential relationships
+	// include optional directional metadata on the bare definition.
+	RelationshipDefinitions map[string]AccountUpdateDefinitionsResponseRelationshipDefinition `json:"relationshipDefinitions" api:"required"`
+	// Map of relationship group keys to their definitions. A group collects
+	// relationships between the same two object types, such as the roles a contact can
+	// hold on an opportunity. Relationships name their group with `groupKey`.
+	RelationshipGroupDefinitions map[string]AccountUpdateDefinitionsResponseRelationshipGroupDefinition `json:"relationshipGroupDefinitions" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		FieldDefinitions             respjson.Field
+		ObjectType                   respjson.Field
+		RelationshipDefinitions      respjson.Field
+		RelationshipGroupDefinitions respjson.Field
+		ExtraFields                  map[string]respjson.Field
+		raw                          string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponse) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateDefinitionsResponse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsResponseFieldDefinition struct {
+	// Whether the field definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the field definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// Description of the field, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the field.
+	Label string `json:"label" api:"required"`
+	// Type-specific configuration (e.g. select options, currency code). A key the
+	// field type does not support is absent; a supported key with nothing set is null.
+	TypeConfiguration AccountUpdateDefinitionsResponseFieldDefinitionTypeConfiguration `json:"typeConfiguration" api:"required"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType" api:"required"`
+	// Unique identifier of the field definition.
+	ID string `json:"id"`
+	// Whether AI fills this field automatically (`ON`), only suggests values
+	// (`SUGGEST`), or leaves it alone (`OFF`). Absent on built-in fields that have no
+	// `id`.
+	//
+	// Any of "ON", "OFF", "SUGGEST".
+	AIFillable string `json:"aiFillable"`
+	// Instructions AI follows when filling this field, or null when none are set.
+	// Absent on built-in fields that have no `id`.
+	AIFillablePrompt string `json:"aiFillablePrompt" api:"nullable"`
+	// Formula a calculated field evaluates, with fields and relationships referenced
+	// by key. Null for fields that are not calculated. Absent on built-in fields that
+	// have no `id`.
+	Formula string `json:"formula" api:"nullable"`
+	// `true` for fields that are not writable via the API (e.g. AI-generated
+	// summaries, calculated fields). `false` or absent for writable fields.
+	ReadOnly bool `json:"readOnly"`
+	// Whether values are entered (`MANUAL`) or calculated from a formula (`COMPUTED`).
+	// Absent on built-in fields that have no `id`.
+	//
+	// Any of "MANUAL", "COMPUTED".
+	ValueSource string `json:"valueSource"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Archived          respjson.Field
+		ArchivedAt        respjson.Field
+		Description       respjson.Field
+		Label             respjson.Field
+		TypeConfiguration respjson.Field
+		ValueType         respjson.Field
+		ID                respjson.Field
+		AIFillable        respjson.Field
+		AIFillablePrompt  respjson.Field
+		Formula           respjson.Field
+		ReadOnly          respjson.Field
+		ValueSource       respjson.Field
+		ExtraFields       map[string]respjson.Field
+		raw               string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseFieldDefinition) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateDefinitionsResponseFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Type-specific configuration (e.g. select options, currency code). A key the
+// field type does not support is absent; a supported key with nothing set is null.
+type AccountUpdateDefinitionsResponseFieldDefinitionTypeConfiguration struct {
+	// ISO 4217 3-letter currency code. Present on `CURRENCY` fields, absent on every
+	// other type.
+	Currency string `json:"currency"`
+	// Number of decimal places values carry, or null when none is set. Present on
+	// `NUMBER` and `CURRENCY` fields, absent on every other type.
+	DecimalPlaces int64 `json:"decimalPlaces" api:"nullable"`
+	// Social platform associated with this handle field, or null when none is set.
+	// Present on `SOCIAL_HANDLE` fields, absent on every other type.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService" api:"nullable"`
+	// Whether this field accepts multiple values. Present on `EMAIL`, `TELEPHONE` and
+	// `URL` fields, absent on every other type.
+	MultipleValues bool `json:"multipleValues"`
+	// Available options. Always present on `SINGLE_SELECT` and `MULTI_SELECT` fields,
+	// as an empty list when there are none. Absent on every other type.
+	Options []AccountUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption `json:"options"`
+	// For a dependent select, the field key whose selected option determines which of
+	// this field's options apply. Absent for ordinary selects.
+	ParentFieldKey string `json:"parentFieldKey"`
+	// Whether values for this field must be unique, or null when not set. Present on
+	// `EMAIL`, `TELEPHONE`, `URL` and `SOCIAL_HANDLE` fields, absent on every other
+	// type.
+	Unique bool `json:"unique" api:"nullable"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Currency       respjson.Field
+		DecimalPlaces  respjson.Field
+		HandleService  respjson.Field
+		MultipleValues respjson.Field
+		Options        respjson.Field
+		ParentFieldKey respjson.Field
+		Unique         respjson.Field
+		ExtraFields    map[string]respjson.Field
+		raw            string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseFieldDefinitionTypeConfiguration) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// For a dependent select, the ID of the option in the parent field named by
+	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
+	// selects.
+	ParentID string `json:"parentId"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ParentID           respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsResponseRelationshipDefinition struct {
+	// Whether the relationship definition is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship definition was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Description of the relationship, or null.
+	Description string `json:"description" api:"required"`
+	// Human-readable display name of the relationship, as it reads from this object
+	// type.
+	Label string `json:"label" api:"required"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType string `json:"objectType" api:"required"`
+	// Unique identifier of the relationship definition.
+	ID string `json:"id"`
+	// Directional metadata for a self-referential relationship. List filters use the
+	// relationship key with `:asSource` or `:asDestination`; writes continue to use
+	// the bare key.
+	Directions AccountUpdateDefinitionsResponseRelationshipDefinitionDirections `json:"directions"`
+	// Key of the relationship group this relationship belongs to, as listed under
+	// `relationshipGroupDefinitions`. Absent when the relationship is not in a group.
+	GroupKey string `json:"groupKey"`
+	// How the same relationship reads from the related object type.
+	Inverse AccountUpdateDefinitionsResponseRelationshipDefinitionInverse `json:"inverse"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
+		Cardinality respjson.Field
+		Description respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ID          respjson.Field
+		Directions  respjson.Field
+		GroupKey    respjson.Field
+		Inverse     respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipDefinition) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdateDefinitionsResponseRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// Directional metadata for a self-referential relationship. List filters use the
+// relationship key with `:asSource` or `:asDestination`; writes continue to use
+// the bare key.
+type AccountUpdateDefinitionsResponseRelationshipDefinitionDirections struct {
+	// The current record is the destination (incoming) endpoint.
+	AsDestination AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination `json:"asDestination" api:"required"`
+	// The current record is the source (outgoing) endpoint.
+	AsSource AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource `json:"asSource" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AsDestination respjson.Field
+		AsSource      respjson.Field
+		ExtraFields   map[string]respjson.Field
+		raw           string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipDefinitionDirections) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipDefinitionDirections) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the destination (incoming) endpoint.
+type AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsDestination) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The current record is the source (outgoing) endpoint.
+type AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipDefinitionDirectionsAsSource) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same relationship reads from the related object type.
+type AccountUpdateDefinitionsResponseRelationshipDefinitionInverse struct {
+	// Whether this endpoint direction is `HAS_ONE` or `HAS_MANY`.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality" api:"required"`
+	// Human-readable display name for this endpoint direction.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Cardinality respjson.Field
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipDefinitionInverse) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsResponseRelationshipGroupDefinition struct {
+	// Unique identifier of the relationship group.
+	ID string `json:"id" api:"required"`
+	// Whether the relationship group is archived.
+	Archived bool `json:"archived" api:"required"`
+	// When the relationship group was archived, or null if active.
+	ArchivedAt time.Time `json:"archivedAt" api:"required" format:"date-time"`
+	// How the same group reads from the related object type.
+	Inverse AccountUpdateDefinitionsResponseRelationshipGroupDefinitionInverse `json:"inverse" api:"required"`
+	// Human-readable display name of the group, as it reads from this object type.
+	Label string `json:"label" api:"required"`
+	// The type of the related object every relationship in the group points to.
+	ObjectType string `json:"objectType" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID          respjson.Field
+		Archived    respjson.Field
+		ArchivedAt  respjson.Field
+		Inverse     respjson.Field
+		Label       respjson.Field
+		ObjectType  respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipGroupDefinition) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipGroupDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// How the same group reads from the related object type.
+type AccountUpdateDefinitionsResponseRelationshipGroupDefinitionInverse struct {
+	// Human-readable display name of the group, as it reads from the related object
+	// type.
+	Label string `json:"label" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		Label       respjson.Field
+		ExtraFields map[string]respjson.Field
+		raw         string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdateDefinitionsResponseRelationshipGroupDefinitionInverse) RawJSON() string {
+	return r.JSON.raw
+}
+func (r *AccountUpdateDefinitionsResponseRelationshipGroupDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// AccountUpdatePipelineResponseUnion contains all possible properties and values
+// from [AccountUpdatePipelineResponseObject],
+// [AccountUpdatePipelineResponseAffectedRecordCount].
+//
+// Use the methods beginning with 'As' to cast the union to one of its variants.
+type AccountUpdatePipelineResponseUnion struct {
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	ID string `json:"id"`
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	Description string `json:"description"`
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	ForecastEnabled bool `json:"forecastEnabled"`
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	Name string `json:"name"`
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	Slug string `json:"slug"`
+	// This field is from variant [AccountUpdatePipelineResponseObject].
+	Stages []AccountUpdatePipelineResponseObjectStage `json:"stages"`
+	// This field is from variant [AccountUpdatePipelineResponseAffectedRecordCount].
+	AffectedRecordCount int64 `json:"affectedRecordCount"`
+	JSON                struct {
+		ID                  respjson.Field
+		Description         respjson.Field
+		ForecastEnabled     respjson.Field
+		Name                respjson.Field
+		Slug                respjson.Field
+		Stages              respjson.Field
+		AffectedRecordCount respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+func (u AccountUpdatePipelineResponseUnion) AsAccountUpdatePipelineResponseObject() (v AccountUpdatePipelineResponseObject) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+func (u AccountUpdatePipelineResponseUnion) AsAccountUpdatePipelineResponseAffectedRecordCount() (v AccountUpdatePipelineResponseAffectedRecordCount) {
+	apijson.UnmarshalRoot(json.RawMessage(u.JSON.raw), &v)
+	return
+}
+
+// Returns the unmodified JSON received from the API
+func (u AccountUpdatePipelineResponseUnion) RawJSON() string { return u.JSON.raw }
+
+func (r *AccountUpdatePipelineResponseUnion) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdatePipelineResponseObject struct {
+	// Unique identifier of the pipeline.
+	ID string `json:"id" api:"required"`
+	// Description of the pipeline, or null.
+	Description string `json:"description" api:"required"`
+	// Whether stages carry a `forecastPercentage`. Turning it off clears every stage
+	// forecast.
+	ForecastEnabled bool `json:"forecastEnabled" api:"required"`
+	// Display name of the pipeline.
+	Name string `json:"name" api:"required"`
+	// Key derived from the name when the pipeline was created, unique on the object
+	// type. Pipelines provisioned by Lightfield use a `$` prefix (e.g.
+	// `$default-pipeline`).
+	Slug string `json:"slug" api:"required"`
+	// Stages in display order. Each `id` is the option ID records hold in `$stage`.
+	Stages []AccountUpdatePipelineResponseObjectStage `json:"stages" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID              respjson.Field
+		Description     respjson.Field
+		ForecastEnabled respjson.Field
+		Name            respjson.Field
+		Slug            respjson.Field
+		Stages          respjson.Field
+		ExtraFields     map[string]respjson.Field
+		raw             string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdatePipelineResponseObject) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdatePipelineResponseObject) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdatePipelineResponseObjectStage struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color"`
+	// Description of the option, or null.
+	Description string `json:"description" api:"nullable"`
+	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
+	// on selects whose options take no forecast.
+	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		ID                 respjson.Field
+		Label              respjson.Field
+		Category           respjson.Field
+		Color              respjson.Field
+		Description        respjson.Field
+		ForecastPercentage respjson.Field
+		Icon               respjson.Field
+		ExtraFields        map[string]respjson.Field
+		raw                string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdatePipelineResponseObjectStage) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdatePipelineResponseObjectStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdatePipelineResponseAffectedRecordCount struct {
+	// Number of records whose stage is, or would be, cleared.
+	AffectedRecordCount int64 `json:"affectedRecordCount" api:"required"`
+	// JSON contains metadata for fields, check presence with [respjson.Field.Valid].
+	JSON struct {
+		AffectedRecordCount respjson.Field
+		ExtraFields         map[string]respjson.Field
+		raw                 string
+	} `json:"-"`
+}
+
+// Returns the unmodified JSON received from the API
+func (r AccountUpdatePipelineResponseAffectedRecordCount) RawJSON() string { return r.JSON.raw }
+func (r *AccountUpdatePipelineResponseAffectedRecordCount) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
@@ -3211,6 +4220,83 @@ func (r *AccountDeleteParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
 }
 
+type AccountNewPipelineParams struct {
+	// Display name of the pipeline, unique among pipelines on the object type.
+	Name string `json:"name" api:"required"`
+	// Description of the pipeline. Send null to clear it; an empty or whitespace-only
+	// string returns 422.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Whether stages carry a forecast. Defaults to false.
+	ForecastEnabled param.Opt[bool] `json:"forecastEnabled,omitzero"`
+	// Key of the pipeline, fixed once created. A slug another pipeline on the object
+	// type already has is refused with 409 `crm.pipeline.slug_taken`, so a create sent
+	// again after a lost response is recognized. Derived from `name` when left out.
+	Slug param.Opt[string] `json:"slug,omitzero"`
+	// Stages in display order. Defaults to none.
+	Stages []AccountNewPipelineParamsStage `json:"stages,omitzero"`
+	paramObj
+}
+
+func (r AccountNewPipelineParams) MarshalJSON() (data []byte, err error) {
+	type shadow AccountNewPipelineParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountNewPipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// The properties Category, Color, Icon, Label are required.
+type AccountNewPipelineParamsStage struct {
+	// Lifecycle group of the stage, in-progress (`ACTIVE`) or done (`COMPLETED`).
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category,omitzero" api:"required"`
+	// Color the stage is displayed in.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero" api:"required"`
+	// Icon the stage is displayed with.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon,omitzero" api:"required"`
+	// Display name of the stage.
+	Label string `json:"label" api:"required"`
+	// Description of the stage. Null clears it.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Forecast weighting from 0 to 100. Only allowed when `forecastEnabled`. Null
+	// clears it.
+	ForecastPercentage param.Opt[float64] `json:"forecastPercentage,omitzero"`
+	// Omit the ID to create a new stage with a random UUIDv4. To keep or edit a stage,
+	// send its published ID. A caller-chosen ID starts with `opt_` followed by either
+	// a UUID in any letter case or groups of lowercase letters and digits separated by
+	// single hyphens or underscores. The ID must be unique on the object type,
+	// ignoring case, hyphens, and underscores.
+	ID param.Opt[string] `json:"id,omitzero"`
+	paramObj
+}
+
+func (r AccountNewPipelineParamsStage) MarshalJSON() (data []byte, err error) {
+	type shadow AccountNewPipelineParamsStage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountNewPipelineParamsStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountNewPipelineParamsStage](
+		"category", "ACTIVE", "COMPLETED",
+	)
+	apijson.RegisterFieldValidator[AccountNewPipelineParamsStage](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+	apijson.RegisterFieldValidator[AccountNewPipelineParamsStage](
+		"icon", "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST",
+	)
+}
+
 type AccountDefinitionsParams struct {
 	// Include archived field and relationship definitions, and those of an archived
 	// custom object type or whose other end is one. Defaults to false.
@@ -3225,6 +4311,42 @@ func (r AccountDefinitionsParams) URLQuery() (v url.Values, err error) {
 		ArrayFormat:  apiquery.ArrayQueryFormatComma,
 		NestedFormat: apiquery.NestedQueryFormatBrackets,
 	})
+}
+
+type AccountDeletePipelineParams struct {
+	// Check the request and count the records it would clear, without changing
+	// anything. Defaults to false.
+	DryRun param.Opt[bool] `query:"dryRun,omitzero" json:"-"`
+	Body   AccountDeletePipelineParamsBody
+	paramObj
+}
+
+func (r AccountDeletePipelineParams) MarshalJSON() (data []byte, err error) {
+	return shimjson.Marshal(r.Body)
+}
+func (r *AccountDeletePipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// URLQuery serializes [AccountDeletePipelineParams]'s query parameters as
+// `url.Values`.
+func (r AccountDeletePipelineParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type AccountDeletePipelineParamsBody struct {
+	paramObj
+}
+
+func (r AccountDeletePipelineParamsBody) MarshalJSON() (data []byte, err error) {
+	type shadow AccountDeletePipelineParamsBody
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountDeletePipelineParamsBody) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
 }
 
 type AccountFieldHistoryParams struct {
@@ -3268,4 +4390,333 @@ func (r AccountRestoreParamsBody) MarshalJSON() (data []byte, err error) {
 }
 func (r *AccountRestoreParamsBody) UnmarshalJSON(data []byte) error {
 	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsParams struct {
+	// Field definitions to create or change, keyed by field key. A key that names no
+	// field creates one with that key, and needs `label` and `valueType`. `filter`,
+	// `fields` and `sort` can't be new keys, since list endpoints use them as query
+	// params. A key that names a field changes only the properties sent. `archived`
+	// archives or restores it. At most 10 definitions per request.
+	FieldDefinitions map[string]AccountUpdateDefinitionsParamsFieldDefinition `json:"fieldDefinitions,omitzero"`
+	// Relationship definitions to create or change, keyed by relationship key.
+	// Creating one needs `label`, `cardinality`, `objectType` and
+	// `inverse.cardinality`.
+	RelationshipDefinitions map[string]AccountUpdateDefinitionsParamsRelationshipDefinition `json:"relationshipDefinitions,omitzero"`
+	// Relationship group definitions to create or change, keyed by group key. Creating
+	// one needs `label` and `objectType`. Groups are written before relationships, so
+	// a relationship in the same request can name a new group.
+	RelationshipGroupDefinitions map[string]AccountUpdateDefinitionsParamsRelationshipGroupDefinition `json:"relationshipGroupDefinitions,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParams) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsParamsFieldDefinition struct {
+	// Instructions AI follows when filling this field, or null when none are set.
+	// Absent on built-in fields that have no `id`.
+	AIFillablePrompt param.Opt[string] `json:"aiFillablePrompt,omitzero"`
+	// Description of the field, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Formula a calculated field evaluates, with fields and relationships referenced
+	// by key. Null for fields that are not calculated. Absent on built-in fields that
+	// have no `id`.
+	Formula param.Opt[string] `json:"formula,omitzero"`
+	// Whether the field definition is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the field.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Whether AI fills this field automatically (`ON`), only suggests values
+	// (`SUGGEST`), or leaves it alone (`OFF`). Absent on built-in fields that have no
+	// `id`.
+	//
+	// Any of "ON", "OFF", "SUGGEST".
+	AIFillable        string                                                         `json:"aiFillable,omitzero"`
+	TypeConfiguration AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration `json:"typeConfiguration,omitzero"`
+	// Data type of the field.
+	//
+	// Any of "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL",
+	// "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT",
+	// "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML".
+	ValueType string `json:"valueType,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsFieldDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsFieldDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsFieldDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsFieldDefinition](
+		"aiFillable", "ON", "OFF", "SUGGEST",
+	)
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsFieldDefinition](
+		"valueType", "ADDRESS", "CHECKBOX", "CURRENCY", "DATE", "DATETIME", "EMAIL", "FULL_NAME", "MARKDOWN", "MULTI_SELECT", "NUMBER", "SINGLE_SELECT", "SOCIAL_HANDLE", "TELEPHONE", "TEXT", "URL", "HTML",
+	)
+}
+
+type AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration struct {
+	// Number of decimal places values carry, or null when none is set. Present on
+	// `NUMBER` and `CURRENCY` fields, absent on every other type.
+	DecimalPlaces param.Opt[int64] `json:"decimalPlaces,omitzero"`
+	// ISO 4217 3-letter currency code. Present on `CURRENCY` fields, absent on every
+	// other type.
+	Currency param.Opt[string] `json:"currency,omitzero"`
+	// Whether this field accepts multiple values. Present on `EMAIL`, `TELEPHONE` and
+	// `URL` fields, absent on every other type.
+	MultipleValues param.Opt[bool] `json:"multipleValues,omitzero"`
+	// For a dependent select, the field key whose selected option determines which of
+	// this field's options apply. Absent for ordinary selects.
+	ParentFieldKey param.Opt[string] `json:"parentFieldKey,omitzero"`
+	// Social platform associated with this handle field, or null when none is set.
+	// Present on `SOCIAL_HANDLE` fields, absent on every other type.
+	//
+	// Any of "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM".
+	HandleService string `json:"handleService,omitzero"`
+	// The full option list of a `SINGLE_SELECT` or `MULTI_SELECT` field, matched to
+	// the options the field has by `id`. An `id` the field does not have creates an
+	// option with that `id`, which must be `opt_` followed by lowercase letters and
+	// digits separated by single hyphens or underscores. A new option cannot take the
+	// label of an existing one unless the same request relabels that one. A
+	// `description` sent as null is cleared; a property left out is kept. Options left
+	// out are removed. `SINGLE_SELECT` options are displayed in the order sent.
+	Options []AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption `json:"options,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration](
+		"handleService", "TWITTER", "LINKEDIN", "FACEBOOK", "INSTAGRAM",
+	)
+}
+
+// The properties ID, Label are required.
+type AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption struct {
+	// Unique identifier of the select option.
+	ID string `json:"id" api:"required"`
+	// Human-readable display name of the option.
+	Label string `json:"label" api:"required"`
+	// Description of the option, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
+	// whose options take no color.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+}
+
+type AccountUpdateDefinitionsParamsRelationshipDefinition struct {
+	// Description of the relationship, or null.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Key of the relationship group to create this relationship in: one that exists,
+	// or one created by the same request. Fixed once the relationship exists.
+	GroupKey param.Opt[string] `json:"groupKey,omitzero"`
+	// Whether the relationship definition is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the relationship, as it reads from this object
+	// type.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// The type of the related object (e.g. `account`, `contact`).
+	ObjectType param.Opt[string] `json:"objectType,omitzero"`
+	// Whether this is a `has_one` or `has_many` relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string                                                      `json:"cardinality,omitzero"`
+	Inverse     AccountUpdateDefinitionsParamsRelationshipDefinitionInverse `json:"inverse,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsRelationshipDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsRelationshipDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsRelationshipDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsRelationshipDefinition](
+		"cardinality", "HAS_ONE", "HAS_MANY",
+	)
+}
+
+type AccountUpdateDefinitionsParamsRelationshipDefinitionInverse struct {
+	// Display name of the relationship as it reads from the related object type.
+	// Defaults to `label`.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Whether the related object type reads this relationship as `HAS_ONE` or
+	// `HAS_MANY`. Required to create a relationship.
+	//
+	// Any of "HAS_ONE", "HAS_MANY".
+	Cardinality string `json:"cardinality,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsRelationshipDefinitionInverse) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsRelationshipDefinitionInverse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsRelationshipDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdateDefinitionsParamsRelationshipDefinitionInverse](
+		"cardinality", "HAS_ONE", "HAS_MANY",
+	)
+}
+
+type AccountUpdateDefinitionsParamsRelationshipGroupDefinition struct {
+	// Whether the relationship group is archived.
+	Archived param.Opt[bool] `json:"archived,omitzero"`
+	// Human-readable display name of the group, as it reads from this object type.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// The type of the related object every relationship in the group points to.
+	ObjectType param.Opt[string]                                                `json:"objectType,omitzero"`
+	Inverse    AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse `json:"inverse,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsRelationshipGroupDefinition) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsRelationshipGroupDefinition
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsRelationshipGroupDefinition) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse struct {
+	// Display name of the group as it reads from the related object type. Defaults to
+	// `label`.
+	Label param.Opt[string] `json:"label,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+type AccountUpdatePipelineParams struct {
+	// Description of the pipeline. Send null to clear it; an empty or whitespace-only
+	// string returns 422.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Check the request and count the records it would clear, without changing
+	// anything. Defaults to false.
+	DryRun param.Opt[bool] `query:"dryRun,omitzero" json:"-"`
+	// Confirm deletion of existing stages omitted from the stage list.
+	Force param.Opt[bool] `query:"force,omitzero" json:"-"`
+	// Whether stages carry a forecast. Turning it off clears every stage forecast.
+	ForecastEnabled param.Opt[bool]   `json:"forecastEnabled,omitzero"`
+	Name            param.Opt[string] `json:"name,omitzero"`
+	// The full stage list, in display order. Stages are matched by `id`. Omitted
+	// properties on a retained stage are preserved. Omitting an existing stage
+	// requires `force=true` to delete it and clear it from records.
+	Stages []AccountUpdatePipelineParamsStage `json:"stages,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdatePipelineParams) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdatePipelineParams
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdatePipelineParams) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+// URLQuery serializes [AccountUpdatePipelineParams]'s query parameters as
+// `url.Values`.
+func (r AccountUpdatePipelineParams) URLQuery() (v url.Values, err error) {
+	return apiquery.MarshalWithSettings(r, apiquery.QuerySettings{
+		ArrayFormat:  apiquery.ArrayQueryFormatComma,
+		NestedFormat: apiquery.NestedQueryFormatBrackets,
+	})
+}
+
+type AccountUpdatePipelineParamsStage struct {
+	// Description of the stage. Null clears it.
+	Description param.Opt[string] `json:"description,omitzero"`
+	// Forecast weighting from 0 to 100. Only allowed when `forecastEnabled`. Null
+	// clears it.
+	ForecastPercentage param.Opt[float64] `json:"forecastPercentage,omitzero"`
+	// Omit the ID to create a new stage with a random UUIDv4. To keep or edit a stage,
+	// send its published ID. A caller-chosen ID starts with `opt_` followed by either
+	// a UUID in any letter case or groups of lowercase letters and digits separated by
+	// single hyphens or underscores. The ID must be unique on the object type,
+	// ignoring case, hyphens, and underscores.
+	ID param.Opt[string] `json:"id,omitzero"`
+	// Display name of the stage.
+	Label param.Opt[string] `json:"label,omitzero"`
+	// Lifecycle group of the stage, in-progress (`ACTIVE`) or done (`COMPLETED`).
+	//
+	// Any of "ACTIVE", "COMPLETED".
+	Category string `json:"category,omitzero"`
+	// Color the stage is displayed in.
+	//
+	// Any of "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE",
+	// "COPPER", "GRAY".
+	Color string `json:"color,omitzero"`
+	// Icon the stage is displayed with.
+	//
+	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
+	// "CLOSED_WON", "CLOSED_LOST".
+	Icon string `json:"icon,omitzero"`
+	paramObj
+}
+
+func (r AccountUpdatePipelineParamsStage) MarshalJSON() (data []byte, err error) {
+	type shadow AccountUpdatePipelineParamsStage
+	return param.MarshalObject(r, (*shadow)(&r))
+}
+func (r *AccountUpdatePipelineParamsStage) UnmarshalJSON(data []byte) error {
+	return apijson.UnmarshalRoot(data, r)
+}
+
+func init() {
+	apijson.RegisterFieldValidator[AccountUpdatePipelineParamsStage](
+		"category", "ACTIVE", "COMPLETED",
+	)
+	apijson.RegisterFieldValidator[AccountUpdatePipelineParamsStage](
+		"color", "RED", "ORANGE", "YELLOW", "LIME", "GREEN", "BLUE", "INDIGO", "PURPLE", "COPPER", "GRAY",
+	)
+	apijson.RegisterFieldValidator[AccountUpdatePipelineParamsStage](
+		"icon", "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION", "CLOSED_WON", "CLOSED_LOST",
+	)
 }

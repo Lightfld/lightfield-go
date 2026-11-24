@@ -169,6 +169,42 @@ func TestAccountDeleteWithOptionalParams(t *testing.T) {
 	}
 }
 
+func TestAccountNewPipelineWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.NewPipeline(context.TODO(), githubcomlightfldlightfieldgo.AccountNewPipelineParams{
+		Name:            "name",
+		Description:     githubcomlightfldlightfieldgo.String("description"),
+		ForecastEnabled: githubcomlightfldlightfieldgo.Bool(true),
+		Slug:            githubcomlightfldlightfieldgo.String("slug"),
+		Stages: []githubcomlightfldlightfieldgo.AccountNewPipelineParamsStage{{
+			Category:           "ACTIVE",
+			Color:              "RED",
+			Icon:               "BACKLOG",
+			Label:              "label",
+			ID:                 githubcomlightfldlightfieldgo.String("id"),
+			Description:        githubcomlightfldlightfieldgo.String("description"),
+			ForecastPercentage: githubcomlightfldlightfieldgo.Float(0),
+		}},
+	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestAccountDefinitionsWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -184,6 +220,35 @@ func TestAccountDefinitionsWithOptionalParams(t *testing.T) {
 	_, err := client.Account.Definitions(context.TODO(), githubcomlightfldlightfieldgo.AccountDefinitionsParams{
 		IncludeArchived: githubcomlightfldlightfieldgo.Bool(true),
 	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestAccountDeletePipelineWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.DeletePipeline(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.AccountDeletePipelineParams{
+			DryRun: githubcomlightfldlightfieldgo.Bool(true),
+			Body:   githubcomlightfldlightfieldgo.AccountDeletePipelineParamsBody{},
+		},
+	)
 	if err != nil {
 		var apierr *githubcomlightfldlightfieldgo.Error
 		if errors.As(err, &apierr) {
@@ -223,6 +288,28 @@ func TestAccountFieldHistoryWithOptionalParams(t *testing.T) {
 	}
 }
 
+func TestAccountListPipelines(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.ListPipelines(context.TODO())
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
 func TestAccountRestoreWithOptionalParams(t *testing.T) {
 	baseURL := "http://localhost:4010"
 	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
@@ -240,6 +327,140 @@ func TestAccountRestoreWithOptionalParams(t *testing.T) {
 		"id",
 		githubcomlightfldlightfieldgo.AccountRestoreParams{
 			Body: githubcomlightfldlightfieldgo.AccountRestoreParamsBody{},
+		},
+	)
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestAccountGetPipeline(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.GetPipeline(context.TODO(), "id")
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestAccountUpdateDefinitionsWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.UpdateDefinitions(context.TODO(), githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParams{
+		FieldDefinitions: map[string]githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsFieldDefinition{
+			"foo": {
+				AIFillable:       "ON",
+				AIFillablePrompt: githubcomlightfldlightfieldgo.String("aiFillablePrompt"),
+				Archived:         githubcomlightfldlightfieldgo.Bool(true),
+				Description:      githubcomlightfldlightfieldgo.String("description"),
+				Formula:          githubcomlightfldlightfieldgo.String("formula"),
+				Label:            githubcomlightfldlightfieldgo.String("label"),
+				TypeConfiguration: githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsFieldDefinitionTypeConfiguration{
+					Currency:       githubcomlightfldlightfieldgo.String("currency"),
+					DecimalPlaces:  githubcomlightfldlightfieldgo.Int(-9007199254740991),
+					HandleService:  "TWITTER",
+					MultipleValues: githubcomlightfldlightfieldgo.Bool(true),
+					Options: []githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsFieldDefinitionTypeConfigurationOption{{
+						ID:          "id",
+						Label:       "label",
+						Color:       "RED",
+						Description: githubcomlightfldlightfieldgo.String("description"),
+					}},
+					ParentFieldKey: githubcomlightfldlightfieldgo.String("parentFieldKey"),
+				},
+				ValueType: "ADDRESS",
+			},
+		},
+		RelationshipDefinitions: map[string]githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsRelationshipDefinition{
+			"foo": {
+				Archived:    githubcomlightfldlightfieldgo.Bool(true),
+				Cardinality: "HAS_ONE",
+				Description: githubcomlightfldlightfieldgo.String("description"),
+				GroupKey:    githubcomlightfldlightfieldgo.String("groupKey"),
+				Inverse: githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsRelationshipDefinitionInverse{
+					Cardinality: "HAS_ONE",
+					Label:       githubcomlightfldlightfieldgo.String("label"),
+				},
+				Label:      githubcomlightfldlightfieldgo.String("label"),
+				ObjectType: githubcomlightfldlightfieldgo.String("objectType"),
+			},
+		},
+		RelationshipGroupDefinitions: map[string]githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsRelationshipGroupDefinition{
+			"foo": {
+				Archived: githubcomlightfldlightfieldgo.Bool(true),
+				Inverse: githubcomlightfldlightfieldgo.AccountUpdateDefinitionsParamsRelationshipGroupDefinitionInverse{
+					Label: githubcomlightfldlightfieldgo.String("label"),
+				},
+				Label:      githubcomlightfldlightfieldgo.String("label"),
+				ObjectType: githubcomlightfldlightfieldgo.String("objectType"),
+			},
+		},
+	})
+	if err != nil {
+		var apierr *githubcomlightfldlightfieldgo.Error
+		if errors.As(err, &apierr) {
+			t.Log(string(apierr.DumpRequest(true)))
+		}
+		t.Fatalf("err should be nil: %s", err.Error())
+	}
+}
+
+func TestAccountUpdatePipelineWithOptionalParams(t *testing.T) {
+	baseURL := "http://localhost:4010"
+	if envURL, ok := os.LookupEnv("TEST_API_BASE_URL"); ok {
+		baseURL = envURL
+	}
+	if !testutil.CheckTestServer(t, baseURL) {
+		return
+	}
+	client := githubcomlightfldlightfieldgo.NewClient(
+		option.WithBaseURL(baseURL),
+		option.WithAPIKey("My API Key"),
+	)
+	_, err := client.Account.UpdatePipeline(
+		context.TODO(),
+		"id",
+		githubcomlightfldlightfieldgo.AccountUpdatePipelineParams{
+			DryRun:          githubcomlightfldlightfieldgo.Bool(true),
+			Force:           githubcomlightfldlightfieldgo.Bool(true),
+			Description:     githubcomlightfldlightfieldgo.String("description"),
+			ForecastEnabled: githubcomlightfldlightfieldgo.Bool(true),
+			Name:            githubcomlightfldlightfieldgo.String("name"),
+			Stages: []githubcomlightfldlightfieldgo.AccountUpdatePipelineParamsStage{{
+				ID:                 githubcomlightfldlightfieldgo.String("id"),
+				Category:           "ACTIVE",
+				Color:              "RED",
+				Description:        githubcomlightfldlightfieldgo.String("description"),
+				ForecastPercentage: githubcomlightfldlightfieldgo.Float(0),
+				Icon:               "BACKLOG",
+				Label:              githubcomlightfldlightfieldgo.String("label"),
+			}},
 		},
 	)
 	if err != nil {
