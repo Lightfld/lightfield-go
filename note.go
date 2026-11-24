@@ -634,11 +634,11 @@ type NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	ID string `json:"id" api:"required"`
 	// Human-readable display name of the option.
 	Label string `json:"label" api:"required"`
-	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`), or
-	// null when none is set. Absent on selects whose options are not grouped.
+	// Lifecycle group of the option, in-progress (`ACTIVE`) or done (`COMPLETED`),
+	// `ACTIVE` when none was set. Absent on selects whose options are not grouped.
 	//
 	// Any of "ACTIVE", "COMPLETED".
-	Category string `json:"category" api:"nullable"`
+	Category string `json:"category"`
 	// Color the option is displayed in, `GRAY` when none was chosen. Absent on selects
 	// whose options take no color.
 	//
@@ -650,12 +650,12 @@ type NoteDefinitionsResponseFieldDefinitionTypeConfigurationOption struct {
 	// Forecast weighting of the option from 0 to 100, or null when none is set. Absent
 	// on selects whose options take no forecast.
 	ForecastPercentage float64 `json:"forecastPercentage" api:"nullable"`
-	// Icon the option is displayed with, or null when none is set. Present only on
-	// $stage.
+	// Icon the option is displayed with, `BACKLOG` when none was chosen. Present only
+	// on $stage.
 	//
 	// Any of "BACKLOG", "QUALIFICATION", "DISCOVERY", "ACTIVE", "NEGOTIATION",
 	// "CLOSED_WON", "CLOSED_LOST".
-	Icon string `json:"icon" api:"nullable"`
+	Icon string `json:"icon"`
 	// For a dependent select, the ID of the option in the parent field named by
 	// `typeConfiguration.parentFieldKey` that owns this option. Absent for ordinary
 	// selects.
