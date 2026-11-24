@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.14.0](https://github.com/Lightfld/lightfield-go/compare/v0.13.0...v0.14.0) (2026-11-24)
+
+
+### Features
+
+* **api:** and/or filters, field selection and sort on list endpoints ([04742aa](https://github.com/Lightfld/lightfield-go/commit/04742aa10b9ff1359d4a28cc620b0a6ef48a0a26))
+* **api:** import files from Google Drive, OneDrive and SharePoint ([1155977](https://github.com/Lightfld/lightfield-go/commit/115597726773b3f600fedbc3b546f3d2a1a9bac9))
+* **sequences:** enroll multichannel contacts that have only one channel ([3ca6e7e](https://github.com/Lightfld/lightfield-go/commit/3ca6e7edba21fc26b392b3176060b440fd3dae39))
+* **sequences:** let an email step start a new thread instead of replying ([5c85407](https://github.com/Lightfld/lightfield-go/commit/5c8540795f2e8af77bcc986968abf0f681f136be))
+
+
+### Bug Fixes
+
+* **api:** LFD-30841 refuse autoCreateRecords when the caller may not create the accounts and contacts ([55c022f](https://github.com/Lightfld/lightfield-go/commit/55c022f0e5aec9658fa4012384c0a02c6a9e4c4b))
+* **api:** LFD-30991 log the email or meeting and warn instead of refusing when auto-creation is restricted ([8cbc89d](https://github.com/Lightfld/lightfield-go/commit/8cbc89d30dd9f35eb8cbfc402667074972fe7889))
+* **meetings:** reveal no attendee identity of a private meeting below full access (LFD-30931) ([9d7a66c](https://github.com/Lightfld/lightfield-go/commit/9d7a66cef9c6b1abdb6f8439ce3abcb311eab1eb))
+* stop calling Gmail for attachments it keeps failing on (Close LFD-31245) ([5171961](https://github.com/Lightfld/lightfield-go/commit/51719615c3b83bfbc99edc9295c41fe9f4098038))
+
+
+### Documentation
+
+* say which contact and account fields take lists or objects ([fcb4cf1](https://github.com/Lightfld/lightfield-go/commit/fcb4cf1c3082d3c043b8efa74204ebc5adc468e9))
+
 ## [0.13.0](https://github.com/Lightfld/lightfield-go/compare/v0.12.0...v0.13.0) (2026-11-10)
 
 
